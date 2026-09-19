@@ -74,7 +74,7 @@ static double HRListSize(NSString *listName)
     l->_identifier = [info[@"identifier"] copy];
     l->_displayName = [info[@"displayName"] copy];
     l->_alphabet = [info[@"alphabet"] copy];
-    l->_defaultLayoutID = [(info[@"defaultLayout"] ?: @"qwerty-us") copy];
+    l->_defaultLayoutID = [(info[@"defaultLayout"] ?: @"qwerty") copy];
     l->_direction = [(info[@"direction"] ?: @"ltr") copy];
     l->_directory = [directory copy];
     l->_wordListNames = [lists copy];

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>thai kedmanee</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>thai_kedmanee</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>_%</string>
+			<string>&#xE45;+</string>
+			<string>/&#xE51;</string>
+			<string>-&#xE52;</string>
+			<string>&#xE20;&#xE53;</string>
+			<string>&#xE16;&#xE54;</string>
+			<string>&#xE38;&#xE39;</string>
+			<string>&#xE36;&#xE3F;</string>
+			<string>&#xE04;&#xE55;</string>
+			<string>&#xE15;&#xE56;</string>
+			<string>&#xE08;&#xE57;</string>
+			<string>&#xE02;&#xE58;</string>
+			<string>&#xE0A;&#xE59;</string>
+		</array>
+		<array>
+			<string>&#xE46;&#xE50;</string>
+			<string>&#xE44;"</string>
+			<string>&#xE33;&#xE0E;</string>
+			<string>&#xE1E;&#xE11;</string>
+			<string>&#xE30;&#xE18;</string>
+			<string>&#xE31;&#xE4D;</string>
+			<string>&#xE35;&#xE4A;</string>
+			<string>&#xE23;&#xE13;</string>
+			<string>&#xE19;&#xE2F;</string>
+			<string>&#xE22;&#xE0D;</string>
+			<string>&#xE1A;&#xE10;</string>
+			<string>&#xE25;,</string>
+			<string>&#xE03;&#xE05;</string>
+		</array>
+		<array>
+			<string>&#xE1F;&#xE24;</string>
+			<string>&#xE2B;&#xE06;</string>
+			<string>&#xE01;&#xE0F;</string>
+			<string>&#xE14;&#xE42;</string>
+			<string>&#xE40;&#xE0C;</string>
+			<string>&#xE49;&#xE47;</string>
+			<string>&#xE48;&#xE4B;</string>
+			<string>&#xE32;&#xE29;</string>
+			<string>&#xE2A;&#xE28;</string>
+			<string>&#xE27;&#xE0B;</string>
+			<string>&#xE07;.</string>
+		</array>
+		<array>
+			<string>&#xE1C;(</string>
+			<string>&#xE1B;)</string>
+			<string>&#xE41;&#xE09;</string>
+			<string>&#xE2D;&#xE2E;</string>
+			<string>&#xE34;&#xE3A;</string>
+			<string>&#xE37;&#xE4C;</string>
+			<string>&#xE17;?</string>
+			<string>&#xE21;&#xE12;</string>
+			<string>&#xE43;&#xE2C;</string>
+			<string>&#xE1D;&#xE26;</string>
+		</array>
+	</array>
+</dict>
+</plist>

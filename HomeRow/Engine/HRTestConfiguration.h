@@ -35,7 +35,7 @@ typedef NS_ENUM(NSInteger, HRBackspacePolicy) {
 @property (nonatomic) HRBackspacePolicy backspacePolicy;
 @property (nonatomic, copy) NSString *languageID;   /* language pack, e.g. "english" */
 @property (nonatomic, copy) NSString *wordListName; /* e.g. "words-200" */
-@property (nonatomic, copy) NSString *layoutID;     /* layout pack, e.g. "qwerty-us" */
+@property (nonatomic, copy) NSString *layoutID;     /* layout pack, e.g. "qwerty" */
 
 + (instancetype)defaultConfiguration;
 

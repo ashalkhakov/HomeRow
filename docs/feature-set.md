@@ -1,4 +1,4 @@
-# HomeRow — Feature Set (draft 4)
+# HomeRow — Feature Set (draft 5)
 
 A native typing tutor for GNUstep and Cocoa, in the spirit of MonkeyType (prose, quick tests, rich stats) and Typing.io (typing real source code), plus a guided touch-typing course for people starting from zero. Objective-C 2.0 with ARC, XIB-based UI, GPL-3.0-or-later, fully offline, no accounts, no telemetry.
 
@@ -118,11 +118,11 @@ MonkeyType and Typing.io both assume you can already touch-type. HomeRow does no
 
 Nothing in the engine or UI may assume English or QWERTY. v0.2 ships exactly one language (English) and one layout (QWERTY-US), but both go through the same loading path a contributed pack would.
 
-**Layout pack** — `Layouts/<id>.plist` (e.g. `qwerty-us`, later `dvorak`, `colemak`, `jcuken-ru`, `qwertz-de`):
+**Layout pack** — `Layouts/<id>.plist` (implemented; MonkeyType's names: `qwerty`, `dvorak`, `colemak`, `russian`, `qwertz`, `azerty`, …; format in `docs/adding-a-layout.md`):
 
-- id, display name, geometry (`ansi` / `iso`), and for each **physical key position** (row + column, independent of what is printed on it): the base character, the shifted character, optionally the AltGr/Option characters, and the finger assigned to it.
-- Dead-key sequences where a layout needs them (e.g. `´` + `e` → `é`), so the keyboard view can hint two-step input.
-- From this one file come: the on-screen keyboard labels, the finger zones, the heatmap, and the mapping "which characters has the learner unlocked so far".
+- id, display name, geometry (`ansi` / `iso`), and four rows of character keys; each key lists what it gives unshifted, shifted and optionally with AltGr. Fingers follow from the column — the standard assignment — so they are not stored.
+- From this one file come the on-screen keyboard labels, the finger zones, the lit next key, and later the heatmap and "which characters has the learner unlocked so far".
+- Not yet: dead-key sequences (e.g. `´` + `e` → `é`) for two-step hints, and drawings for matrix/split boards.
 
 **Language pack** — `Languages/<id>/` (e.g. `english`, `russian`, `german`):
 
@@ -218,8 +218,8 @@ HomeRow/
 ## 14. Phasing
 
 - **v0.1 — usable daily**: Time, Words, Custom, Zen modes; punctuation/numbers; core typing behaviour; live WPM/accuracy; results screen with chart; results saved through Core Data/FreeCoreData; light and dark themes; CI on both platforms producing an AppImage and a macOS zip from the first commit.
-- **Done ahead of plan (with the relicensing)**: GNU Typist courses with a basic lesson runner (Lessons menu), 140 language packs with a Language / Word List menu.
-- **v0.2 — tutor**: a course window with per-lesson progress and stars (`HRLessonProgress`), `NSTextInputClient` on macOS (dead keys — needed by every non-English course), layout/language pack loading and validation, lesson generator, English + QWERTY-US course, keyboard view with finger hints, course window, lesson progress, first-launch choice.
+- **Done ahead of plan**: GNU Typist courses; 140 language packs; **course mode** — a Courses window to pick the course being followed, position kept per course down to the step (`CourseProgress`), a record per lesson (`LessonRecord`: attempts, completions, best/last WPM and accuracy, time), every exercise in the history with its course/lesson/step, lesson-level results, relaunch resumes the course; **on-screen keyboard** — 239 layout packs from MonkeyType, finger zones, next key + opposite Shift + Backspace-on-error lit; data model version 2 with migration (explicit lightweight migration, old store kept).
+- **v0.2 — tutor**: `NSTextInputClient` on macOS (dead keys — needed by every non-English course), layout/language pack loading and validation, lesson generator, English + QWERTY-US course, keyboard view with finger hints, course window, lesson progress, first-launch choice.
 - **v0.3 — insight**: History window, charts, heatmap on the keyboard view, weak-spot practice and adaptive review, personal bests, export/import; Quote mode.
 - **v0.4 — code**: Code mode with auto-indent, tokenizer colouring, file/folder import, overhead and symbol metrics.
 - **v1.0 — polish**: pace caret, replay, command palette, sounds, more themes; additional layout and language packs as they are contributed; signed/notarized macOS build.

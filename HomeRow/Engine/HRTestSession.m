@@ -322,6 +322,25 @@ static const NSUInteger HRMaxExtra = 20;
     return ci < [typed count] ? typed[ci] : @"";
 }
 
+- (NSString *)expectedInput
+{
+    if (_state == HRSessionFinished || [self isZen]) return nil;
+    HRWord *word = [self currentWord];
+    if (!word) return nil;
+    NSArray *typed = [self currentTyped];
+    NSArray *target = word.characters;
+    NSUInteger n = [typed count];
+    /* a mistake behind the caret comes first -- if it can be taken back */
+    if (_configuration.backspacePolicy != HRBackspaceNone) {
+        if (n > [target count]) return @"\b";
+        for (NSUInteger i = 0; i < n; i++) {
+            if (![typed[i] isEqualToString:target[i]]) return @"\b";
+        }
+    }
+    if (n < [target count]) return target[n];
+    return word.separator == HRSeparatorNewline ? @"\n" : @" ";
+}
+
 - (NSUInteger)caretIndexInCurrentWord
 {
     return [[self currentTyped] count];

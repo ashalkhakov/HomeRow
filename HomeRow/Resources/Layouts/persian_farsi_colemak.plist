@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>persian farsi colemak</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>persian_farsi_colemak</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>&#xF7;&#xD7;</string>
+			<string>1!</string>
+			<string>2@</string>
+			<string>3#</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6^</string>
+			<string>7&amp;</string>
+			<string>8*</string>
+			<string>9)</string>
+			<string>0(</string>
+			<string>-_</string>
+			<string>=+</string>
+		</array>
+		<array>
+			<string>&#x636;&#x64B;</string>
+			<string>&#x635;&#x64C;</string>
+			<string>&#x628;&#x651;</string>
+			<string>&#x62D;\</string>
+			<string>&#x644;&#x6C0;</string>
+			<string>&#x62A;&#x640;</string>
+			<string>&#x645;&#xBB;</string>
+			<string>&#x639;,</string>
+			<string>&#x63A;&#x61B;</string>
+			<string>&#x6A9;:</string>
+			<string>&#x62C;}</string>
+			<string>&#x686;{</string>
+			<string>&#x67E;|</string>
+		</array>
+		<array>
+			<string>&#x634;&#x64E;</string>
+			<string>&#x642;</string>
+			<string>&#x633;&#x64F;</string>
+			<string>&#x641;&#x60C;</string>
+			<string>&#x6CC;&#x650;</string>
+			<string>&#x627;&#x622;</string>
+			<string>&#x62F;&#x623;</string>
+			<string>&#x62B;&#x64D;</string>
+			<string>&#x647;]</string>
+			<string>&#x62E;[</string>
+			<string>&#x6AF;"</string>
+		</array>
+		<array>
+			<string>&#x638;&#x629;</string>
+			<string>&#x637;&#x64A;</string>
+			<string>&#x632;&#x698;</string>
+			<string>&#x631;&#x624;</string>
+			<string>&#x630;&#x625;</string>
+			<string>&#x646;&#xAB;</string>
+			<string>&#x626;&#x621;</string>
+			<string>&#x648;&lt;</string>
+			<string>.&gt;</string>
+			<string>/&#x61F;</string>
+		</array>
+	</array>
+</dict>
+</plist>

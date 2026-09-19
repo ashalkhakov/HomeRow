@@ -49,4 +49,5 @@ run-tests: all
 	. $(GNUSTEP_MAKEFILES)/GNUstep.sh; \
 	HR_LANGUAGES_DIR="$(CURDIR)/../HomeRow/Resources/Languages" \
 	HR_LESSONS_DIR="$(CURDIR)/../HomeRow/Resources/Lessons" \
+	HR_LAYOUTS_DIR="$(CURDIR)/../HomeRow/Resources/Layouts" \
 	$(XCTEST) "$(BUNDLE_NAME).bundle"

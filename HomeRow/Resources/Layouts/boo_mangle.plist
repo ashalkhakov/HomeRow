@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>boo mangle</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>boo_mangle</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>$~</string>
+			<string>&amp;%</string>
+			<string>[7</string>
+			<string>{5</string>
+			<string>}3</string>
+			<string>(1</string>
+			<string>=9</string>
+			<string>*0</string>
+			<string>)2</string>
+			<string>+4</string>
+			<string>]6</string>
+			<string>!8</string>
+			<string>#`</string>
+		</array>
+		<array>
+			<string>,&lt;</string>
+			<string>.&gt;</string>
+			<string>uU</string>
+			<string>cC</string>
+			<string>vV</string>
+			<string>qQ</string>
+			<string>fF</string>
+			<string>dD</string>
+			<string>lL</string>
+			<string>yY</string>
+			<string>/?</string>
+			<string>@^</string>
+			<string>\|</string>
+		</array>
+		<array>
+			<string>aA</string>
+			<string>oO</string>
+			<string>eE</string>
+			<string>sS</string>
+			<string>gG</string>
+			<string>bB</string>
+			<string>nN</string>
+			<string>tT</string>
+			<string>rR</string>
+			<string>iI</string>
+			<string>-_</string>
+		</array>
+		<array>
+			<string>xX</string>
+			<string>'"</string>
+			<string>wW</string>
+			<string>;:</string>
+			<string>zZ</string>
+			<string>pP</string>
+			<string>hH</string>
+			<string>mM</string>
+			<string>kK</string>
+			<string>jJ</string>
+		</array>
+	</array>
+</dict>
+</plist>

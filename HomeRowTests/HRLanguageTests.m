@@ -66,7 +66,7 @@
     NSError *e = nil;
     HRLanguage *en = [HRLanguage languageWithDirectory:dir error:&e];
     XCTAssertNotNil(en, @"%@", e);
-    XCTAssertEqualObjects(en.defaultLayoutID, @"qwerty-us");
+    XCTAssertEqualObjects(en.defaultLayoutID, @"qwerty");
     XCTAssertTrue([en.wordListNames containsObject:@"words-200"]);
     XCTAssertEqual([[en wordsNamed:@"words-200" error:NULL] count], (NSUInteger)200);
 }

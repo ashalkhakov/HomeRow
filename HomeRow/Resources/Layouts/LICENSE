@@ -1,0 +1,8 @@
+Imported by Scripts/import-monkeytype-layouts.py
+
+*.plist
+    From MonkeyType, https://github.com/monkeytypegame/monkeytype
+    commit 91bd24bb8513785c7364cbea29296ff7adafac41, frontend/static/layouts/
+    GNU General Public License, version 3.  Copyright (C) the MonkeyType
+    contributors.  Converted from JSON to property lists; the space row is
+    dropped and nothing else is changed.

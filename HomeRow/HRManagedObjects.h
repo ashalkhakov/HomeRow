@@ -41,6 +41,11 @@
  * second.  A blob keeps the schema flat; nothing queries inside it. */
 @property (nonatomic, strong) NSData *series;
 
+/* set when the result is an exercise of a course (mode "lesson") */
+@property (nonatomic, copy) NSString *courseFile;
+@property (nonatomic, strong) NSNumber *lessonIndex;
+@property (nonatomic, strong) NSNumber *stepIndex;
+
 @property (nonatomic, strong) NSSet *keyStats;
 
 - (NSDictionary *)seriesDictionary;
@@ -53,5 +58,35 @@
 @property (nonatomic, strong) NSNumber *hits;
 @property (nonatomic, strong) NSNumber *misses;
 @property (nonatomic, strong) HRTestResult *result;
+
+@end
+
+/* Where the learner is in one course.  One row per course ever started;
+ * which course is the current one is a user default, not data. */
+@interface HRCourseProgress : NSManagedObject
+
+@property (nonatomic, copy) NSString *courseFile;
+@property (nonatomic, strong) NSNumber *lessonIndex;   /* the lesson to do next */
+@property (nonatomic, strong) NSNumber *stepIndex;     /* where to resume inside it */
+@property (nonatomic, strong) NSDate *startedDate;
+@property (nonatomic, strong) NSDate *lastDate;
+
+@end
+
+/* What happened in one lesson of one course, over all the times it was
+ * taken.  The exercises themselves are HRTestResult rows. */
+@interface HRLessonRecord : NSManagedObject
+
+@property (nonatomic, copy) NSString *courseFile;
+@property (nonatomic, strong) NSNumber *lessonIndex;
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, strong) NSNumber *attempts;      /* times started */
+@property (nonatomic, strong) NSNumber *completions;   /* times finished */
+@property (nonatomic, strong) NSNumber *bestWpm;
+@property (nonatomic, strong) NSNumber *bestAccuracy;
+@property (nonatomic, strong) NSNumber *lastWpm;
+@property (nonatomic, strong) NSNumber *lastAccuracy;
+@property (nonatomic, strong) NSNumber *totalDuration;
+@property (nonatomic, strong) NSDate *lastDate;
 
 @end

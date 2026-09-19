@@ -12,6 +12,7 @@
 
 @class HRChartView;
 @class HRResultsView;
+@class HRKeyboardView;
 
 @interface HRAppDelegate : NSObject <NSApplicationDelegate, HRTestViewDelegate>
 
@@ -19,6 +20,7 @@
 @property (nonatomic, strong) IBOutlet HRTestView *testView;
 @property (nonatomic, strong) IBOutlet HRResultsView *resultsView;
 @property (nonatomic, strong) IBOutlet HRChartView *chartView;
+@property (nonatomic, strong) IBOutlet HRKeyboardView *keyboardView;
 
 @property (nonatomic, strong) IBOutlet NSPopUpButton *modePopUp;
 @property (nonatomic, strong) IBOutlet NSPopUpButton *amountPopUp;
@@ -32,12 +34,18 @@
 @property (nonatomic, strong) IBOutlet NSTextField *hintField;
 
 - (IBAction)modeChanged:(id)sender;
+- (IBAction)selectMode:(id)sender;
 - (IBAction)amountChanged:(id)sender;
 - (IBAction)optionChanged:(id)sender;
 - (IBAction)restartTest:(id)sender;
 - (IBAction)openText:(id)sender;
 - (IBAction)selectLanguage:(id)sender;
 - (IBAction)selectWordList:(id)sender;
-- (IBAction)startLesson:(id)sender;
+- (IBAction)selectLayout:(id)sender;
+- (IBAction)showCourses:(id)sender;
+- (IBAction)continueCourse:(id)sender;
+- (IBAction)switchToCourse:(id)sender;
+- (IBAction)restartLesson:(id)sender;
+- (IBAction)toggleKeyboard:(id)sender;
 
 @end

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>hindi inscript</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>hindi_inscript</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>&#x94A;&#x912;</string>
+			<string>1&#x90D;</string>
+			<string>2&#x945;</string>
+			<string>3</string>
+			<string>4</string>
+			<string>5</string>
+			<string>6</string>
+			<string>7</string>
+			<string>8</string>
+			<string>9(</string>
+			<string>0)</string>
+			<string>-&#x903;</string>
+			<string>&#x90B;&#x943;</string>
+		</array>
+		<array>
+			<string>&#x94C;&#x914;</string>
+			<string>&#x948;&#x910;</string>
+			<string>&#x93E;&#x906;</string>
+			<string>&#x940;&#x908;</string>
+			<string>&#x942;&#x90A;</string>
+			<string>&#x92C;&#x92D;</string>
+			<string>&#x939;&#x919;</string>
+			<string>&#x917;&#x918;</string>
+			<string>&#x926;&#x927;</string>
+			<string>&#x91C;&#x91D;</string>
+			<string>&#x921;&#x922;</string>
+			<string>&#x93C;&#x91E;</string>
+			<string>&#x949;&#x911;</string>
+		</array>
+		<array>
+			<string>&#x94B;&#x913;</string>
+			<string>&#x947;&#x90F;</string>
+			<string>&#x94D;&#x905;</string>
+			<string>&#x93F;&#x907;</string>
+			<string>&#x941;&#x909;</string>
+			<string>&#x92A;&#x92B;</string>
+			<string>&#x930;&#x931;</string>
+			<string>&#x915;&#x916;</string>
+			<string>&#x924;&#x925;</string>
+			<string>&#x91A;&#x91B;</string>
+			<string>&#x91F;&#x920;</string>
+		</array>
+		<array>
+			<string>&#x946;&#x90E;</string>
+			<string>&#x902;&#x901;</string>
+			<string>&#x92E;&#x923;</string>
+			<string>&#x928;</string>
+			<string>&#x935;</string>
+			<string>&#x932;&#x933;</string>
+			<string>&#x938;&#x936;</string>
+			<string>,&#x937;</string>
+			<string>.&#x964;</string>
+			<string>&#x92F;&#x95F;</string>
+		</array>
+	</array>
+</dict>
+</plist>

@@ -24,8 +24,10 @@ HomeRow_APPLICATION_ICON = HomeRow.png
 #
 HomeRow_RESOURCE_FILES = \
     Resources/MainMenu.xib \
+    Resources/CourseWindow.xib \
     Resources/HomeRow.png \
     Resources/Languages \
+    Resources/Layouts \
     Resources/Lessons \
     Resources/Themes
 
@@ -43,6 +45,8 @@ HomeRow_OBJC_FILES = \
     $(wildcard Engine/*.m) \
     HRAppDelegate.m \
     HRChartView.m \
+    HRCourseWindowController.m \
+    HRKeyboardView.m \
     HRManagedObjects.m \
     HRResultStore.m \
     HRResultsView.m \

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>japanese hiragana</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>japanese_hiragana</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>&#x308D;&#x308D;</string>
+			<string>&#x306C;&#x306C;</string>
+			<string>&#x3075;&#x3075;</string>
+			<string>&#x3042;&#x3041;</string>
+			<string>&#x3046;&#x3045;</string>
+			<string>&#x3048;&#x3047;</string>
+			<string>&#x304A;&#x3049;</string>
+			<string>&#x3084;&#x3083;</string>
+			<string>&#x3086;&#x3085;</string>
+			<string>&#x3088;&#x3087;</string>
+			<string>&#x308F;&#x3092;</string>
+			<string>&#x307B;&#x307B;</string>
+			<string>&#x3078;&#x3078;</string>
+		</array>
+		<array>
+			<string>&#x305F;&#x305F;</string>
+			<string>&#x3066;&#x3066;</string>
+			<string>&#x3044;&#x3043;</string>
+			<string>&#x3059;&#x3059;</string>
+			<string>&#x304B;&#x304B;</string>
+			<string>&#x3093;&#x3093;</string>
+			<string>&#x306A;&#x306A;</string>
+			<string>&#x306B;&#x306B;</string>
+			<string>&#x3089;&#x3089;</string>
+			<string>&#x305B;&#x305B;</string>
+			<string>&#x309B;&#x300C;</string>
+			<string>&#x309C;&#x300D;</string>
+			<string>&#x3080;&#x3080;</string>
+		</array>
+		<array>
+			<string>&#x3061;&#x3061;</string>
+			<string>&#x3068;&#x3068;</string>
+			<string>&#x3057;&#x3057;</string>
+			<string>&#x306F;&#x306F;</string>
+			<string>&#x304D;&#x304D;</string>
+			<string>&#x304F;&#x304F;</string>
+			<string>&#x307E;&#x307E;</string>
+			<string>&#x306E;&#x306E;</string>
+			<string>&#x308A;&#x308A;</string>
+			<string>&#x308C;&#x308C;</string>
+			<string>&#x3051;&#x3051;</string>
+		</array>
+		<array>
+			<string>&#x3064;&#x3063;</string>
+			<string>&#x3055;&#x3055;</string>
+			<string>&#x305D;&#x305D;</string>
+			<string>&#x3072;&#x3072;</string>
+			<string>&#x3053;&#x3053;</string>
+			<string>&#x307F;&#x307F;</string>
+			<string>&#x3082;&#x3082;</string>
+			<string>&#x306D;&#x3001;</string>
+			<string>&#x308B;&#x3002;</string>
+			<string>&#x3081;&#x30FB;</string>
+		</array>
+	</array>
+</dict>
+</plist>

@@ -20,7 +20,7 @@
         _backspacePolicy = HRBackspaceFree;
         _languageID = @"english";
         _wordListName = @"words-200";
-        _layoutID = @"qwerty-us";
+        _layoutID = @"qwerty";
     }
     return self;
 }
@@ -87,7 +87,7 @@
         @"backspacePolicy": @(_backspacePolicy),
         @"languageID": _languageID ?: @"english",
         @"wordListName": _wordListName ?: @"words-200",
-        @"layoutID": _layoutID ?: @"qwerty-us",
+        @"layoutID": _layoutID ?: @"qwerty",
     };
 }
 

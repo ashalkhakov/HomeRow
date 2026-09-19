@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>thai manoonchai</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>thai_manoonchai</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>`~</string>
+			<string>1!</string>
+			<string>2@</string>
+			<string>3#</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6^</string>
+			<string>7&amp;</string>
+			<string>8*</string>
+			<string>9(</string>
+			<string>0)</string>
+			<string>-_</string>
+			<string>=+</string>
+		</array>
+		<array>
+			<string>&#xE43;&#xE12;</string>
+			<string>&#xE15;&#xE0F;</string>
+			<string>&#xE2B;&#xE0B;</string>
+			<string>&#xE25;&#xE0D;</string>
+			<string>&#xE2A;&#xE1F;</string>
+			<string>&#xE1B;&#xE09;</string>
+			<string>&#xE31;&#xE36;</string>
+			<string>&#xE01;&#xE18;</string>
+			<string>&#xE34;&#xE10;</string>
+			<string>&#xE1A;&#xE0E;</string>
+			<string>&#xE47;&#xE06;</string>
+			<string>&#xE2C;&#xE11;</string>
+			<string>&#xE2F;&#xE0C;</string>
+		</array>
+		<array>
+			<string>&#xE07;&#xE29;</string>
+			<string>&#xE40;&#xE16;</string>
+			<string>&#xE23;&#xE41;</string>
+			<string>&#xE19;&#xE0A;</string>
+			<string>&#xE21;&#xE1E;</string>
+			<string>&#xE2D;&#xE1C;</string>
+			<string>&#xE32;&#xE33;</string>
+			<string>&#xE48;&#xE02;</string>
+			<string>&#xE49;&#xE42;</string>
+			<string>&#xE27;&#xE20;</string>
+			<string>&#xE37;"</string>
+		</array>
+		<array>
+			<string>&#xE38;&#xE24;</string>
+			<string>&#xE44;&#xE1D;</string>
+			<string>&#xE17;&#xE46;</string>
+			<string>&#xE22;&#xE13;</string>
+			<string>&#xE08;&#xE4A;</string>
+			<string>&#xE04;&#xE4B;</string>
+			<string>&#xE35;&#xE4C;</string>
+			<string>&#xE14;&#xE28;</string>
+			<string>&#xE30;&#xE2E;</string>
+			<string>&#xE39;?</string>
+		</array>
+	</array>
+</dict>
+</plist>

@@ -72,6 +72,12 @@ typedef NS_ENUM(NSInteger, HRCharacterState) {
 /* What to draw at that position: the target character, or the extra one. */
 - (NSString *)displayCharacterAtIndex:(NSUInteger)charIndex
                         inWordAtIndex:(NSUInteger)wordIndex;
+/* What the learner has to press next, for the on-screen keyboard:
+ * the next character of the word, @" " or @"\n" at its end, @"\b" when
+ * what is typed so far is wrong and has to be taken back first, and nil
+ * when there is nothing to press (zen, finished). */
+- (NSString *)expectedInput;
+
 /* Caret position within the current word, in characters. */
 - (NSUInteger)caretIndexInCurrentWord;
 

@@ -21,6 +21,10 @@ HomeRow/Resources/Languages/*/words-*.txt
     source files and the commit.  The exception is english/words-200.txt,
     which was compiled by hand for HomeRow.
 
+HomeRow/Resources/Layouts/*.plist
+    Keyboard layouts from MonkeyType (same project, licence and commit),
+    converted by Scripts/import-monkeytype-layouts.py; see Layouts/LICENSE.
+
     Not used: MonkeyType's quotes, which are excerpts from third-party
     works, and Typing.io's content, which is proprietary.
 

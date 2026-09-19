@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>colemak dh</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>colemak_dh</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>`~</string>
+			<string>1!</string>
+			<string>2@</string>
+			<string>3#</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6^</string>
+			<string>7&amp;</string>
+			<string>8*</string>
+			<string>9(</string>
+			<string>0)</string>
+			<string>-_</string>
+			<string>=+</string>
+		</array>
+		<array>
+			<string>qQ</string>
+			<string>wW</string>
+			<string>fF</string>
+			<string>pP</string>
+			<string>bB</string>
+			<string>jJ</string>
+			<string>lL</string>
+			<string>uU</string>
+			<string>yY</string>
+			<string>;:</string>
+			<string>[{</string>
+			<string>]}</string>
+			<string>\|</string>
+		</array>
+		<array>
+			<string>aA</string>
+			<string>rR</string>
+			<string>sS</string>
+			<string>tT</string>
+			<string>gG</string>
+			<string>mM</string>
+			<string>nN</string>
+			<string>eE</string>
+			<string>iI</string>
+			<string>oO</string>
+			<string>'"</string>
+		</array>
+		<array>
+			<string>xX</string>
+			<string>cC</string>
+			<string>dD</string>
+			<string>vV</string>
+			<string>zZ</string>
+			<string>kK</string>
+			<string>hH</string>
+			<string>,&lt;</string>
+			<string>.&gt;</string>
+			<string>/?</string>
+		</array>
+	</array>
+</dict>
+</plist>
