@@ -124,7 +124,9 @@ static const NSUInteger HRStatsMinimumPresses = 10;
     CGFloat boardWidth = MIN(W, 720.0);
     CGFloat boardHeight = [HRKeyboardView heightForWidth:boardWidth];
     CGFloat bottom = 12.0;
-    [_keysField setFrame:NSMakeRect(margin, bottom, W, keysHeight)];
+    CGFloat buttonWidth = _practiceButton ? 190.0 : 0.0;
+    [_keysField setFrame:NSMakeRect(margin, bottom, W - buttonWidth, keysHeight)];
+    [_practiceButton setFrame:NSMakeRect(margin + W - buttonWidth + 6.0, bottom - 7.0, buttonWidth - 6.0, 32.0)];
     bottom += keysHeight + 6.0;
     [_keyboardView setFrame:NSMakeRect(margin + floor((W - boardWidth) / 2.0), bottom, boardWidth, boardHeight)];
     bottom += boardHeight + 8.0;
@@ -151,6 +153,11 @@ static const NSUInteger HRStatsMinimumPresses = 10;
     [d setInteger:[[_kindPopUp selectedItem] tag] forKey:HRStatsKindDefaultsKey];
     [d setInteger:[[_periodPopUp selectedItem] tag] forKey:HRStatsDaysDefaultsKey];
     [self reload];
+}
+
+- (IBAction)practise:(id)sender
+{
+    if (_practiceTarget && _practiceAction) [NSApp sendAction:_practiceAction to:_practiceTarget from:self];
 }
 
 - (NSString *)nameOfCharacter:(NSString *)ch
@@ -215,6 +222,7 @@ static const NSUInteger HRStatsMinimumPresses = 10;
         if (k.misses == 0 || [worst count] >= 8) break;
         [worst addObject:[NSString stringWithFormat:@"%@ %.0f%%", [self nameOfCharacter:k.character], [k errorRate] * 100.0]];
     }
+    [_practiceButton setEnabled:[worst count] > 0 && _practiceTarget != nil];
     if ([worst count] > 0) {
         [_keysField setStringValue:[NSString stringWithFormat:HRLoc(@"Missed most often:   %@      (the deepest tint is %.0f%% of presses)"),
                                     [worst componentsJoinedByString:@"    "], [_keyboardView heatMaximumRate] * 100.0]];

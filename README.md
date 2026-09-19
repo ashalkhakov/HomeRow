@@ -59,6 +59,9 @@ Details: [docs/building.md](docs/building.md).
 - **Statistics** — headline numbers, speed and accuracy test after test with a
   moving average, practice day by day, and the keyboard tinted by how often
   each key is missed; for everything or for tests, courses or code alone.
+- **Weak-spot practice** — rounds of words weighted towards the keys you miss
+  clearly more often than your own average; weak capitals and symbols are
+  worked into the words.
 - **Your data stays yours** — results go into a Core Data store on your disk
   (Apple's on macOS, [FreeCoreData](https://github.com/ashalkhakov/FreeCoreData)
   on GNUstep) and nowhere else.
@@ -72,8 +75,8 @@ How to use all of it, with every shortcut: [docs/using.md](docs/using.md).
 - **Input methods** that convert text after it is typed (Chinese, Japanese,
   Korean) are not supported; dead keys and Option accents are. On macOS a held
   key repeats and does not open the accent pop-up.
-- **No weak-spot practice yet.** The statistics show which keys you miss;
-  lessons generated from that come next.
+- **Weak-spot practice goes by missed keys only**, not yet by slow ones or
+  by letter pairs.
 - **Statistics are charts only** — no list of single results, no export.
 - **Code mode** has no code-specific metrics yet, never asks for Tab, and
   TextMate grammar *injections* are ignored (none of the bundled languages
@@ -110,7 +113,7 @@ block-beta
 Everything under `Engine/` is free of AppKit and takes its timestamps as
 arguments, so the rules — what counts as an error, when a drill repeats, how a
 file is cut into parts, what a grammar makes of a line — are tested without a
-display: 61 XCTest cases, including vscode-textmate's own tokenizer suite, run
+display: 68 XCTest cases, including vscode-textmate's own tokenizer suite, run
 on both platforms in CI. What cannot be unit-tested is covered by a smoke test
 built into the app (`HR_SMOKE_TEST=1`): CI starts the packaged AppImage and the
 macOS app, which check their own outlets, type a test, a lesson and a section

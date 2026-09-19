@@ -8,9 +8,9 @@ plans.
 ## Suggested order
 
 1. Bug fixes (below)
-2. Dead keys on macOS
-3. Preferences window
-4. Weak-spot practice
+2. Dead keys on macOS (fixed)
+3. Preferences window (done)
+4. Weak-spot practice (done)
 5. History list and export
 6. Tag `v0.1`
 
@@ -41,8 +41,11 @@ plans.
 - [ ] **Statistics, further slices** — a history list of single results;
       progress charts per course and per file; *speed* per key (only error
       rate so far); personal bests; export and import (JSON/CSV).
-- [ ] **Weak-spot practice** — drills generated from the keys (later: letter
-      pairs) that are missed or slow. The reason the statistics are collected.
+- [x] **Weak-spot practice** — rounds of words weighted towards the keys
+      that are *missed* clearly more often than the typist's average; weak
+      capitals and symbols are worked into the words. Still to come: *slow*
+      keys (needs per-key timing, which results do not store yet) and letter
+      pairs.
 - [ ] **Generated courses** — lesson plan × layout × language, for everything
       GNU Typist has no course for. With it: layout packs for Czech, Slovenian
       and Romanian, and a numeric keypad drawing.

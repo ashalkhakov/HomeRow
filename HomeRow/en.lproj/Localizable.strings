@@ -105,3 +105,9 @@
 "Keyboard Layout: %@\U2026" = "Keyboard Layout: %@\U2026";
 "%lu layouts" = "%lu layouts";
 "%lu of %lu layouts" = "%lu of %lu layouts";
+
+/* weak-spot practice */
+"weak keys" = "weak keys";
+"Practise Weak Keys" = "Practise Weak Keys";
+"There is not enough on record yet to say which keys are weak \U2014\nor none stands out.\n\nType a few tests, lessons or sections of code first.\nreturn \U2014 a time test" = "There is not enough on record yet to say which keys are weak \U2014\nor none stands out.\n\nType a few tests, lessons or sections of code first.\nreturn \U2014 a time test";
+"Practising the keys you miss most:   %@" = "Practising the keys you miss most:   %@";

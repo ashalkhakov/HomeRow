@@ -11,6 +11,7 @@
 | Return, Tab or Esc on the results | next test |
 | Cmd/Ctrl+O | open a text file as a custom test |
 | Cmd/Ctrl+1, 2, 3 | time test, words test, zen — also the way out of a course |
+| Cmd/Ctrl+5 | practise the keys you miss most |
 | Cmd/Ctrl+4 | the Code window |
 | Cmd/Ctrl+L | the Courses window |
 | Cmd/Ctrl+Shift+S | the Statistics window |
@@ -84,6 +85,27 @@ test and the line the average of the last ten; minutes of practice day by
 day, gaps included; and the keyboard tinted by how often each key is missed
 per press, with the worst keys named underneath. Move the mouse over a chart
 to read a single test or day.
+
+## Practising weak keys
+
+**Test ▸ Practise Weak Keys** (Cmd/Ctrl+5), the *weak keys* entry of the mode
+pop-up, or the button in the Statistics window. HomeRow looks at the hits and
+misses of the last thirty days (of everything, if that is too little) and
+takes up to six keys that you miss clearly more often than you miss keys on
+the whole — half again your overall error rate, at least one miss in a
+hundred, and only keys pressed often enough to judge. The round is forty words
+from the current word list, named in the caption above the text:
+
+- words containing the weak letters come up much more often, though not
+  exclusively, so it still reads like text;
+- a weak capital brings words beginning with that letter, capitalised;
+- what no word contains — digits, brackets, the symbols of code — is attached
+  to words: wrapped around them when it is one of a pair, otherwise put before
+  or after.
+
+Return after a round starts the next, worked out afresh. With too little on
+record, or no key standing out, it says so instead. Rounds are saved like
+tests (as *practice*) and count in the statistics.
 
 ## Preferences
 

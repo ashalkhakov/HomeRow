@@ -27,6 +27,7 @@
 #import "HRStatsWindowController.h"
 #import "HRPreferencesWindowController.h"
 #import "HRLayoutChooserController.h"
+#import "HRWeakSpots.h"
 #import "HRPlotView.h"
 #import <objc/runtime.h>
 
@@ -58,6 +59,8 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
 
     NSMenuItem *_layoutMenuItem;
     HRLayoutChooserController *_layoutChooser;
+    HRWeakSpots *_weakSpots;         /* what the practice round under way is for */
+    HRWeakSpots *_weakSpotsForTesting;   /* the smoke test's: its store is too young to have weak keys */
     NSMenuItem *_keyboardMenuItem;
     NSMenuItem *_testKeyboardMenuItem;   /* the same command in the Test menu, where code and tests look for it */
     NSMenu *_courseMenu;
@@ -415,7 +418,8 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         NSDictionary *statsOutlets = @{@"kindPopUp": stats.kindPopUp ?: [NSNull null], @"periodPopUp": stats.periodPopUp ?: [NSNull null],
             @"tilesView": (id)stats.tilesView ?: [NSNull null], @"speedPlot": (id)stats.speedPlot ?: [NSNull null],
             @"accuracyPlot": (id)stats.accuracyPlot ?: [NSNull null], @"daysPlot": (id)stats.daysPlot ?: [NSNull null],
-            @"keyboardView": (id)stats.keyboardView ?: [NSNull null], @"keysField": stats.keysField ?: [NSNull null]};
+            @"keyboardView": (id)stats.keyboardView ?: [NSNull null], @"keysField": stats.keysField ?: [NSNull null],
+            @"practiceButton": (id)stats.practiceButton ?: [NSNull null]};
         for (NSString *name in statsOutlets) {
             if (statsOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"StatsWindow.xib: outlet %@ is not connected", name]];
         }
@@ -478,6 +482,53 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         printf("HomeRow smoke test: statistics over %lu results, %lu days\n",
                (unsigned long)[stats.speedPlot.values count], (unsigned long)[stats.daysPlot.values count]);
         [[stats window] orderOut:self];
+    }
+
+    /* Weak-spot practice: with next to nothing on record it says so; with
+     * weak keys to go by, the round is made of them. */
+    {
+        [self practiseWeakKeys:self];
+        if (_configuration.mode != HRTestModePractice) [failures addObject:@"Practise Weak Keys did not switch to practice"];
+        if (![self currentWeakSpots] && _testView.pageText == nil) {
+            [failures addObject:@"with nothing to go by, practice did not say so"];
+        }
+        _weakSpotsForTesting = [HRWeakSpots weakSpotsFromCounts:@{@"e": @{@"hits": @2000, @"misses": @10},
+                                                                   @"q": @{@"hits": @30, @"misses": @10},
+                                                                   @"#": @{@"hits": @20, @"misses": @10}}
+                                              minimumKeyPresses:10 minimumTotalPresses:300 maximum:6];
+        [self startNewTest];
+        NSUInteger withWeak = 0;
+        for (HRWord *w in _session.words) {
+            if ([w.text rangeOfString:@"q"].location != NSNotFound || [w.text rangeOfString:@"#"].location != NSNotFound) withWeak++;
+        }
+        if (_testView.pageText != nil || [_session.words count] == 0) [failures addObject:@"a practice round did not start"];
+        else if (withWeak * 4 < [_session.words count]) [failures addObject:@"the practice round hardly contains the weak keys"];
+        if ([_testView.caption rangeOfString:@"#"].location == NSNotFound) [failures addObject:@"the practice round does not say which keys it is for"];
+        if ([_modePopUp isHidden]) [failures addObject:@"the mode pop-up is hidden in practice"];
+        [[_window contentView] display];
+        NSMutableArray *practiceTexts = [NSMutableArray array];
+        for (HRWord *w in _session.words) [practiceTexts addObject:w.text];
+        NSUInteger savedBefore = [[_store recentResultsWithLimit:0 error:NULL] count];
+        if ([practiceTexts count] > 0) {
+            [_testView typeText:[practiceTexts[0] stringByAppendingString:@" "] atTime:HRMonotonicNow() - 8.0];
+            [practiceTexts removeObjectAtIndex:0];
+            /* the source hands words out as they are needed: type what there is until it is done */
+            for (NSUInteger guard = 0; _session.state != HRSessionFinished && guard < 200; guard++) {
+                HRWord *w = _session.currentWordIndex < [_session.words count] ? _session.words[_session.currentWordIndex] : nil;
+                if (!w) break;
+                BOOL last = (_session.currentWordIndex + 1 == [_session.words count]);
+                [_testView typeText:(last ? w.text : [w.text stringByAppendingString:@" "]) atTime:HRMonotonicNow()];
+                if (last && _session.state != HRSessionFinished) [_testView typeText:@" " atTime:HRMonotonicNow()];
+            }
+        }
+        if (_session.state != HRSessionFinished) [failures addObject:@"the practice round did not come to an end"];
+        if (_store && [[_store recentResultsWithLimit:0 error:NULL] count] != savedBefore + 1) [failures addObject:@"the practice round was not saved"];
+        if (_store && ![[(HRTestResult *)[[_store recentResultsWithLimit:1 error:NULL] firstObject] mode] isEqualToString:@"practice"]) {
+            [failures addObject:@"the practice round was not saved as practice"];
+        }
+        _weakSpotsForTesting = nil;
+        [_modePopUp selectItemWithTag:HRTestModeTime];
+        [self modeChanged:self];
     }
 
     /* Preferences: every control connected, and a change made there takes
@@ -667,6 +718,8 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     [[_modePopUp lastItem] setTag:HRTestModeLesson];
     [_modePopUp addItemWithTitle:HRLoc(@"code")];
     [[_modePopUp lastItem] setTag:HRTestModeCode];
+    [_modePopUp addItemWithTitle:HRLoc(@"weak keys")];
+    [[_modePopUp lastItem] setTag:HRTestModePractice];
     if (_configuration.mode == HRTestModeCustom) {
         [_modePopUp addItemWithTitle:HRLoc(@"custom")];
         [[_modePopUp lastItem] setTag:HRTestModeCustom];
@@ -861,6 +914,10 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
             [modeItem setTarget:self];
             [modeItem setTag:[mode[1] integerValue]];
         }
+        NSMenuItem *practiceItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Practise Weak Keys") action:@selector(selectMode:)
+                                                              keyEquivalent:@"5"];
+        [practiceItem setTarget:self];
+        [practiceItem setTag:HRTestModePractice];
         NSMenuItem *codeItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Code\u2026") action:@selector(showCode:)
                                                           keyEquivalent:@"4"];
         [codeItem setTarget:self];
@@ -1481,6 +1538,31 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     [self startSection:section ofCodeFile:file];
 }
 
+#pragma mark - Weak-spot practice
+
+static const NSUInteger HRPracticeWords = 40;
+
+/* From the last thirty days if that is enough to go by, otherwise from
+ * everything there is: what was a weak key a year ago need not be one now. */
+- (HRWeakSpots *)currentWeakSpots
+{
+    if (!_store) return nil;
+    NSDate *month = [NSDate dateWithTimeIntervalSinceNow:-30.0 * 86400.0];
+    for (NSDate *since in @[month, [NSDate distantPast]]) {
+        HRWeakSpots *spots = [HRWeakSpots weakSpotsFromCounts:[_store keyCountsForKind:HRStatKindAll since:since]
+                                            minimumKeyPresses:10 minimumTotalPresses:300 maximum:6];
+        if (spots) return spots;
+    }
+    return nil;
+}
+
+- (IBAction)practiseWeakKeys:(id)sender
+{
+    [_modePopUp selectItemWithTag:HRTestModePractice];
+    [self modeChanged:sender];
+    [_window makeKeyAndOrderFront:self];
+}
+
 #pragma mark - Preferences
 
 /* Theme, fonts and the beep: at launch, and again whenever Preferences
@@ -1595,6 +1677,8 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     if (!_statsWindow) {
         _statsWindow = [[HRStatsWindowController alloc] initWithStore:_store theme:_theme];
         _statsWindow.keyboardLayout = [self layoutNamed:_configuration.layoutID] ?: [self layoutNamed:@"qwerty"];
+        _statsWindow.practiceTarget = self;
+        _statsWindow.practiceAction = @selector(practiseWeakKeys:);
     }
     return _statsWindow;
 }
@@ -1727,6 +1811,15 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         case HRTestModeLesson:   /* a lesson builds its own sources */
         case HRTestModeCode:     /* and so does a section of code */
             return nil;
+        case HRTestModePractice: {
+            HRLanguage *language = [self currentLanguage];
+            NSString *list = [self currentWordListName];
+            NSArray *words = list ? [language wordsNamed:list error:NULL] : nil;
+            HRWeakSpotSource *source = [[HRWeakSpotSource alloc] initWithWords:words weakSpots:_weakSpots
+                                                                        random:[HRRandom randomWithSystemSeed]];
+            source.limit = HRPracticeWords;
+            return source;
+        }
         case HRTestModeCustom:
             return [[HRFixedTextSource alloc] initWithText:_customText ?: @""];
         case HRTestModeTime:
@@ -1766,6 +1859,15 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         else [self continueCode:self];
         return;
     }
+    if (_configuration.mode == HRTestModePractice) {
+        /* looked up afresh every round: the round before has just changed it */
+        _weakSpots = _weakSpotsForTesting ?: [self currentWeakSpots];
+        if (!_weakSpots) {
+            [self showPlaceholder:HRLoc(@"There is not enough on record yet to say which keys are weak \u2014\nor none stands out.\n\nType a few tests, lessons or sections of code first.\nreturn \u2014 a time test")
+                           inMode:HRTestModePractice];
+            return;
+        }
+    }
     if (_configuration.mode == HRTestModeCustom && _customText == nil) {
         /* a custom mode with no text behind it */
         _configuration.mode = HRTestModeTime;
@@ -1773,6 +1875,12 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     }
     _testView.caption = nil;
     _testView.pageText = nil;
+    if (_configuration.mode == HRTestModePractice) {
+        NSMutableArray *names = [NSMutableArray array];
+        for (NSString *ch in _weakSpots.characters) [names addObject:ch];
+        _testView.caption = [NSString stringWithFormat:HRLoc(@"Practising the keys you miss most:   %@"),
+                             [names componentsJoinedByString:@"   "]];
+    }
     _session = [[HRTestSession alloc] initWithConfiguration:_configuration source:[self makeSource]];
     _testView.session = _session;
     [_resultsView setHidden:YES];
@@ -1835,6 +1943,11 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     if (!_run) {
         /* the "choose a course" page, or code mode's "choose a file" */
         if (_configuration.mode == HRTestModeCode) [self showCode:self];
+        else if (_configuration.mode == HRTestModePractice) {
+            /* the "nothing to practise yet" page: on to something that makes a record */
+            [_modePopUp selectItemWithTag:HRTestModeTime];
+            [self modeChanged:self];
+        }
         else [self showCourses:self];
         return;
     }

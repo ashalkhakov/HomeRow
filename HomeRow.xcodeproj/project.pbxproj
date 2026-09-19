@@ -73,6 +73,7 @@
 		78C474AE1E869F0C3B6A27DB /* HRRegexTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CF14938BC70685B40F2BE7DF /* HRRegexTests.m */; };
 		79167B35ED051CB9984A4234 /* utf16_le.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A8F36A03FAA5212FE599EAD /* utf16_le.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		8104D80551905181DE61C62F /* HRLanguageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 05F81AFC19398833C60203E1 /* HRLanguageTests.m */; };
+		821D026FBE00E7DEE3A58AB1 /* HRWeakSpotsTests.m in Sources */ = {isa = PBXBuildFile; fileRef = F1F3C834A253720BBEF0DEFB /* HRWeakSpotsTests.m */; };
 		829F6B42A04A80D498C730BB /* HRKeyboardLayout.m in Sources */ = {isa = PBXBuildFile; fileRef = 87BDF60DED43C362DECDAD82 /* HRKeyboardLayout.m */; };
 		84921F7366F4B1B4DFFC900B /* HRKeyboardLayoutTests.m in Sources */ = {isa = PBXBuildFile; fileRef = C8A1FB8B34F38CCDBBF9927F /* HRKeyboardLayoutTests.m */; };
 		8521FA946778D5596C3122F6 /* utf8.c in Sources */ = {isa = PBXBuildFile; fileRef = 72EE3C0FAC1931239935C009 /* utf8.c */; settings = {COMPILER_FLAGS = "-w"; }; };
@@ -80,6 +81,7 @@
 		8885F83A4ADAE1F0123BB28F /* HRCourseTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 1B89FF39335780E4CEF15CDC /* HRCourseTests.m */; };
 		89D8AAB94886B82CF2A7EF5B /* HRChartView.m in Sources */ = {isa = PBXBuildFile; fileRef = 2C12646F93A788ECE3BF06CC /* HRChartView.m */; };
 		8C551AEA02032A173AD2A5DD /* regsyntax.c in Sources */ = {isa = PBXBuildFile; fileRef = EB2AAC49976C98552443B71B /* regsyntax.c */; settings = {COMPILER_FLAGS = "-w"; }; };
+		8E39B9AB55355F03FF3B42E7 /* HRWeakSpots.m in Sources */ = {isa = PBXBuildFile; fileRef = 9C84A094C072C97946E3E867 /* HRWeakSpots.m */; };
 		8F5A30B256CEDF6FF5463A25 /* unicode_fold1_key.c in Sources */ = {isa = PBXBuildFile; fileRef = C33227D7284262BEF107FE3A /* unicode_fold1_key.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		968AB26C0145F0FF94F55323 /* HRPreferencesWindowController.m in Sources */ = {isa = PBXBuildFile; fileRef = 91E18EEB5065BA78288CB24E /* HRPreferencesWindowController.m */; };
 		9701A601F9A8417B16FFBC70 /* HRKeyboardView.m in Sources */ = {isa = PBXBuildFile; fileRef = B59F86B7922640C3E6F5DA0C /* HRKeyboardView.m */; };
@@ -100,6 +102,7 @@
 		B77DAA79532A4DCCDC71A3FA /* regexec.c in Sources */ = {isa = PBXBuildFile; fileRef = 117D82CE91C609C0D02C145B /* regexec.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		B8E36FE2BE0495BDFEBB4E4F /* HRCodeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = FE9EEF232FDB28584E2577F2 /* HRCodeTests.m */; };
 		BA1922AC2E270387A08B542C /* HRLayoutChooserController.m in Sources */ = {isa = PBXBuildFile; fileRef = A2D0E45B3A9F05DE326421B7 /* HRLayoutChooserController.m */; };
+		BC5F2482C93E59EFD536FD30 /* HRWeakSpots.m in Sources */ = {isa = PBXBuildFile; fileRef = 9C84A094C072C97946E3E867 /* HRWeakSpots.m */; };
 		BD36392115571A0EF22DCEAB /* unicode.c in Sources */ = {isa = PBXBuildFile; fileRef = 0C5C07B54FB0C922B315853C /* unicode.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		BDF8E97FBF19D1876F191C68 /* HRTypScriptTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6F9D79EC5FC562B25C54B0F6 /* HRTypScriptTests.m */; };
 		BE0E0FA51972B05133656627 /* HRWord.m in Sources */ = {isa = PBXBuildFile; fileRef = C0A425F22DF4C68751F0F267 /* HRWord.m */; };
@@ -200,9 +203,11 @@
 		91E18EEB5065BA78288CB24E /* HRPreferencesWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRPreferencesWindowController.m; sourceTree = "<group>"; };
 		95D2FBB4E77838CD27EADFAB /* HRGNUstepCompat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRGNUstepCompat.h; sourceTree = "<group>"; };
 		9AFF612DC68E0331A8D886AF /* HRTextMateGrammar.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRTextMateGrammar.h; sourceTree = "<group>"; };
+		9C84A094C072C97946E3E867 /* HRWeakSpots.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRWeakSpots.m; sourceTree = "<group>"; };
 		9E7AE698E63DE96276661C9F /* Layouts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Layouts; sourceTree = "<group>"; };
 		A28B4A0C5B9FE8BEF32FE345 /* unicode_fold3_key.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = unicode_fold3_key.c; sourceTree = "<group>"; };
 		A2D0E45B3A9F05DE326421B7 /* HRLayoutChooserController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRLayoutChooserController.m; sourceTree = "<group>"; };
+		A304C01F0DF64F4345D70499 /* HRWeakSpots.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRWeakSpots.h; sourceTree = "<group>"; };
 		A4E084B279FE1381206D0015 /* HRTextMateTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRTextMateTests.m; sourceTree = "<group>"; };
 		A7731240CE237500F6AD8BB9 /* HRCodeWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRCodeWindowController.m; sourceTree = "<group>"; };
 		A7BEB9F41717A5A3EEF88843 /* HomeRow-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "HomeRow-Info.plist"; sourceTree = "<group>"; };
@@ -243,6 +248,7 @@
 		EC28381FAF8FF2C076D3FB88 /* HRTextSourceTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRTextSourceTests.m; sourceTree = "<group>"; };
 		EDA633D524AD0BB848E0C5C7 /* PreferencesWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PreferencesWindow.xib; sourceTree = "<group>"; };
 		F0DDF2FBC24ECE522D9BD6DF /* regext.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = regext.c; sourceTree = "<group>"; };
+		F1F3C834A253720BBEF0DEFB /* HRWeakSpotsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRWeakSpotsTests.m; sourceTree = "<group>"; };
 		FD49F1D2553AB14D5E553904 /* HRAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRAppDelegate.h; sourceTree = "<group>"; };
 		FE9EEF232FDB28584E2577F2 /* HRCodeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRCodeTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -353,6 +359,8 @@
 				C2468BB857D623A478AAB88E /* HRTextSource.m */,
 				68F3F61EF188184C25E4651C /* HRTypScript.h */,
 				7145CDA7EED687E5F1CB9E9C /* HRTypScript.m */,
+				A304C01F0DF64F4345D70499 /* HRWeakSpots.h */,
+				9C84A094C072C97946E3E867 /* HRWeakSpots.m */,
 				578FCD5D814BE9EF2316A143 /* HRWord.h */,
 				C0A425F22DF4C68751F0F267 /* HRWord.m */,
 			);
@@ -436,6 +444,7 @@
 				A4E084B279FE1381206D0015 /* HRTextMateTests.m */,
 				EC28381FAF8FF2C076D3FB88 /* HRTextSourceTests.m */,
 				6F9D79EC5FC562B25C54B0F6 /* HRTypScriptTests.m */,
+				F1F3C834A253720BBEF0DEFB /* HRWeakSpotsTests.m */,
 				A9716BF0300F2F646C24C239 /* textmate */,
 			);
 			path = HomeRowTests;
@@ -572,6 +581,7 @@
 				01D4B6FCAF7460183C3D8351 /* HRTextMateGrammar.m in Sources */,
 				666EB62FCFEE2F529E72C343 /* HRTextSource.m in Sources */,
 				0ABDBDC88AF928F51FF98108 /* HRTypScript.m in Sources */,
+				BC5F2482C93E59EFD536FD30 /* HRWeakSpots.m in Sources */,
 				BE0E0FA51972B05133656627 /* HRWord.m in Sources */,
 				2C084479EDEE0D6198E5910E /* HRAppDelegate.m in Sources */,
 				89D8AAB94886B82CF2A7EF5B /* HRChartView.m in Sources */,
@@ -627,6 +637,7 @@
 				317B461E81640E2A56CCD904 /* HRTextMateTests.m in Sources */,
 				53D88223121A52B101262DA7 /* HRTextSourceTests.m in Sources */,
 				BDF8E97FBF19D1876F191C68 /* HRTypScriptTests.m in Sources */,
+				821D026FBE00E7DEE3A58AB1 /* HRWeakSpotsTests.m in Sources */,
 				39676341CD4F08E3A5550B5B /* HRClock.m in Sources */,
 				D14C622A2E7534A22FC51201 /* HRCodeDocument.m in Sources */,
 				B0A2414E5E3A0F16F6710AAC /* HRCodeLibrary.m in Sources */,
@@ -642,6 +653,7 @@
 				2CF9FCF5C05B3A26FA6C2DA0 /* HRTextMateGrammar.m in Sources */,
 				44EAB2B9D67258063E27101E /* HRTextSource.m in Sources */,
 				1F058CB40AE50F4D911129FF /* HRTypScript.m in Sources */,
+				8E39B9AB55355F03FF3B42E7 /* HRWeakSpots.m in Sources */,
 				76C81C825B57D613CEEDB5CB /* HRWord.m in Sources */,
 				290D05D730C1D11BB48FD315 /* HRManagedObjects.m in Sources */,
 				F973161BE2686EBD0CCD6214 /* HRResultStore.m in Sources */,

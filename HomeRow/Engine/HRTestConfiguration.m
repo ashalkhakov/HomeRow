@@ -57,6 +57,7 @@
         case HRTestModeZen:    return @"zen";
         case HRTestModeLesson: return @"lesson";
         case HRTestModeCode:   return @"code";
+        case HRTestModePractice: return @"practice";
     }
     return @"time";
 }
@@ -68,6 +69,7 @@
     if ([name isEqualToString:@"zen"])    return HRTestModeZen;
     if ([name isEqualToString:@"lesson"]) return HRTestModeLesson;
     if ([name isEqualToString:@"code"])   return HRTestModeCode;
+    if ([name isEqualToString:@"practice"]) return HRTestModePractice;
     return HRTestModeTime;
 }
 

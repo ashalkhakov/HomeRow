@@ -32,6 +32,7 @@
 @property (nonatomic, strong) IBOutlet HRPlotView *daysPlot;
 @property (nonatomic, strong) IBOutlet HRKeyboardView *keyboardView;
 @property (nonatomic, strong) IBOutlet NSTextField *keysField;
+@property (nonatomic, strong) IBOutlet NSButton *practiceButton;
 
 - (instancetype)initWithStore:(HRResultStore *)store theme:(HRTheme *)theme;
 
@@ -42,5 +43,10 @@
 - (void)reload;
 
 - (IBAction)filterChanged:(id)sender;
+
+/* "Practise Weak Keys": sent to practiceTarget, which starts the round. */
+@property (nonatomic, weak) id practiceTarget;
+@property (nonatomic) SEL practiceAction;
+- (IBAction)practise:(id)sender;
 
 @end

@@ -16,7 +16,8 @@ typedef NS_ENUM(NSInteger, HRTestMode) {
     HRTestModeCustom,     /* the text decides */
     HRTestModeZen,        /* no target text; ended by the user */
     HRTestModeLesson,     /* an exercise of a course; the lesson decides the text */
-    HRTestModeCode        /* a section of a source file */
+    HRTestModeCode,       /* a section of a source file */
+    HRTestModePractice    /* words chosen for the keys that are missed most; amount = number of words */
 };
 
 typedef NS_ENUM(NSInteger, HRBackspacePolicy) {

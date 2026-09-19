@@ -392,6 +392,7 @@ static const NSUInteger HRMaxExtra = 20;
         case HRTestModeCustom:
         case HRTestModeLesson:
         case HRTestModeCode:
+        case HRTestModePractice:
             return (NSInteger)[_words count] - (NSInteger)[_committed count];
         case HRTestModeZen:
             return -1;

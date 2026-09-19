@@ -17,6 +17,7 @@
                 <outlet property="daysPlot" destination="uVt-Yk-wMJ" id="QKn-Y8-qS0"/>
                 <outlet property="keyboardView" destination="FrC-fZ-4U2" id="BFn-7B-wpk"/>
                 <outlet property="keysField" destination="Eqk-Nk-6sE" id="Z01-BZ-GaG"/>
+                <outlet property="practiceButton" destination="BOa-dg-7aq" id="eDK-tl-1rk"/>
             </connections>
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
@@ -92,6 +93,17 @@
                             <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>
+                    <button verticalHuggingPriority="750" id="BOa-dg-7aq">
+                        <rect key="frame" x="640" y="5" width="186" height="32"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMinX="YES" flexibleMaxY="YES"/>
+                        <buttonCell key="cell" type="push" title="Practise Weak Keys" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="FBj-HZ-pzE">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="practise:" target="-2" id="Kyj-kA-gmQ"/>
+                        </connections>
+                    </button>
                 </subviews>
             </view>
         </window>
