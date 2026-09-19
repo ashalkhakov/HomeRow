@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>-abcdefghijlmnopqrstuvxz&#xE0;&#xE1;&#xE2;&#xE3;&#xE7;&#xE9;&#xEA;&#xED;&#xF3;&#xF4;&#xF5;&#xFA;</string>
+	<key>bcp47</key>
+	<string>pt-PT</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Portuguese Acentos E Cedilha</string>
+	<key>identifier</key>
+	<string>portuguese_acentos_e_cedilha</string>
+</dict>
+</plist>

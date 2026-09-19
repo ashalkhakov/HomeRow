@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>-.1&#xE01;&#xE02;&#xE04;&#xE06;&#xE07;&#xE08;&#xE09;&#xE0A;&#xE0B;&#xE0C;&#xE0D;&#xE0E;&#xE0F;&#xE10;&#xE11;&#xE12;&#xE13;&#xE14;&#xE15;&#xE16;&#xE17;&#xE18;&#xE19;&#xE1A;&#xE1B;&#xE1C;&#xE1D;&#xE1E;&#xE1F;&#xE20;&#xE21;&#xE22;&#xE23;&#xE24;&#xE25;&#xE26;&#xE27;&#xE28;&#xE29;&#xE2A;&#xE2B;&#xE2C;&#xE2D;&#xE2E;&#xE2F;&#xE30;&#xE31;&#xE32;&#xE33;&#xE34;&#xE35;&#xE36;&#xE37;&#xE38;&#xE39;&#xE3A;&#xE40;&#xE41;&#xE42;&#xE43;&#xE44;&#xE45;&#xE46;&#xE47;&#xE48;&#xE49;&#xE4A;&#xE4B;&#xE4C;</string>
+	<key>bcp47</key>
+	<string>th-TH</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Thai</string>
+	<key>identifier</key>
+	<string>thai</string>
+</dict>
+</plist>

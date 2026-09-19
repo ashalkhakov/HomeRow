@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRAppDelegate.h"
 #import "HRChartView.h"
@@ -16,6 +16,7 @@
 #import "HRLanguage.h"
 #import "HRRandom.h"
 #import "HRClock.h"
+#import "HRTypScript.h"
 
 static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 
@@ -30,6 +31,16 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     NSArray *_languages;
     NSString *_customText;
     NSTimer *_timer;
+
+    NSMenu *_languageMenu;
+    NSMenu *_wordListMenu;
+    NSMutableDictionary *_scripts;   /* course file -> HRTypScript, parsed on demand */
+
+    /* a lesson in progress: nil when testing freely */
+    HRTypLesson *_lesson;
+    NSUInteger _stepIndex;
+    BOOL _repeating;
+    HRTestSummary *_lastLessonSummary;
 }
 
 #pragma mark - Launch
@@ -40,7 +51,9 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     _configuration = saved ? [[HRTestConfiguration alloc] initWithDictionary:saved]
                            : [HRTestConfiguration defaultConfiguration];
     /* a custom text does not outlive the run that opened it */
-    if (_configuration.mode == HRTestModeCustom) _configuration.mode = HRTestModeTime;
+    if (_configuration.mode == HRTestModeCustom || _configuration.mode == HRTestModeLesson) {
+        _configuration.mode = HRTestModeTime;
+    }
 
     [self loadLanguages];
 
@@ -66,6 +79,7 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     [_hintField setTextColor:_theme.untyped];
     [_liveField setTextColor:_theme.untyped];
 
+    [self buildMenus];
     [self syncControls];
     [self startNewTest];
 
@@ -168,6 +182,33 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     if ([_resultsView isHidden]) [failures addObject:@"the results were not shown"];
     if ([[_wpmField stringValue] length] == 0) [failures addObject:@"the results are empty"];
 
+    /* A whole lesson, the way the Lessons menu starts one: read the pages,
+     * type the drills, arrive at the results. */
+    NSMenuItem *starter = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@""];
+    [starter setRepresentedObject:@[@"q.typ", @0]];
+    [self startLesson:starter];
+    if (!_lesson) {
+        [failures addObject:@"the first lesson of q.typ did not start"];
+    } else {
+        NSUInteger pages = 0, exercises = 0;
+        NSTimeInterval t = HRMonotonicNow();
+        for (NSUInteger guard = 0; _lesson && guard < 1000; guard++) {
+            HRTypStep *step = _lesson.steps[_stepIndex];
+            if (_testView.pageText) { pages++; [self testViewDidDismissPage:_testView]; }
+            else { exercises++; t += 10.0; [_testView typeText:step.text atTime:t]; }
+        }
+        if (_lesson) [failures addObject:@"the lesson did not come to an end"];
+        if (pages == 0 || exercises == 0) [failures addObject:@"the lesson had no pages or no exercises"];
+        if ([_resultsView isHidden]) [failures addObject:@"the lesson did not end on the results"];
+        printf("HomeRow smoke test: lesson with %lu pages and %lu exercises\n", (unsigned long)pages, (unsigned long)exercises);
+    }
+    [self selectLanguage:[_languageMenu itemWithTitle:@"Russian"]];
+    if (![[self currentLanguage].identifier isEqualToString:@"russian"] || _session == nil
+        || [_session.words count] == 0) {
+        [failures addObject:@"switching to Russian did not start a Russian test"];
+    }
+    if ([_wordListMenu numberOfItems] < 2) [failures addObject:@"the word-list menu was not rebuilt"];
+
     if ([failures count] == 0) {
         printf("HomeRow smoke test: OK\n");
         exit(0);
@@ -231,9 +272,9 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     [[_modePopUp itemAtIndex:0] setTag:HRTestModeTime];
     [[_modePopUp itemAtIndex:1] setTag:HRTestModeWords];
     [[_modePopUp itemAtIndex:2] setTag:HRTestModeZen];
-    if (_configuration.mode == HRTestModeCustom) {
-        [_modePopUp addItemWithTitle:HRLoc(@"custom")];
-        [[_modePopUp lastItem] setTag:HRTestModeCustom];
+    if (_configuration.mode == HRTestModeCustom || _configuration.mode == HRTestModeLesson) {
+        [_modePopUp addItemWithTitle:HRLoc([_configuration modeName])];
+        [[_modePopUp lastItem] setTag:_configuration.mode];
     }
     [_modePopUp selectItemWithTag:_configuration.mode];
 
@@ -254,6 +295,7 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     [_numbersCheck setEnabled:generated];
     [_punctuationCheck setState:(_configuration.punctuation ? NSControlStateValueOn : NSControlStateValueOff)];
     [_numbersCheck setState:(_configuration.numbers ? NSControlStateValueOn : NSControlStateValueOff)];
+    [self syncMenus];
 }
 
 - (void)saveConfiguration
@@ -264,6 +306,7 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 
 - (IBAction)modeChanged:(id)sender
 {
+    [self leaveLesson];
     _configuration.mode = (HRTestMode)[[_modePopUp selectedItem] tag];
     [self syncControls];
     [self saveConfiguration];
@@ -306,10 +349,253 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
         [alert runModal];
         return;
     }
+    [self leaveLesson];
     _customText = text;
     _configuration.mode = HRTestModeCustom;
     [self syncControls];
     [self startNewTest];
+}
+
+#pragma mark - Language and lesson menus
+
+/* Built in code rather than in the XIB: both are lists of whatever packs
+ * and courses are present, which the XIB cannot know. */
+- (void)buildMenus
+{
+    NSMenu *main = [NSApp mainMenu];
+    NSInteger at = MAX(0, [main numberOfItems] - 1);   /* before Window */
+
+    _languageMenu = [[NSMenu alloc] initWithTitle:HRLoc(@"Language")];
+    _wordListMenu = [[NSMenu alloc] initWithTitle:HRLoc(@"Word List")];
+    NSMenuItem *lists = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Word List") action:NULL keyEquivalent:@""];
+    [lists setSubmenu:_wordListMenu];
+    [_languageMenu addItem:lists];
+    [_languageMenu addItem:[NSMenuItem separatorItem]];
+    NSArray *byName = [_languages sortedArrayUsingDescriptors:
+                       @[[NSSortDescriptor sortDescriptorWithKey:@"displayName" ascending:YES]]];
+    for (HRLanguage *l in byName) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:l.displayName
+                                                      action:@selector(selectLanguage:)
+                                               keyEquivalent:@""];
+        [item setTarget:self];
+        [item setRepresentedObject:l.identifier];
+        [_languageMenu addItem:item];
+    }
+    NSMenuItem *languageItem = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Language") action:NULL keyEquivalent:@""];
+    [languageItem setSubmenu:_languageMenu];
+    [main insertItem:languageItem atIndex:at];
+
+    /* Lessons > language > course > lesson.  The lesson level is filled in
+     * when a course's submenu first opens (-menuNeedsUpdate:): parsing all
+     * the courses at launch would cost a second nobody asked for. */
+    NSString *dir = [self lessonsDirectory];
+    NSArray *courses = [NSDictionary dictionaryWithContentsOfFile:[dir stringByAppendingPathComponent:@"index.plist"]][@"courses"];
+    if ([courses count] == 0) return;
+    _scripts = [NSMutableDictionary dictionary];
+    NSMenu *lessonsMenu = [[NSMenu alloc] initWithTitle:HRLoc(@"Lessons")];
+    NSMutableDictionary *perLanguage = [NSMutableDictionary dictionary];
+    for (NSDictionary *course in courses) {
+        NSString *languageID = course[@"language"] ?: @"";
+        NSMenu *languageCourses = perLanguage[languageID];
+        if (!languageCourses) {
+            NSString *name = languageID;
+            for (HRLanguage *l in _languages) if ([l.identifier isEqualToString:languageID]) name = l.displayName;
+            languageCourses = [[NSMenu alloc] initWithTitle:name];
+            perLanguage[languageID] = languageCourses;
+        }
+        NSMenu *courseMenu = [[NSMenu alloc] initWithTitle:course[@"title"]];
+        /* NSMenuDelegate is adopted informally: gnustep-gui's declaration of
+         * the protocol has no @optional, and would demand all of it */
+        [courseMenu setDelegate:(id)self];
+        NSMenuItem *courseItem = [[NSMenuItem alloc] initWithTitle:course[@"title"] action:NULL keyEquivalent:@""];
+        [courseItem setRepresentedObject:course[@"file"]];
+        [courseItem setSubmenu:courseMenu];
+        [languageCourses addItem:courseItem];
+    }
+    NSArray *names = [[perLanguage allValues] sortedArrayUsingDescriptors:
+                      @[[NSSortDescriptor sortDescriptorWithKey:@"title" ascending:YES]]];
+    for (NSMenu *m in names) {
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[m title] action:NULL keyEquivalent:@""];
+        [item setSubmenu:m];
+        [lessonsMenu addItem:item];
+    }
+    NSMenuItem *lessonsItem = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Lessons") action:NULL keyEquivalent:@""];
+    [lessonsItem setSubmenu:lessonsMenu];
+    [main insertItem:lessonsItem atIndex:at + 1];
+}
+
+- (NSString *)lessonsDirectory
+{
+    return [[[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Lessons"]
+            stringByAppendingPathComponent:@"gtypist"];
+}
+
+- (HRTypScript *)scriptForCourseFile:(NSString *)file
+{
+    HRTypScript *script = _scripts[file];
+    if (!script) {
+        NSError *error = nil;
+        script = [HRTypScript scriptWithContentsOfFile:[[self lessonsDirectory] stringByAppendingPathComponent:file]
+                                                 error:&error];
+        if (!script) {
+            NSLog(@"HomeRow: %@ could not be read: %@", file, [error localizedDescription]);
+            return nil;
+        }
+        _scripts[file] = script;
+    }
+    return script;
+}
+
+/* Fills a course's submenu with its lessons the first time it opens. */
+- (void)menuNeedsUpdate:(NSMenu *)menu
+{
+    if ([menu numberOfItems] > 0) return;
+    NSString *file = nil;
+    NSMenu *parent = [menu supermenu];
+    for (NSMenuItem *item in [parent itemArray]) {
+        if ([item submenu] == menu) file = [item representedObject];
+    }
+    if (!file) return;
+    NSArray *lessons = [self scriptForCourseFile:file].lessons;
+    for (NSUInteger i = 0; i < [lessons count]; i++) {
+        HRTypLesson *lesson = lessons[i];
+        NSString *title = [lesson.title length] > 0 ? lesson.title
+                          : [NSString stringWithFormat:@"%lu", (unsigned long)(i + 1)];
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:@selector(startLesson:) keyEquivalent:@""];
+        [item setTarget:self];
+        [item setRepresentedObject:@[file, @(i)]];
+        [menu addItem:item];
+    }
+}
+
+- (void)syncMenus
+{
+    for (NSMenuItem *item in [_languageMenu itemArray]) {
+        if (![item representedObject]) continue;
+        BOOL on = [[item representedObject] isEqual:[self currentLanguage].identifier];
+        [item setState:(on ? NSControlStateValueOn : NSControlStateValueOff)];
+    }
+    [_wordListMenu removeAllItems];
+    HRLanguage *language = [self currentLanguage];
+    NSString *current = [self currentWordListName];
+    for (NSString *name in language.wordListNames) {
+        NSString *title = [name hasPrefix:@"words-"] ? [name substringFromIndex:6] : name;
+        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:title action:@selector(selectWordList:) keyEquivalent:@""];
+        [item setTarget:self];
+        [item setRepresentedObject:name];
+        [item setState:([name isEqualToString:current] ? NSControlStateValueOn : NSControlStateValueOff)];
+        [_wordListMenu addItem:item];
+    }
+}
+
+/* The configured list if this language has it, else its smallest. */
+- (NSString *)currentWordListName
+{
+    HRLanguage *language = [self currentLanguage];
+    if ([language.wordListNames containsObject:_configuration.wordListName]) return _configuration.wordListName;
+    return [language.wordListNames firstObject];
+}
+
+- (IBAction)selectLanguage:(id)sender
+{
+    _configuration.languageID = [sender representedObject];
+    if (_configuration.mode != HRTestModeTime && _configuration.mode != HRTestModeWords) {
+        _configuration.mode = HRTestModeTime;
+    }
+    [self leaveLesson];
+    [self syncControls];
+    [self saveConfiguration];
+    [self startNewTest];
+}
+
+- (IBAction)selectWordList:(id)sender
+{
+    _configuration.wordListName = [sender representedObject];
+    [self leaveLesson];
+    [self syncControls];
+    [self saveConfiguration];
+    [self startNewTest];
+}
+
+#pragma mark - Lessons
+
+- (IBAction)startLesson:(id)sender
+{
+    NSArray *ref = [sender representedObject];
+    NSArray *lessons = [self scriptForCourseFile:ref[0]].lessons;
+    NSUInteger i = [ref[1] unsignedIntegerValue];
+    if (i >= [lessons count]) return;
+    _lesson = lessons[i];
+    _stepIndex = 0;
+    _repeating = NO;
+    _lastLessonSummary = nil;
+    _configuration.mode = HRTestModeLesson;
+    [self syncControls];
+    [self startLessonStep];
+}
+
+- (void)leaveLesson
+{
+    _lesson = nil;
+    _testView.pageText = nil;
+    _testView.caption = nil;
+}
+
+- (void)startLessonStep
+{
+    if (_stepIndex >= [_lesson.steps count]) {
+        [self finishLesson];
+        return;
+    }
+    HRTypStep *step = _lesson.steps[_stepIndex];
+    [_resultsView setHidden:YES];
+    [_testView setHidden:NO];
+    [_window makeFirstResponder:_testView];
+    if (!step.isExercise) {
+        _session = nil;
+        _testView.session = nil;
+        _testView.caption = nil;
+        _testView.pageText = step.text;
+        [self updateLiveField];
+        return;
+    }
+    NSString *caption = step.instruction;
+    if (_repeating) {
+        NSString *again = HRLoc(@"Too many errors — once more.");
+        caption = [caption length] > 0 ? [NSString stringWithFormat:@"%@\n%@", again, caption] : again;
+    }
+    _testView.pageText = nil;
+    _testView.caption = caption;
+    _session = [[HRTestSession alloc] initWithConfiguration:_configuration
+                                                     source:[[HRFixedTextSource alloc] initWithText:step.text]];
+    _testView.session = _session;
+    [self updateLiveField];
+}
+
+/* GNU Typist's rule: an exercise with more than its allowed share of wrong
+ * keystrokes (3% unless the script says otherwise) is done again, unless
+ * it is marked practice-only. */
+- (void)lessonExerciseDidFinish:(HRTestSummary *)summary
+{
+    HRTypStep *step = _lesson.steps[_stepIndex];
+    double allowed = step.maxErrorPercent >= 0.0 ? step.maxErrorPercent : 3.0;
+    _lastLessonSummary = summary;
+    if (!step.practiceOnly && (100.0 - summary.accuracy) > allowed) {
+        _repeating = YES;
+    } else {
+        _repeating = NO;
+        _stepIndex++;
+    }
+    [self startLessonStep];
+}
+
+- (void)finishLesson
+{
+    NSString *title = _lesson.title;
+    HRTestSummary *last = _lastLessonSummary;
+    [self leaveLesson];
+    if (last) [self showSummary:last isBest:NO];
+    [_hintField setStringValue:[NSString stringWithFormat:HRLoc(@"%@ — lesson complete.  tab, esc or return — free practice"), title]];
 }
 
 #pragma mark - Running a test
@@ -319,13 +605,13 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     switch (_configuration.mode) {
         case HRTestModeZen:
             return nil;
+        case HRTestModeLesson:   /* a lesson builds its own sources */
         case HRTestModeCustom:
             return [[HRFixedTextSource alloc] initWithText:_customText ?: @""];
         case HRTestModeTime:
         case HRTestModeWords: {
             HRLanguage *language = [self currentLanguage];
-            NSString *list = _configuration.wordListName;
-            if (![language.wordListNames containsObject:list]) list = [language.wordListNames firstObject];
+            NSString *list = [self currentWordListName];
             NSArray *words = list ? [language wordsNamed:list error:NULL] : nil;
             /* no pack at all should not mean no app */
             if ([words count] == 0) words = @[@"home", @"row"];
@@ -342,6 +628,19 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 
 - (void)startNewTest
 {
+    if (_lesson) {
+        /* Tab in a lesson: this exercise again, not a way out of it */
+        [self startLessonStep];
+        return;
+    }
+    if (_configuration.mode == HRTestModeLesson
+        || (_configuration.mode == HRTestModeCustom && _customText == nil)) {
+        /* a finished lesson, or a custom mode with no text behind it */
+        _configuration.mode = HRTestModeTime;
+        [self syncControls];
+    }
+    _testView.caption = nil;
+    _testView.pageText = nil;
     _session = [[HRTestSession alloc] initWithConfiguration:_configuration source:[self makeSource]];
     _testView.session = _session;
     [_resultsView setHidden:YES];
@@ -352,6 +651,16 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 
 - (void)updateLiveField
 {
+    if (_lesson) {
+        NSString *progress = [NSString stringWithFormat:@"%@   %lu/%lu", _lesson.title,
+                              (unsigned long)MIN(_stepIndex + 1, [_lesson.steps count]), (unsigned long)[_lesson.steps count]];
+        if (_session && _session.state != HRSessionIdle) {
+            progress = [progress stringByAppendingFormat:@"   %.0f wpm   %.0f%%",
+                        [_session liveWpmAtTime:HRMonotonicNow()], [_session liveAccuracy]];
+        }
+        [_liveField setStringValue:progress];
+        return;
+    }
     if (_session.state == HRSessionIdle) {
         [_liveField setStringValue:(_configuration.mode == HRTestModeZen
                                     ? HRLoc(@"type anything — shift+return to finish")
@@ -377,6 +686,13 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     [self startNewTest];
 }
 
+- (void)testViewDidDismissPage:(HRTestView *)view
+{
+    if (!_lesson) return;
+    _stepIndex++;
+    [self startLessonStep];
+}
+
 - (void)testViewDidChange:(HRTestView *)view
 {
     [self updateLiveField];
@@ -392,7 +708,7 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
     if (_store && worthKeeping) {
         NSString *key = [_configuration settingsKey];
         HRTestResult *best = [_store personalBestForSettingsKey:key error:NULL];
-        isBest = (_configuration.mode != HRTestModeCustom && _configuration.mode != HRTestModeZen)
+        isBest = (_configuration.mode == HRTestModeTime || _configuration.mode == HRTestModeWords)
                  && best != nil && s.wpm > [best.wpm doubleValue];
         NSError *error = nil;
         if (![_store recordSummary:s configuration:_configuration date:[NSDate date] error:&error]) {
@@ -400,6 +716,15 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
         }
     }
 
+    if (_lesson) {
+        [self lessonExerciseDidFinish:s];
+        return;
+    }
+    [self showSummary:s isBest:isBest];
+}
+
+- (void)showSummary:(HRTestSummary *)s isBest:(BOOL)isBest
+{
     [_wpmField setStringValue:[NSString stringWithFormat:@"%.0f %@", s.wpm, HRLoc(@"wpm")]];
     [_accuracyField setStringValue:[NSString stringWithFormat:@"%.0f%% %@", s.accuracy, HRLoc(@"acc")]];
     [_detailField setStringValue:[NSString stringWithFormat:

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>&#xC82;&#xC85;&#xC86;&#xC87;&#xC88;&#xC89;&#xC8A;&#xC8E;&#xC8F;&#xC90;&#xC92;&#xC93;&#xC95;&#xC96;&#xC97;&#xC98;&#xC9A;&#xC9B;&#xC9C;&#xC9E;&#xC9F;&#xCA0;&#xCA1;&#xCA2;&#xCA3;&#xCA4;&#xCA5;&#xCA6;&#xCA7;&#xCA8;&#xCAA;&#xCAC;&#xCAD;&#xCAE;&#xCAF;&#xCB0;&#xCB2;&#xCB3;&#xCB5;&#xCB6;&#xCB7;&#xCB8;&#xCB9;&#xCBE;&#xCBF;&#xCC0;&#xCC1;&#xCC2;&#xCC3;&#xCC6;&#xCC7;&#xCC8;&#xCCA;&#xCCB;&#xCCC;&#xCCD;</string>
+	<key>bcp47</key>
+	<string>kn-IN</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Kannada</string>
+	<key>identifier</key>
+	<string>kannada</string>
+</dict>
+</plist>

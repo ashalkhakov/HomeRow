@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>abcdefghijklmnopqrstuvwxyz&#xE0;&#xE1;&#xE7;&#xE8;&#xE9;&#xEA;&#xEB;&#xED;&#xEF;&#xF2;&#xF3;&#xFA;&#xFC;</string>
+	<key>bcp47</key>
+	<string>oc-FR</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Occitan</string>
+	<key>identifier</key>
+	<string>occitan</string>
+</dict>
+</plist>

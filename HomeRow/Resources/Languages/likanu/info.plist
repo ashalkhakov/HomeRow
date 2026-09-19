@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>ox&#x131;&#x14D;&#x17F;&#x1A8;&#x237;&#x242;&#x255;&#x25B;&#x25E;&#x264;&#x275;&#x283;&#x28B;&#x28C;&#x29C;&#x304;</string>
+	<key>bcp47</key>
+	<string>xxs-Uixs</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Likanu</string>
+	<key>identifier</key>
+	<string>likanu</string>
+</dict>
+</plist>

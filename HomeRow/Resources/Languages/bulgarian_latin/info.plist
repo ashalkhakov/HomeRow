@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>,abcdefghijklmnopqrstuvyz</string>
+	<key>bcp47</key>
+	<string>bg</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Bulgarian Latin</string>
+	<key>identifier</key>
+	<string>bulgarian_latin</string>
+</dict>
+</plist>

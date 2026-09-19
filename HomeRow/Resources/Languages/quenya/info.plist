@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>()ACEHILMNPQRSTVYabcdefghiklmnopqrstuvwxyz&#xDA;&#xE1;&#xE4;&#xE9;&#xEB;&#xED;&#xF3;&#xF6;&#xFA;&#xFE;&#x3C7;</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Quenya</string>
+	<key>identifier</key>
+	<string>quenya</string>
+</dict>
+</plist>

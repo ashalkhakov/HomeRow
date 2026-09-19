@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>&#x1000;&#x1001;&#x1002;&#x1004;&#x1005;&#x1006;&#x1007;&#x1009;&#x100A;&#x1010;&#x1011;&#x1012;&#x1013;&#x1014;&#x1015;&#x1016;&#x1017;&#x1018;&#x1019;&#x101A;&#x101B;&#x101C;&#x101D;&#x101E;&#x101F;&#x1021;&#x1026;&#x102B;&#x102C;&#x102D;&#x102E;&#x102F;&#x1030;&#x1031;&#x1032;&#x1036;&#x1037;&#x1038;&#x1039;&#x103A;&#x103B;&#x103C;&#x103D;&#x103E;&#x103F;&#x104D;</string>
+	<key>bcp47</key>
+	<string>my-MM</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Myanmar Burmese</string>
+	<key>identifier</key>
+	<string>myanmar_burmese</string>
+</dict>
+</plist>

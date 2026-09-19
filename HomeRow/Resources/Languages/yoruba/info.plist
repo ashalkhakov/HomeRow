@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>-ABDEGIMNSTabcdefghijklmnopqrstuvwxy&#xC0;&#xE0;&#xE1;&#xE8;&#xE9;&#xEC;&#xED;&#xF2;&#xF3;&#xF5;&#xF9;&#xFA;&#x117;&#x161;&#x1E63;&#x1EB9;&#x1ECC;&#x1ECD;&#x2019;</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Yoruba</string>
+	<key>identifier</key>
+	<string>yoruba</string>
+</dict>
+</plist>

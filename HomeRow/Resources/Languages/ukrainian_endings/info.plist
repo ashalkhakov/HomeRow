@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>&#x430;&#x432;&#x433;&#x435;&#x438;&#x439;&#x43A;&#x43B;&#x43C;&#x43D;&#x43E;&#x441;&#x442;&#x443;&#x445;&#x448;&#x44C;&#x44E;&#x44F;&#x454;&#x456;&#x457;</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Ukrainian Endings</string>
+	<key>identifier</key>
+	<string>ukrainian_endings</string>
+</dict>
+</plist>

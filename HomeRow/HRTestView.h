@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import <AppKit/AppKit.h>
 
@@ -20,6 +20,8 @@
 - (void)testViewDidChange:(HRTestView *)view;
 /* The session reached HRSessionFinished. */
 - (void)testViewDidFinish:(HRTestView *)view;
+/* Return or Space on a page of reading text (see pageText). */
+- (void)testViewDidDismissPage:(HRTestView *)view;
 @end
 
 /* The typing surface.  Draws the text itself instead of being an
@@ -33,6 +35,12 @@
 @property (nonatomic, strong) HRTestSession *session;
 @property (nonatomic, strong) HRTheme *theme;
 @property (nonatomic, strong) NSFont *font;
+/* One or two lines shown above the text: a lesson's instruction. */
+@property (nonatomic, copy) NSString *caption;
+/* When set, the view shows this instead of the session -- a lesson's
+ * tutorial page, laid out for an 80-column terminal as GNU Typist's are --
+ * and waits for Return or Space. */
+@property (nonatomic, copy) NSString *pageText;
 /* IBOutlet-compatible; not retained. */
 @property (nonatomic, assign) IBOutlet id delegate;
 

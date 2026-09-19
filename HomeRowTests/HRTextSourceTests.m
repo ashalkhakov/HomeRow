@@ -2,16 +2,17 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import <XCTest/XCTest.h>
 #import "HRTextSource.h"
 #import "HRRandom.h"
 
 @interface HRTextSourceTests : XCTestCase
+
 @end
 
 @implementation HRTextSourceTests
@@ -91,6 +92,16 @@
     XCTAssertEqual(((HRWord *)w[0]).separator, HRSeparatorSpace);
     XCTAssertEqual(((HRWord *)w[1]).separator, HRSeparatorNewline);
     XCTAssertEqual([[s nextWords:10] count], (NSUInteger)0);
+}
+
+
+/* gnustep-base would not split "na\n\u02bbo" with a string search. */
+- (void)testALineBreakBeforeAModifierLetterIsStillALineBreak
+{
+    NSArray *lines = [HRWord linesOfString:@"na\n\u02bbo\r\nke\r\u0301x"];
+    XCTAssertEqual([lines count], (NSUInteger)4);
+    XCTAssertEqualObjects(lines[1], @"\u02bbo");
+    XCTAssertEqualObjects(lines[2], @"ke");
 }
 
 @end

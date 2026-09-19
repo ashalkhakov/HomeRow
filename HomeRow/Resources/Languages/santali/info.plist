@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>-?&#x1C5A;&#x1C5B;&#x1C5C;&#x1C5D;&#x1C5E;&#x1C5F;&#x1C60;&#x1C61;&#x1C62;&#x1C63;&#x1C64;&#x1C65;&#x1C66;&#x1C67;&#x1C68;&#x1C69;&#x1C6A;&#x1C6B;&#x1C6C;&#x1C6D;&#x1C6E;&#x1C6F;&#x1C70;&#x1C71;&#x1C72;&#x1C73;&#x1C74;&#x1C75;&#x1C76;&#x1C77;&#x1C78;&#x1C79;&#x1C7D;</string>
+	<key>bcp47</key>
+	<string>sat-IN</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Santali</string>
+	<key>identifier</key>
+	<string>santali</string>
+</dict>
+</plist>

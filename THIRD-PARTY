@@ -1,9 +1,28 @@
 HomeRow -- third-party material
 ===============================
 
-Everything bundled with HomeRow must be compatible with the LGPL-2.1-or-later.
-In particular, nothing here comes from MonkeyType (GPL-3.0, word lists and
-quotes included) or from Typing.io (proprietary).
+HomeRow is GPL-3.0-or-later; everything bundled with it must be compatible
+with that.
+
+Content
+-------
+
+HomeRow/Resources/Lessons/gtypist/*.typ
+    The lessons of GNU Typist, https://www.gnu.org/software/gtypist/,
+    unmodified.  Copyright (C) 1998-2003 Simon Baldwin, (C) 2003-2022 the
+    GNU Typist contributors; GPL-3.0-or-later.  kt*.typ derive from KTouch
+    and ttde.typ from TippTrainer; each file names its source and authors.
+    See the README in that folder for the exact commit.
+
+HomeRow/Resources/Languages/*/words-*.txt
+    Word lists from MonkeyType, https://github.com/monkeytypegame/monkeytype,
+    Copyright (C) the MonkeyType contributors; GPL-3.0.  Imported by
+    Scripts/import-monkeytype.py; the LICENSE file in each pack names the
+    source files and the commit.  The exception is english/words-200.txt,
+    which was compiled by hand for HomeRow.
+
+    Not used: MonkeyType's quotes, which are excerpts from third-party
+    works, and Typing.io's content, which is proprietary.
 
 Linked at run time
 ------------------
@@ -13,24 +32,21 @@ FreeCoreData (GNUstep builds only)
     MIT licence; a port of the Cocotron CoreData runtime (Copyright (c)
     2006-2009 Christopher J. W. Lloyd, Johannes Fortmann and the other
     Cocotron contributors named in FreeCoreData's LICENSE files), with
-    NSFetchedResultsController following
-    MRTFetchedResultsController by Matteo Rattotti (MIT).
+    NSFetchedResultsController following MRTFetchedResultsController by
+    Matteo Rattotti (MIT).
     The commit used is pinned in .github/scripts/dependencies.sh.
 
 GNUstep (libobjc2, libs-base, libs-gui, libs-back), libdispatch, the Eau
 theme and the DejaVu and Liberation fonts are shipped inside the AppImage
 under their own licences; none of their source is part of this repository.
 
-Build-time patches
-------------------
+Build scripts and patches
+-------------------------
+
+.github/scripts/, Scripts/ (AppImage packaging, version stamping)
+    Adapted from XFormsKit, https://github.com/ashalkhakov/XFormsKit
+    (LGPL-2.1-or-later, same author), used here under GPL-3.0-or-later.
 
 patches/gnustep/*.patch
     Fixes to gnustep-gui (LGPL-2.1-or-later, as gnustep-gui itself), copied
     from XFormsKit. See patches/gnustep/README.md.
-
-Content
--------
-
-HomeRow/Resources/Languages/en/words-200.txt
-    Compiled by hand for HomeRow; LGPL-2.1-or-later. See the LICENSE file
-    beside it. Every language pack carries such a file.

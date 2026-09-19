@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>&#x3A0;&#x3A6;&#x3A7;&#x3AC;&#x3AD;&#x3AE;&#x3AF;&#x3B1;&#x3B2;&#x3B3;&#x3B4;&#x3B5;&#x3B6;&#x3B7;&#x3B8;&#x3B9;&#x3BA;&#x3BB;&#x3BC;&#x3BD;&#x3BE;&#x3BF;&#x3C0;&#x3C1;&#x3C2;&#x3C3;&#x3C4;&#x3C5;&#x3C6;&#x3C7;&#x3C8;&#x3C9;&#x3CC;&#x3CD;&#x3CE;&#x1F00;&#x1F01;&#x1F04;&#x1F05;&#x1F10;&#x1F11;&#x1F14;&#x1F15;&#x1F21;&#x1F24;&#x1F30;&#x1F31;&#x1F34;&#x1F35;&#x1F36;&#x1F37;&#x1F38;&#x1F40;&#x1F41;&#x1F44;&#x1F45;&#x1F50;&#x1F51;&#x1F54;&#x1F55;&#x1F56;&#x1F57;&#x1F61;&#x1F65;&#x1FB6;&#x1FC4;&#x1FC6;&#x1FD6;&#x1FE6;&#x1FF4;&#x1FF6;</string>
+	<key>bcp47</key>
+	<string>el-GR</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Greek Koine</string>
+	<key>identifier</key>
+	<string>greek_koine</string>
+</dict>
+</plist>

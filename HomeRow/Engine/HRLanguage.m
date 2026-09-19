@@ -2,12 +2,13 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRLanguage.h"
+#import "HRWord.h"
 
 NSString * const HRPackErrorDomain = @"HRPackErrorDomain";
 
@@ -17,6 +18,16 @@ static NSError *HRPackError(NSString *path, NSString *what)
     return [NSError errorWithDomain:HRPackErrorDomain code:1
                            userInfo:@{NSLocalizedDescriptionKey: msg,
                                       NSFilePathErrorKey: path}];
+}
+
+/* "words-200" -> 200, "words-5k" -> 5000, "words-1kb" -> 1000 */
+static double HRListSize(NSString *listName)
+{
+    NSScanner *scanner = [NSScanner scannerWithString:[listName substringFromIndex:[@"words-" length]]];
+    double n = 0.0;
+    if (![scanner scanDouble:&n]) return 1e12;
+    if (![scanner isAtEnd] && [[listName lowercaseString] characterAtIndex:[scanner scanLocation] + [@"words-" length]] == 'k') n *= 1000.0;
+    return n;
 }
 
 @implementation HRLanguage
@@ -42,11 +53,18 @@ static NSError *HRPackError(NSString *path, NSString *what)
 
     NSMutableArray *lists = [NSMutableArray array];
     NSArray *files = [[NSFileManager defaultManager] contentsOfDirectoryAtPath:directory error:NULL];
-    for (NSString *f in [files sortedArrayUsingSelector:@selector(compare:)]) {
+    for (NSString *f in files) {
         if ([f hasPrefix:@"words-"] && [[f pathExtension] isEqualToString:@"txt"]) {
             [lists addObject:[f stringByDeletingPathExtension]];
         }
     }
+    /* smallest first -- "words-200", "words-1k", "words-10k" -- so that the
+     * first list is the one to start a newcomer on */
+    [lists sortUsingComparator:^NSComparisonResult(NSString *a, NSString *b) {
+        double sa = HRListSize(a), sb = HRListSize(b);
+        if (sa != sb) return sa < sb ? NSOrderedAscending : NSOrderedDescending;
+        return [a compare:b];
+    }];
     if ([lists count] == 0) {
         if (error) *error = HRPackError(directory, @"no words-*.txt word list");
         return nil;
@@ -92,7 +110,7 @@ static NSError *HRPackError(NSString *path, NSString *what)
     if (!text) return nil;
     NSMutableArray *words = [NSMutableArray array];
     NSCharacterSet *ws = [NSCharacterSet whitespaceAndNewlineCharacterSet];
-    for (NSString *line in [text componentsSeparatedByString:@"\n"]) {
+    for (NSString *line in [HRWord linesOfString:text]) {
         NSString *w = [line stringByTrimmingCharactersInSet:ws];
         if ([w length] == 0 || [w hasPrefix:@"#"]) continue;
         [words addObject:w];

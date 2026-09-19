@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>&#xC02;&#xC05;&#xC06;&#xC07;&#xC08;&#xC09;&#xC0A;&#xC0E;&#xC0F;&#xC10;&#xC12;&#xC13;&#xC15;&#xC16;&#xC17;&#xC18;&#xC1A;&#xC1C;&#xC1F;&#xC20;&#xC21;&#xC23;&#xC24;&#xC25;&#xC26;&#xC27;&#xC28;&#xC2A;&#xC2B;&#xC2C;&#xC2D;&#xC2E;&#xC2F;&#xC30;&#xC32;&#xC33;&#xC35;&#xC36;&#xC37;&#xC38;&#xC39;&#xC3E;&#xC3F;&#xC40;&#xC41;&#xC42;&#xC43;&#xC46;&#xC47;&#xC48;&#xC4A;&#xC4B;&#xC4C;&#xC4D;</string>
+	<key>bcp47</key>
+	<string>te-IN</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Telugu</string>
+	<key>identifier</key>
+	<string>telugu</string>
+</dict>
+</plist>

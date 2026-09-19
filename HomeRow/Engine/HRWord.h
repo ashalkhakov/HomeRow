@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import <Foundation/Foundation.h>
 
@@ -29,6 +29,14 @@ typedef NS_ENUM(NSInteger, HRSeparator) {
 
 + (instancetype)wordWithText:(NSString *)text;
 + (instancetype)wordWithText:(NSString *)text separator:(HRSeparator)separator;
+
+/* Splits a string into lines at \n, \r\n or \r, code unit by code unit.
+ *
+ * Not -componentsSeparatedByString:@"\n": string search matches composed
+ * character sequences, so a line break followed by a combining mark or a
+ * modifier letter (Hawaiian words begin with U+02BB) is, to gnustep-base,
+ * not a line break at all. */
++ (NSArray *)linesOfString:(NSString *)string;
 
 /* Splits a string into its composed character sequences. */
 + (NSArray *)charactersOfString:(NSString *)string;

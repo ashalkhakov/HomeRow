@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import <XCTest/XCTest.h>
 #import "HRResultStore.h"
@@ -80,7 +80,7 @@
 
     HRTestResult *best = [store personalBestForSettingsKey:[c settingsKey] error:&e];
     XCTAssertEqualWithAccuracy([best.wpm doubleValue], 70.0, 1e-9);
-    XCTAssertNil([store personalBestForSettingsKey:@"words:10:en/words-200" error:&e]);
+    XCTAssertNil([store personalBestForSettingsKey:@"words:10:english/words-200" error:&e]);
 }
 
 - (void)testResultsSurviveReopeningTheSQLiteStore
@@ -102,7 +102,7 @@
     XCTAssertEqual([all count], (NSUInteger)1, @"%@", e);
     HRTestResult *r = [all firstObject];
     XCTAssertEqualObjects(r.mode, @"words");
-    XCTAssertEqualObjects(r.settingsKey, @"words:25:en/words-200:p");
+    XCTAssertEqualObjects(r.settingsKey, @"words:25:english/words-200:p");
     XCTAssertEqualWithAccuracy([r.wpm doubleValue], 55.5, 1e-9);
     XCTAssertEqual([r.correctCharacters integerValue], (NSInteger)200);
     XCTAssertEqualObjects([r seriesDictionary][@"raw"], (@[@60.0, @72.0, @48.0]));

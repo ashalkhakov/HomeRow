@@ -1,0 +1,13 @@
+words-200.txt
+    A list of very common English words, compiled by hand for HomeRow and
+    released with it under the GNU GPL, version 3 or later.
+
+Imported by Scripts/import-monkeytype.py
+
+english_10k.json
+english_1k.json
+english_5k.json
+    From MonkeyType, https://github.com/monkeytypegame/monkeytype
+    commit 91bd24bb8513785c7364cbea29296ff7adafac41, frontend/static/languages/
+    GNU General Public License, version 3.  Copyright (C) the MonkeyType
+    contributors.  De-duplicated and NFC-normalized; otherwise unchanged.

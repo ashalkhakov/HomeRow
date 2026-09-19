@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRTextSource.h"
 #import "HRRandom.h"
@@ -120,10 +120,8 @@
 {
     if ((self = [super init])) {
         NSMutableArray *words = [NSMutableArray array];
-        NSString *normalized = [text stringByReplacingOccurrencesOfString:@"\r\n" withString:@"\n"];
-        normalized = [normalized stringByReplacingOccurrencesOfString:@"\r" withString:@"\n"];
         NSCharacterSet *blank = [NSCharacterSet whitespaceCharacterSet];
-        for (NSString *line in [normalized componentsSeparatedByString:@"\n"]) {
+        for (NSString *line in [HRWord linesOfString:text]) {
             NSMutableArray *lineWords = [NSMutableArray array];
             for (NSString *piece in [line componentsSeparatedByCharactersInSet:blank]) {
                 if ([piece length] > 0) [lineWords addObject:piece];

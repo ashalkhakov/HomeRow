@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>abcdefghijklmnopqrstuvwyz&#xDF;&#xE1;&#xE4;&#xE5;&#xE9;&#xEB;&#xF1;&#xF3;&#xF6;&#xFA;&#xFC;&#xFD;&#xFF;&#x131;</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Viossa Njutro</string>
+	<key>identifier</key>
+	<string>viossa_njutro</string>
+</dict>
+</plist>

@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 
 #import "HRTestConfiguration.h"
@@ -18,7 +18,7 @@
         _mode = HRTestModeTime;
         _amount = 30;
         _backspacePolicy = HRBackspaceFree;
-        _languageID = @"en";
+        _languageID = @"english";
         _wordListName = @"words-200";
         _layoutID = @"qwerty-us";
     }
@@ -51,6 +51,7 @@
         case HRTestModeWords:  return @"words";
         case HRTestModeCustom: return @"custom";
         case HRTestModeZen:    return @"zen";
+        case HRTestModeLesson: return @"lesson";
     }
     return @"time";
 }
@@ -60,6 +61,7 @@
     if ([name isEqualToString:@"words"])  return HRTestModeWords;
     if ([name isEqualToString:@"custom"]) return HRTestModeCustom;
     if ([name isEqualToString:@"zen"])    return HRTestModeZen;
+    if ([name isEqualToString:@"lesson"]) return HRTestModeLesson;
     return HRTestModeTime;
 }
 
@@ -83,7 +85,7 @@
         @"punctuation": @(_punctuation),
         @"numbers": @(_numbers),
         @"backspacePolicy": @(_backspacePolicy),
-        @"languageID": _languageID ?: @"en",
+        @"languageID": _languageID ?: @"english",
         @"wordListName": _wordListName ?: @"words-200",
         @"layoutID": _layoutID ?: @"qwerty-us",
     };

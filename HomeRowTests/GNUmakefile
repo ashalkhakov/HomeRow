@@ -48,4 +48,5 @@ run-tests: all
 	@echo "Running XCTest bundle: $(BUNDLE_NAME)"
 	. $(GNUSTEP_MAKEFILES)/GNUstep.sh; \
 	HR_LANGUAGES_DIR="$(CURDIR)/../HomeRow/Resources/Languages" \
+	HR_LESSONS_DIR="$(CURDIR)/../HomeRow/Resources/Lessons" \
 	$(XCTEST) "$(BUNDLE_NAME).bundle"

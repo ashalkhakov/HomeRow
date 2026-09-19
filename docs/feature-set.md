@@ -1,13 +1,14 @@
-# HomeRow — Feature Set (draft 3)
+# HomeRow — Feature Set (draft 4)
 
-A native typing tutor for GNUstep and Cocoa, in the spirit of MonkeyType (prose, quick tests, rich stats) and Typing.io (typing real source code), plus a guided touch-typing course for people starting from zero. Objective-C 2.0 with ARC, XIB-based UI, LGPL-2.1, fully offline, no accounts, no telemetry.
+A native typing tutor for GNUstep and Cocoa, in the spirit of MonkeyType (prose, quick tests, rich stats) and Typing.io (typing real source code), plus a guided touch-typing course for people starting from zero. Objective-C 2.0 with ARC, XIB-based UI, GPL-3.0-or-later, fully offline, no accounts, no telemetry.
 
 ## 0. Decisions so far
 
 | Topic | Decision |
 |---|---|
 | Name / prefix | **HomeRow**, class prefix `HR` |
-| Licence | LGPL-2.1 (`COPYING.LIB`) |
+| Licence | **GPL-3.0-or-later** (`COPYING`). Relicensed from LGPL-2.1 on 2026-09-19 by the sole author, so that GNU Typist's lessons and MonkeyType's word lists can ship in the app |
+| Content | Courses: GNU Typist's `.typ` lesson files, unmodified (46 courses, ~15 languages, incl. the KTouch-derived ones). Word lists: MonkeyType's (140 languages), via `Scripts/import-monkeytype.py`. The two are complementary, not alternatives: MonkeyType has no lessons, GNU Typist has no word lists. MonkeyType's quotes are not used |
 | macOS target | macOS 11 Big Sur minimum, universal (arm64 + x86_64) |
 | GNUstep target | From-source stack only (clang, libobjc2, `ng-gnu-gnu`, `gnustep-2.0`, ARC), as in XFormsKit; Linux distribution is an **AppImage**. Distro GNUstep packages are not supported. |
 | Persistence | Core Data API — Apple's CoreData on macOS, **FreeCoreData** on GNUstep (dogfooding), SQLite store |
@@ -59,7 +60,7 @@ Modifiers for Time and Words: **punctuation** on/off, **numbers** on/off, word l
 - Comments and blank lines can be skipped automatically (setting), since they train prose, not code.
 - Lightweight syntax colouring of the *untyped* text only (keywords, strings, comments, numbers) via a small table-driven tokenizer per language — no external dependencies. Typed text uses the correct/incorrect colours so feedback stays unambiguous.
 - Long files are split into sections of roughly 40–80 lines; progress through a file is remembered.
-- Bundled starter library: short snippets in C, Objective-C, C#, Python, JavaScript, Go, Rust, SQL, shell. **Licensing constraint:** everything bundled must be LGPL-2.1-compatible (own code, public domain, MIT/BSD with attribution kept in a `THIRD-PARTY` file).
+- Bundled starter library: short snippets in C, Objective-C, C#, Python, JavaScript, Go, Rust, SQL, shell. **Licensing constraint:** everything bundled must be GPL-3.0-compatible, with attribution kept in `THIRD-PARTY`.
 - "Open file…" and drag-and-drop to practise on your own code; a folder can be added as a personal library.
 - Code-specific metrics: **unproductive keystroke overhead** (keystrokes spent on errors and fixes ÷ total), and a **symbol breakdown** showing speed and error rate per character class (letters, digits, brackets, operators, punctuation).
 
@@ -98,7 +99,7 @@ All formulas are documented in `docs/metrics.md` and pinned by unit tests, so nu
   - `HRCustomText` — title, body or file bookmark/path, kind (prose/code), language, last position.
 - Settings remain in `NSUserDefaults`; themes and word lists remain files.
 - Anything the app needs that FreeCoreData lacks (aggregate fetches, lightweight migration between model versions, etc.) becomes an upstream FreeCoreData issue rather than a workaround here — that is the point of dogfooding. The store is behind a small `HRResultStore` façade, so the engine tests do not depend on it.
-- Licence check: FreeCoreData is MIT (Cocotron heritage), compatible with LGPL-2.1; its notices go into `THIRD-PARTY`.
+- Licence check: FreeCoreData is MIT (Cocotron heritage), compatible with the GPL; its notices go into `THIRD-PARTY`.
 
 ## 7. Lessons — the touch-typing course
 
@@ -123,7 +124,7 @@ Nothing in the engine or UI may assume English or QWERTY. v0.2 ships exactly one
 - Dead-key sequences where a layout needs them (e.g. `´` + `e` → `é`), so the keyboard view can hint two-step input.
 - From this one file come: the on-screen keyboard labels, the finger zones, the heatmap, and the mapping "which characters has the learner unlocked so far".
 
-**Language pack** — `Languages/<id>/` (e.g. `en`, later `ru`, `de`):
+**Language pack** — `Languages/<id>/` (e.g. `english`, `russian`, `german`):
 
 - `info.plist`: id, display name, script, writing direction, default layout id, the alphabet, and language-specific punctuation rules (quote marks, spacing before `?`/`:` in French, etc.) used by the punctuation modifier.
 - `words-*.txt`: frequency-ordered word lists, one word per line, UTF-8 (`words-200`, `words-1k`, …).
@@ -169,12 +170,15 @@ Nothing in the engine or UI may assume English or QWERTY. v0.2 ships exactly one
 
 Accounts, cloud sync, leaderboards, multiplayer/races, ads, telemetry, network access of any kind. No web view, no embedded scripting.
 
-## 11. Content licensing (needs care)
+## 11. Content and licensing
 
-- MonkeyType is **GPL-3.0**, including its word lists and quote files, so none of it can be bundled in an LGPL-2.1 app. Typing.io content is proprietary.
-- Word lists: build from permissively licensed or public-domain frequency data (each source recorded in `THIRD-PARTY`).
-- Quotes: public-domain texts only (e.g. Project Gutenberg, pre-1929 works), with author/title attribution shown on the results screen.
-- Lesson texts and course definitions: written for this project, LGPL-2.1.
+HomeRow is GPL-3.0-or-later, which is what lets it build on the two largest free bodies of typing content:
+
+- **Courses — GNU Typist** (GPL-3.0-or-later). All of its lesson files ship unmodified in `Resources/Lessons/gtypist/`: the English QWERTY series (Q, R, T, V, U), drills (M, S), numeric keypad (N), programmers' symbols (P), Dvorak, Colemak, Czech, Spanish, Russian, Romanian, and the KTouch-derived courses for Bulgarian, German (incl. NEO), Danish, Finnish, French, Hungarian, Italian, Dutch, Norwegian, Polish, Slovenian, Turkish, Catalan. `index.plist` maps each course to a language pack and a layout. `HRTypScript` (Foundation-only) parses the format; the app runs a lesson as tutorial pages and exercises, repeating an exercise that exceeds the allowed error rate, as gtypist does.
+- **Word lists — MonkeyType** (GPL-3.0). 140 languages / 283 lists up to 10k words, imported reproducibly by `Scripts/import-monkeytype.py` (each pack's `LICENSE` names the upstream commit). Left out: `code_*` lists (for Code mode later), right-to-left languages, languages needing an input method (Chinese, Japanese kana, Korean), lists over 10k words, and brand/joke lists.
+- **MonkeyType's keyboard layouts** (239 JSON files) are the intended source for v0.2's layout packs.
+- **Not used:** MonkeyType's quotes — the GPL covers the collection, not the third-party books and films quoted. Quote mode stays on public-domain texts. Typing.io content is proprietary.
+- The generated course (plan × layout × language, section 7) is still wanted: it is the only thing that gives *every* language/layout pair a course, and the only adaptive one. The GNU Typist courses are the hand-written complement.
 - Fonts: rely on system fonts; bundle none, or only OFL-licensed ones.
 
 ## 12. Technical notes that shape the features
@@ -202,7 +206,7 @@ HomeRow/
   Scripts/                    install-linuxdeploy.sh, AppDir assembly
   .github/workflows/ci.yml, release.yml
   .github/scripts/apt-update.sh, dependencies.sh
-  docs/  COPYING.LIB  THIRD-PARTY  README.md
+  docs/  COPYING  THIRD-PARTY  README.md
 ```
 
 - `ci.yml`, on push / PR / manual, with branch-name concurrency groups:
@@ -214,7 +218,8 @@ HomeRow/
 ## 14. Phasing
 
 - **v0.1 — usable daily**: Time, Words, Custom, Zen modes; punctuation/numbers; core typing behaviour; live WPM/accuracy; results screen with chart; results saved through Core Data/FreeCoreData; light and dark themes; CI on both platforms producing an AppImage and a macOS zip from the first commit.
-- **v0.2 — tutor**: `NSTextInputClient` on macOS (dead keys), layout/language pack loading and validation, lesson generator, English + QWERTY-US course, keyboard view with finger hints, course window, lesson progress, first-launch choice.
+- **Done ahead of plan (with the relicensing)**: GNU Typist courses with a basic lesson runner (Lessons menu), 140 language packs with a Language / Word List menu.
+- **v0.2 — tutor**: a course window with per-lesson progress and stars (`HRLessonProgress`), `NSTextInputClient` on macOS (dead keys — needed by every non-English course), layout/language pack loading and validation, lesson generator, English + QWERTY-US course, keyboard view with finger hints, course window, lesson progress, first-launch choice.
 - **v0.3 — insight**: History window, charts, heatmap on the keyboard view, weak-spot practice and adaptive review, personal bests, export/import; Quote mode.
 - **v0.4 — code**: Code mode with auto-indent, tokenizer colouring, file/folder import, overhead and symbol metrics.
 - **v1.0 — polish**: pace caret, replay, command palette, sounds, more themes; additional layout and language packs as they are contributed; signed/notarized macOS build.

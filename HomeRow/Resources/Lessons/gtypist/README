@@ -1,0 +1,29 @@
+GNU Typist lessons
+==================
+
+The .typ files in this folder are the lessons of GNU Typist (gtypist),
+https://www.gnu.org/software/gtypist/, unmodified, taken from
+https://github.com/gnu-mirror-unofficial/gtypist (an unofficial mirror of
+the Savannah repository) at commit bda1c9dca77ebea6294f72d7ed09abe30a62a09f,
+lessons/.  demo.typ and tinydemo.typ, which demonstrate the script format
+rather than teach typing, are left out.
+
+Copyright (C) 1998-2003 Simon Baldwin; (C) 2003-2022 Michael Opdenacker,
+Felix Natter, Dmitry Rutsky, Paul Goins, Tim Marston, Mihai Gătejescu and
+the other GNU Typist contributors named in each file.  GNU General Public
+License, version 3 or (at your option) any later version; every file
+carries the full notice.
+
+kt*.typ were converted by the GNU Typist project from the lessons of
+KTouch (https://apps.kde.org/ktouch/), and ttde.typ from TippTrainer; each
+file's header names its source and authors.
+
+index.plist is HomeRow's: it gives each course a title, the language pack
+it goes with and the keyboard layout it teaches.  To update the lessons,
+copy the new .typ files over these, adjust index.plist, and run the tests:
+HRTypScriptTests parses every course and fails on one that is broken.
+
+"upstreamWarnings" in index.plist is the number of gotos in a file that
+point at labels which do not exist (cs.typ: 2, ru.typ: 1).  They are
+upstream's and harmless -- those branches are never reached from a menu --
+but they are counted so that a new one does not slip in unnoticed.

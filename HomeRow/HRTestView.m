@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRTestView.h"
 #import "HRTestSession.h"
@@ -47,6 +47,18 @@ static const CGFloat HRInset = 24.0;
 - (void)setSession:(HRTestSession *)session
 {
     _session = session;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setCaption:(NSString *)caption
+{
+    _caption = [caption copy];
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setPageText:(NSString *)pageText
+{
+    _pageText = [pageText copy];
     [self setNeedsDisplay:YES];
 }
 
@@ -106,7 +118,12 @@ static const CGFloat HRInset = 24.0;
     NSRect bounds = [self bounds];
     [(_theme.background ?: [NSColor whiteColor]) set];
     NSRectFill(bounds);
-    if (!_session || !_theme) return;
+    if (!_theme) return;
+    if (_pageText) {
+        [self drawPageInRect:bounds];
+        return;
+    }
+    if (!_session) return;
 
     CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: _font}].width;
     CGFloat lineHeight = ceil(([_font ascender] - [_font descender]) * 1.5);
@@ -123,6 +140,18 @@ static const CGFloat HRInset = 24.0;
      * above it to show */
     NSUInteger firstLine = currentLine > 0 ? currentLine - 1 : 0;
     CGFloat top = floor((NSHeight(bounds) - HRVisibleLines * lineHeight) / 2.0);
+
+    if ([_caption length] > 0) {
+        NSFont *small = [NSFont userFixedPitchFontOfSize:13.0] ?: [NSFont systemFontOfSize:13.0];
+        NSDictionary *attrs = @{NSFontAttributeName: small, NSForegroundColorAttributeName: _theme.untyped};
+        NSArray *captionLines = [_caption componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+        CGFloat h = ceil([small ascender] - [small descender]) + 3.0;
+        CGFloat y = MAX(8.0, top - 14.0 - h * [captionLines count]);
+        for (NSString *l in captionLines) {
+            [l drawAtPoint:NSMakePoint(HRInset, y) withAttributes:attrs];
+            y += h;
+        }
+    }
 
     for (NSUInteger row = 0; row < HRVisibleLines && firstLine + row < [lines count]; row++) {
         NSRange range = [lines[firstLine + row] rangeValue];
@@ -161,6 +190,51 @@ static const CGFloat HRInset = 24.0;
     }
 }
 
+/* Tabs to the next multiple of eight, as a terminal would. */
+static NSString *HRExpandTabs(NSString *line)
+{
+    if ([line rangeOfString:@"\t" options:NSLiteralSearch].location == NSNotFound) return line;
+    NSMutableString *out = [NSMutableString string];
+    for (NSUInteger i = 0; i < [line length]; i++) {
+        unichar c = [line characterAtIndex:i];
+        if (c != '\t') { [out appendFormat:@"%C", c]; continue; }
+        do { [out appendString:@" "]; } while ([out length] % 8 != 0);
+    }
+    return out;
+}
+
+- (void)drawPageInRect:(NSRect)bounds
+{
+    NSMutableArray *lines = [NSMutableArray array];
+    NSUInteger columns = 40;
+    for (NSString *l in [_pageText componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]]) {
+        NSString *expanded = HRExpandTabs(l);
+        columns = MAX(columns, [expanded length]);
+        [lines addObject:expanded];
+    }
+    /* the largest size at which the widest line and all the lines fit */
+    CGFloat size = 16.0;
+    NSFont *font = nil;
+    CGFloat advance = 0.0, lineHeight = 0.0;
+    for (; size >= 8.0; size -= 1.0) {
+        font = [NSFont userFixedPitchFontOfSize:size] ?: [NSFont systemFontOfSize:size];
+        advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width;
+        lineHeight = ceil(([font ascender] - [font descender]) * 1.25);
+        if (advance * columns <= NSWidth(bounds) - 2 * HRInset
+            && lineHeight * ([lines count] + 2) <= NSHeight(bounds) - 2 * 12.0) break;
+    }
+    NSDictionary *attrs = @{NSFontAttributeName: font, NSForegroundColorAttributeName: _theme.correct};
+    CGFloat x = floor((NSWidth(bounds) - advance * columns) / 2.0);
+    CGFloat y = MAX(12.0, floor((NSHeight(bounds) - lineHeight * ([lines count] + 2)) / 2.0));
+    for (NSString *l in lines) {
+        [l drawAtPoint:NSMakePoint(MAX(HRInset, x), y) withAttributes:attrs];
+        y += lineHeight;
+    }
+    NSString *hint = NSLocalizedString(@"return or space \u2014 continue", nil);
+    [hint drawAtPoint:NSMakePoint(MAX(HRInset, x), y + lineHeight)
+       withAttributes:@{NSFontAttributeName: font, NSForegroundColorAttributeName: _theme.untyped}];
+}
+
 #pragma mark - Input
 
 - (void)keyDown:(NSEvent *)event
@@ -176,6 +250,12 @@ static const CGFloat HRInset = 24.0;
 
     if ((mods & NSEventModifierFlagCommand) != 0) {
         [super keyDown:event];
+        return;
+    }
+    if (_pageText) {
+        BOOL advance = (c == ' ' || c == NSCarriageReturnCharacter || c == NSNewlineCharacter || c == NSEnterCharacter);
+        if (advance) [_delegate testViewDidDismissPage:self];
+        else if (c == NSTabCharacter || c == 0x1B) [_delegate testViewDidRequestRestart:self];
         return;
     }
     BOOL isBackspace = (c == NSDeleteCharacter || c == NSBackspaceCharacter || c == NSDeleteFunctionKey);

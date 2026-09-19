@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>01246789ABCDEFGHIJMOPQRSTUVXabcdefghijklmnopqrstuvwxyz&#xC5;&#xD8;&#xE0;&#xE5;&#xE6;&#xE9;&#xF8;</string>
+	<key>bcp47</key>
+	<string>da-DK</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Danish</string>
+	<key>identifier</key>
+	<string>danish</string>
+</dict>
+</plist>

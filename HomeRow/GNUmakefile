@@ -19,13 +19,14 @@ APP_NAME = HomeRow
 HomeRow_APPLICATION_ICON = HomeRow.png
 
 #
-# Resources.  Languages and Themes are copied as whole folders, so a new
-# language pack or theme is picked up without touching this file.
+# Resources.  Languages, Lessons and Themes are copied as whole folders, so a
+# new language pack, course or theme is picked up without touching this file.
 #
 HomeRow_RESOURCE_FILES = \
     Resources/MainMenu.xib \
     Resources/HomeRow.png \
     Resources/Languages \
+    Resources/Lessons \
     Resources/Themes
 
 HomeRow_LANGUAGES = en

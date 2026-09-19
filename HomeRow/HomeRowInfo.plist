@@ -7,7 +7,7 @@
 	"Artyom Shalkhakov"
     );
     Copyright = "Copyright (C) 2026 Artyom Shalkhakov";
-    CopyrightDescription = "Released under the GNU LGPL, version 2.1 or later";
+    CopyrightDescription = "Released under the GNU GPL, version 3 or later";
     FullVersionID = "0.1";
     NSExecutable = HomeRow;
     NSIcon = "HomeRow.png";

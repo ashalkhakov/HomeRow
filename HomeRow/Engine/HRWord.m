@@ -2,10 +2,10 @@
  * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
  * Copyright (C) 2026 Artyom Shalkhakov
  *
- * This library is free software; you can redistribute it and/or modify it
- * under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation; either version 2.1 of the License, or (at
- * your option) any later version.  See COPYING.LIB.
+ * HomeRow is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRWord.h"
 
@@ -30,6 +30,21 @@ static NSString *HRPrecomposed(NSString *string)
 }
 
 @implementation HRWord
+
++ (NSArray *)linesOfString:(NSString *)string
+{
+    NSMutableArray *lines = [NSMutableArray array];
+    NSUInteger n = [string length], start = 0;
+    for (NSUInteger i = 0; i < n; i++) {
+        unichar c = [string characterAtIndex:i];
+        if (c != '\n' && c != '\r') continue;
+        [lines addObject:[string substringWithRange:NSMakeRange(start, i - start)]];
+        if (c == '\r' && i + 1 < n && [string characterAtIndex:i + 1] == '\n') i++;
+        start = i + 1;
+    }
+    [lines addObject:[string substringFromIndex:start]];
+    return lines;
+}
 
 + (NSArray *)charactersOfString:(NSString *)string
 {
