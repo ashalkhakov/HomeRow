@@ -367,6 +367,27 @@
     return [self save:error];
 }
 
+- (NSArray *)earlierExercisesOfLesson:(NSUInteger)lessonIndex inCourse:(NSString *)courseFile
+                           beforeStep:(NSUInteger)step
+{
+    HRLessonRecord *record = [self lessonRecordsForCourse:courseFile][@(lessonIndex)];
+    if (!record.lastDate || step == 0) return @[];
+    NSArray *results = [self fetch:@"TestResult"
+                             where:[NSPredicate predicateWithFormat:@"courseFile == %@ AND lessonIndex == %@",
+                                    courseFile, @(lessonIndex)]];
+    results = [results sortedArrayUsingDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"date" ascending:YES]]];
+    NSMutableArray *out = [NSMutableArray array];
+    for (HRTestResult *r in results) {
+        if (!r.date || [r.date compare:record.lastDate] == NSOrderedAscending) continue;
+        if ([r.stepIndex unsignedIntegerValue] >= step) continue;
+        NSUInteger keys = [r.correctCharacters unsignedIntegerValue] + [r.incorrectCharacters unsignedIntegerValue]
+                        + [r.extraCharacters unsignedIntegerValue];
+        [out addObject:@{@"step": r.stepIndex ?: @0, @"wpm": r.wpm ?: @0, @"accuracy": r.accuracy ?: @100,
+                         @"duration": r.duration ?: @0, @"keystrokes": @(keys)}];
+    }
+    return out;
+}
+
 - (BOOL)noteLessonCompleted:(NSUInteger)lessonIndex summary:(HRLessonSummary *)summary
               countsForBest:(BOOL)countsForBest inCourse:(NSString *)courseFile error:(NSError **)error
 {

@@ -9,6 +9,7 @@
  */
 #import "HRCourseWindowController.h"
 #import "HRResultStore.h"
+#import "HRStatistics.h"
 #import "HRTypScript.h"
 
 #define HRLoc(key) NSLocalizedString(key, nil)
@@ -219,7 +220,11 @@
             [_dateFormatter setDateStyle:NSDateFormatterMediumStyle];
             [_dateFormatter setTimeStyle:NSDateFormatterNoStyle];
         }
-        return [_dateFormatter stringFromDate:record.lastDate];
+        /* the locale's own format where there is one; a gnustep-base built
+         * without ICU formats nothing, and then the date is spelled by hand */
+        NSString *formatted = [_dateFormatter stringFromDate:record.lastDate];
+        return [formatted length] > 0 ? formatted
+                                      : [HRStatistics mediumStringForDate:record.lastDate timeZone:nil];
     }
     return @"";
 }

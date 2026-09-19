@@ -32,8 +32,8 @@
 /* Statistics: character -> @{@"hits", @"misses"} (as HRResultStore sums
  * them).  When set, the finger tints give way to a heatmap: the more often
  * a key was missed, per press, the deeper it is tinted in the error colour
- * -- one hue, light to dark.  A key's characters (both levels) are taken
- * together; keys pressed fewer than heatMinimumPresses times stay plain. */
+ * -- one hue, light to dark.  A key shows the worst of its characters;
+ * characters pressed fewer than heatMinimumPresses times do not count. */
 @property (nonatomic, copy) NSDictionary *heatCounts;
 @property (nonatomic) NSUInteger heatMinimumPresses;
 /* The error rate (0...1) the deepest tint stands for, for a legend. */

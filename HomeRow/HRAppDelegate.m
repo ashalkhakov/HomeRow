@@ -446,6 +446,18 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
             [[[stats window] contentView] addSubview:probe];
             [probe display];
             [probe removeFromSuperview];
+            /* a key shows the worst of its characters, as the list under it does */
+            HRKeyboardView *board = [[HRKeyboardView alloc] initWithFrame:NSMakeRect(0, 0, 600, 200)];
+            board.keyboardLayout = [self layoutNamed:@"qwerty"];
+            board.heatMinimumPresses = 10;
+            board.heatCounts = @{@"3": @{@"hits": @200, @"misses": @0}, @"#": @{@"hits": @20, @"misses": @10},
+                                 @"q": @{@"hits": @2, @"misses": @2}};
+            HRKeyPosition *hash = [board.keyboardLayout positionOfCharacter:@"#"];
+            HRKeyPosition *q = [board.keyboardLayout positionOfCharacter:@"q"];
+            if (fabs([board heatRateForKeyAtRow:hash.row column:hash.column] - 1.0 / 3.0) > 1e-9) {
+                [failures addObject:@"the heatmap hides a badly missed # behind a well-typed 3"];
+            }
+            if ([board heatRateForKeyAtRow:q.row column:q.column] >= 0.0) [failures addObject:@"the heatmap judges a key on four presses"];
             stats.speedPlot.highlightedIndex = 0;
             if ([[stats.speedPlot readout] length] == 0) [failures addObject:@"the speed chart has no read-out"];
             [[stats kindPopUp] selectItemWithTag:HRStatKindCode];
@@ -1044,6 +1056,10 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     _lessonIndex = lessonIndex;
     [self leaveCode];
     _run = [[HRCourseRun alloc] initWithLesson:lesson startingAtStep:step];
+    /* picked up in the middle (a relaunch): what was typed before counts too */
+    if (_run.stepIndex > 0) {
+        [_run addEarlierExercises:[_store earlierExercisesOfLesson:lessonIndex inCourse:file beforeStep:_run.stepIndex] ?: @[]];
+    }
     if (_run.stepIndex == 0) {
         [_store noteLessonStarted:lessonIndex title:lesson.title inCourse:file error:NULL];
     }

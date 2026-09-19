@@ -18,6 +18,8 @@
     NSTimeInterval _duration;
     NSUInteger _correctKeys, _incorrectKeys;
     NSUInteger _exercises, _repeats;
+    NSUInteger _resumeStep;
+    BOOL _earlierAdded;
 }
 
 + (double)defaultMaxErrorPercent
@@ -30,6 +32,7 @@
     if ((self = [super init])) {
         _lesson = lesson;
         _stepIndex = stepIndex < [lesson.steps count] ? stepIndex : 0;
+        _resumeStep = _stepIndex;
         _coversWholeLesson = (_stepIndex == 0);
     }
     return self;
@@ -73,6 +76,33 @@
     _exercises++;
     _stepIndex++;
     return YES;
+}
+
+- (void)addEarlierExercises:(NSArray *)exercises
+{
+    if (_coversWholeLesson || _earlierAdded) return;
+    _earlierAdded = YES;
+    NSMutableSet *seen = [NSMutableSet set];
+    for (NSDictionary *e in exercises) {
+        NSUInteger step = [e[@"step"] unsignedIntegerValue];
+        if (step >= _resumeStep || step >= [_lesson.steps count]) continue;
+        if (!((HRTypStep *)_lesson.steps[step]).isExercise) continue;
+        double duration = [e[@"duration"] doubleValue];
+        double keys = [e[@"keystrokes"] doubleValue];
+        double accuracy = MAX(0.0, MIN(100.0, [e[@"accuracy"] doubleValue]));
+        _weightedWpm += [e[@"wpm"] doubleValue] * duration;
+        _duration += duration;
+        NSUInteger correct = (NSUInteger)(keys * accuracy / 100.0 + 0.5);
+        _correctKeys += correct;
+        _incorrectKeys += (NSUInteger)MAX(0.0, keys - (double)correct);
+        if ([seen containsObject:@(step)]) _repeats++;
+        else { [seen addObject:@(step)]; _exercises++; }
+    }
+    NSUInteger expected = 0;
+    for (NSUInteger i = 0; i < _resumeStep && i < [_lesson.steps count]; i++) {
+        if (((HRTypStep *)_lesson.steps[i]).isExercise) expected++;
+    }
+    if ([seen count] == expected) _coversWholeLesson = YES;
 }
 
 - (HRLessonSummary *)summary

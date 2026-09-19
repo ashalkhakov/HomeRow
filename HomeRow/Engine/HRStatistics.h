@@ -82,6 +82,8 @@ typedef NS_ENUM(NSInteger, HRStatKind) {
 /* "Jan 10" -- by arithmetic, for the same reason -days avoids NSCalendar
  * (NSDateFormatter is as empty-handed without ICU). */
 + (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone;
+/* "Jan 10, 2026" -- for the tables of lessons and sections. */
++ (NSString *)mediumStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone;
 
 /* "1 h 05 min", "12 min", "40 s" */
 + (NSString *)stringForDuration:(NSTimeInterval)duration;

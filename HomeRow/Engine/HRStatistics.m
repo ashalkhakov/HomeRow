@@ -156,7 +156,7 @@
     return keys;
 }
 
-+ (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone
++ (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone year:(long *)outYear
 {
     if (!date) return @"";
     NSTimeZone *zone = timeZone ?: [NSTimeZone localTimeZone];
@@ -172,7 +172,20 @@
     long month = mp < 10 ? mp + 3 : mp - 9;
     static NSString * const names[] = {@"Jan", @"Feb", @"Mar", @"Apr", @"May", @"Jun",
                                        @"Jul", @"Aug", @"Sep", @"Oct", @"Nov", @"Dec"};
+    if (outYear) *outYear = yoe + era * 400 + (month <= 2 ? 1 : 0);
     return [NSString stringWithFormat:@"%@ %ld", names[month - 1], day];
+}
+
++ (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone
+{
+    return [self shortStringForDate:date timeZone:timeZone year:NULL];
+}
+
++ (NSString *)mediumStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone
+{
+    long year = 0;
+    NSString *s = [self shortStringForDate:date timeZone:timeZone year:&year];
+    return [s length] > 0 ? [NSString stringWithFormat:@"%@, %ld", s, year] : @"";
 }
 
 + (NSString *)stringForDuration:(NSTimeInterval)duration

@@ -73,6 +73,13 @@
               countsForBest:(BOOL)countsForBest
                    inCourse:(NSString *)courseFile
                       error:(NSError **)error;
+/* The exercises of the attempt at a lesson that is under way -- saved since
+ * the lesson was last started -- before `step`, oldest first, in the form
+ * -[HRCourseRun addEarlierExercises:] takes.  The keystroke count is
+ * estimated from the characters; results do not store it. */
+- (NSArray *)earlierExercisesOfLesson:(NSUInteger)lessonIndex
+                             inCourse:(NSString *)courseFile
+                           beforeStep:(NSUInteger)step;
 /* Forgets position and lesson records of a course; exercise results stay
  * in the history. */
 - (BOOL)resetCourse:(NSString *)courseFile error:(NSError **)error;

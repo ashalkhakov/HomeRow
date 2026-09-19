@@ -93,6 +93,35 @@
     XCTAssertEqual(run.stepIndex, (NSUInteger)0, @"a position past the end means from the top");
 }
 
+/* Relaunched in the middle of a lesson: the exercises typed before count
+ * towards its totals, once the store hands them over. */
+- (void)testAResumedRunTakesInWhatWasTypedBefore
+{
+    HRCourseRun *run = [[HRCourseRun alloc] initWithLesson:[self lesson] startingAtStep:2];
+    XCTAssertFalse(run.coversWholeLesson);
+    /* aaaa was typed twice (the first time badly); the entry for step 0 is
+     * a page and the one for step 3 is still to come: both ignored */
+    [run addEarlierExercises:@[@{@"step": @1, @"wpm": @20, @"accuracy": @80, @"duration": @10, @"keystrokes": @10},
+                               @{@"step": @1, @"wpm": @40, @"accuracy": @100, @"duration": @10, @"keystrokes": @10},
+                               @{@"step": @0, @"wpm": @99, @"accuracy": @100, @"duration": @99, @"keystrokes": @99},
+                               @{@"step": @3, @"wpm": @99, @"accuracy": @100, @"duration": @99, @"keystrokes": @99}]];
+    XCTAssertTrue(run.coversWholeLesson, @"the one exercise before the resume point is accounted for");
+    XCTAssertTrue([run recordExercise:[self summaryWithWpm:60 correct:10 wrong:0 seconds:20]]);
+    XCTAssertTrue([run recordExercise:[self summaryWithWpm:60 correct:10 wrong:0 seconds:20]]);
+    XCTAssertTrue(run.isFinished);
+    HRLessonSummary *l = [run summary];
+    XCTAssertEqual(l.exercises, (NSUInteger)3);
+    XCTAssertEqual(l.repeats, (NSUInteger)1);
+    XCTAssertEqualWithAccuracy(l.duration, 60.0, 1e-9);
+    XCTAssertEqualWithAccuracy(l.wpm, (20.0 * 10 + 40.0 * 10 + 60.0 * 40) / 60.0, 1e-9);
+    XCTAssertEqualWithAccuracy(l.accuracy, 100.0 * 38.0 / 40.0, 1e-9);
+
+    /* nothing on record for the part that was skipped: still a partial run */
+    HRCourseRun *partial = [[HRCourseRun alloc] initWithLesson:[self lesson] startingAtStep:2];
+    [partial addEarlierExercises:@[]];
+    XCTAssertFalse(partial.coversWholeLesson);
+}
+
 - (HRResultStore *)storeAtURL:(NSURL *)url
 {
     NSError *e = nil;
@@ -101,6 +130,31 @@
                                                              error:&e];
     XCTAssertNotNil(store, @"%@", e);
     return store;
+}
+
+- (void)testTheStoreHandsOverTheEarlierExercisesOfThisAttemptOnly
+{
+    HRResultStore *store = [self storeAtURL:nil];
+    HRTestConfiguration *c = [HRTestConfiguration defaultConfiguration];
+    c.mode = HRTestModeLesson;
+    HRTestSummary *s = [self summaryWithWpm:30 correct:38 wrong:2 seconds:12];
+    s.correctCharacters = 38;
+    s.incorrectCharacters = 2;
+    NSError *e = nil;
+    /* an exercise from an attempt long ago, then the lesson is started again */
+    XCTAssertNotNil([store recordSummary:s configuration:c courseFile:@"q.typ" lessonIndex:0 stepIndex:1
+                                    date:[NSDate dateWithTimeIntervalSinceNow:-86400.0] error:&e], @"%@", e);
+    XCTAssertTrue([store noteLessonStarted:0 title:@"One" inCourse:@"q.typ" error:&e], @"%@", e);
+    XCTAssertEqual([[store earlierExercisesOfLesson:0 inCourse:@"q.typ" beforeStep:2] count], (NSUInteger)0);
+    XCTAssertNotNil([store recordSummary:s configuration:c courseFile:@"q.typ" lessonIndex:0 stepIndex:1
+                                    date:[NSDate dateWithTimeIntervalSinceNow:1.0] error:&e], @"%@", e);
+    XCTAssertNotNil([store recordSummary:s configuration:c courseFile:@"q.typ" lessonIndex:1 stepIndex:1
+                                    date:[NSDate dateWithTimeIntervalSinceNow:1.0] error:&e], @"another lesson: %@", e);
+    NSArray *earlier = [store earlierExercisesOfLesson:0 inCourse:@"q.typ" beforeStep:2];
+    XCTAssertEqual([earlier count], (NSUInteger)1);
+    XCTAssertEqualObjects(earlier[0][@"step"], @1);
+    XCTAssertEqualObjects(earlier[0][@"keystrokes"], @40);
+    XCTAssertEqual([[store earlierExercisesOfLesson:0 inCourse:@"q.typ" beforeStep:1] count], (NSUInteger)0);
 }
 
 - (void)testProgressAndLessonRecordsSurviveReopening

@@ -109,20 +109,21 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
     [self setNeedsDisplay:YES];
 }
 
+/* The worst of the key's characters, each judged on its own presses: "#"
+ * missed one time in three must show on its key however reliably "3" is
+ * hit -- and then the keyboard says what the list under it says. */
 - (double)rateForCharacters:(NSArray *)characters
 {
-    NSUInteger hits = 0, misses = 0;
-    NSMutableSet *seen = [NSMutableSet set];
+    double worst = -1.0;
     for (NSString *ch in characters) {
-        if ([ch length] == 0 || [seen containsObject:ch]) continue;
-        [seen addObject:ch];
+        if ([ch length] == 0) continue;
         NSDictionary *c = _heatCounts[ch];
-        hits += [c[@"hits"] unsignedIntegerValue];
-        misses += [c[@"misses"] unsignedIntegerValue];
+        NSUInteger hits = [c[@"hits"] unsignedIntegerValue], misses = [c[@"misses"] unsignedIntegerValue];
+        NSUInteger total = hits + misses;
+        if (total == 0 || total < _heatMinimumPresses) continue;
+        worst = MAX(worst, (double)misses / (double)total);
     }
-    NSUInteger total = hits + misses;
-    if (total == 0 || total < _heatMinimumPresses) return -1.0;
-    return (double)misses / (double)total;
+    return worst;
 }
 
 - (double)heatRateForKeyAtRow:(NSUInteger)row column:(NSUInteger)column

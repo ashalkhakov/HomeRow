@@ -85,7 +85,7 @@ How to use all of it, with every shortcut: [docs/using.md](docs/using.md).
 - **English interface only.**
 - **No signed or notarized macOS build** until the release secrets are set.
 
-The plan, phase by phase: [docs/feature-set.md](docs/feature-set.md).
+The plan, phase by phase: [docs/feature-set.md](docs/feature-set.md); the working list: [docs/roadmap.md](docs/roadmap.md).
 
 ## Architecture
 
@@ -133,7 +133,7 @@ of code, open every window, and exit 0.
 - [Using HomeRow](docs/using.md) — keys, courses, code, statistics
 - [Building and packaging](docs/building.md)
 - Adding [a language](docs/adding-a-language.md), [a keyboard layout](docs/adding-a-layout.md), [a programming language](docs/adding-a-code-language.md)
-- [How the numbers are worked out](docs/metrics.md) · [Feature set and phases](docs/feature-set.md)
+- [How the numbers are worked out](docs/metrics.md) · [Feature set and phases](docs/feature-set.md) · [Roadmap](docs/roadmap.md)
 - [GNUstep patches](patches/gnustep/README.md)
 
 ## Where the content comes from
