@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>persian standard colemak</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>persian_standard_colemak</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>&#x6AF;&#x61B;</string>
+			<string>&#x6F1;!</string>
+			<string>&#x6F2;&#x66C;</string>
+			<string>&#x6F3;&#x66B;</string>
+			<string>&#x6F4;</string>
+			<string>&#x6F5;&#x66A;</string>
+			<string>&#x6F6;&#xD7;</string>
+			<string>&#x6F7;&#x60C;</string>
+			<string>&#x6F8;*</string>
+			<string>&#x6F9;)</string>
+			<string>&#x6F0;)</string>
+			<string>-&#x640;</string>
+			<string>=+</string>
+		</array>
+		<array>
+			<string>&#x636;&#x652;</string>
+			<string>&#x635;&#x64C;</string>
+			<string>&#x628;&#x625;</string>
+			<string>&#x62D;[</string>
+			<string>&#x644;&#x623;</string>
+			<string>&#x62A;&#x629;</string>
+			<string>&#x645;&#xAB;</string>
+			<string>&#x639;&#x64E;</string>
+			<string>&#x63A;&#x650;</string>
+			<string>&#x6A9;:</string>
+			<string>\|</string>
+			<string>&#x62C;}</string>
+			<string>&#x686;{</string>
+		</array>
+		<array>
+			<string>&#x634;&#x624;</string>
+			<string>&#x642;&#x64B;</string>
+			<string>&#x633;&#x626;</string>
+			<string>&#x641;&#x64F;</string>
+			<string>&#x6CC;&#x64A;</string>
+			<string>&#x627;&#x622;</string>
+			<string>&#x62F;&#x654;</string>
+			<string>&#x62B;&#x64D;</string>
+			<string>&#x647;&#x651;</string>
+			<string>&#x62E;]</string>
+			<string>&#x6AF;&#x61B;</string>
+		</array>
+		<array>
+			<string>&#x638;&#x643;</string>
+			<string>&#x637;&#x637;</string>
+			<string>&#x632;&#x698;</string>
+			<string>&#x631;&#x670;</string>
+			<string>&#x630;&#x200C;</string>
+			<string>&#x646;&#xBB;</string>
+			<string>&#x67E;&#x621;</string>
+			<string>&#x648;&gt;</string>
+			<string>.&lt;</string>
+			<string>/&#x61F;</string>
+		</array>
+	</array>
+</dict>
+</plist>

@@ -81,6 +81,21 @@
     HRTestResult *best = [store personalBestForSettingsKey:[c settingsKey] error:&e];
     XCTAssertEqualWithAccuracy([best.wpm doubleValue], 70.0, 1e-9);
     XCTAssertNil([store personalBestForSettingsKey:@"words:10:english/words-200" error:&e]);
+
+    /* the same three, as the Statistics window gets them */
+    NSArray *samples = [store statSamples];
+    XCTAssertEqual([samples count], (NSUInteger)3);
+    HRStatSample *sample = samples[0];
+    XCTAssertEqualObjects(sample.mode, [c modeName]);
+    XCTAssertEqualWithAccuracy(sample.duration, 30.0, 1e-9);
+    XCTAssertEqual([sample kind], HRStatKindTests);
+    NSDictionary *all = [store keyCountsForKind:HRStatKindAll since:nil];
+    NSDictionary *a3 = @{@"hits": @30, @"misses": @3};
+    XCTAssertEqualObjects(all[@"a"], a3);
+    NSDictionary *late = [store keyCountsForKind:HRStatKindTests since:[NSDate dateWithTimeIntervalSince1970:2500]];
+    NSDictionary *b1 = @{@"hits": @4, @"misses": @0};
+    XCTAssertEqualObjects(late[@"b"], b1);
+    XCTAssertEqual([[store keyCountsForKind:HRStatKindCode since:nil] count], (NSUInteger)0);
 }
 
 - (void)testResultsSurviveReopeningTheSQLiteStore

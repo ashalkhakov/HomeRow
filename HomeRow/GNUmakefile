@@ -24,8 +24,13 @@ HomeRow_APPLICATION_ICON = HomeRow.png
 #
 HomeRow_RESOURCE_FILES = \
     Resources/MainMenu.xib \
+    Resources/CourseWindow.xib \
+    Resources/CodeWindow.xib \
+    Resources/StatsWindow.xib \
+    Resources/Code \
     Resources/HomeRow.png \
     Resources/Languages \
+    Resources/Layouts \
     Resources/Lessons \
     Resources/Themes
 
@@ -43,6 +48,12 @@ HomeRow_OBJC_FILES = \
     $(wildcard Engine/*.m) \
     HRAppDelegate.m \
     HRChartView.m \
+    HRCourseWindowController.m \
+    HRCodeWindowController.m \
+    HRPlotView.m \
+    HRStatTilesView.m \
+    HRStatsWindowController.m \
+    HRKeyboardView.m \
     HRManagedObjects.m \
     HRResultStore.m \
     HRResultsView.m \
@@ -50,9 +61,31 @@ HomeRow_OBJC_FILES = \
     HRTheme.m \
     main.m
 
+# Oniguruma: exactly these -- the other .c files in that folder are
+# #included by unicode.c.  See ThirdParty/oniguruma/README.HomeRow.
+HomeRow_C_FILES = \
+    ThirdParty/oniguruma/src/regerror.c \
+    ThirdParty/oniguruma/src/regparse.c \
+    ThirdParty/oniguruma/src/regext.c \
+    ThirdParty/oniguruma/src/regcomp.c \
+    ThirdParty/oniguruma/src/regexec.c \
+    ThirdParty/oniguruma/src/regenc.c \
+    ThirdParty/oniguruma/src/regsyntax.c \
+    ThirdParty/oniguruma/src/regtrav.c \
+    ThirdParty/oniguruma/src/regversion.c \
+    ThirdParty/oniguruma/src/st.c \
+    ThirdParty/oniguruma/src/unicode.c \
+    ThirdParty/oniguruma/src/ascii.c \
+    ThirdParty/oniguruma/src/utf8.c \
+    ThirdParty/oniguruma/src/utf16_le.c \
+    ThirdParty/oniguruma/src/unicode_unfold_key.c \
+    ThirdParty/oniguruma/src/unicode_fold1_key.c \
+    ThirdParty/oniguruma/src/unicode_fold2_key.c \
+    ThirdParty/oniguruma/src/unicode_fold3_key.c
+
 HomeRow_HEADER_FILES = $(wildcard Engine/*.h) $(wildcard *.h)
 
-HomeRow_INCLUDE_DIRS = -IEngine
+HomeRow_INCLUDE_DIRS = -IEngine -IThirdParty/oniguruma/src
 HomeRow_GUI_LIBS += -lCoreData
 
 -include GNUmakefile.preamble

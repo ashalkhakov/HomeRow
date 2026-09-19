@@ -1,3 +1,7 @@
 # HomeRow is ARC throughout.  HRGNUstepCompat.h is force-included so that
 # sources written against current AppKit names compile unchanged.
 ADDITIONAL_OBJCFLAGS += -fobjc-arc -Wall -include HRGNUstepCompat.h
+
+# Oniguruma is C, and not ours: no ARC flags reach it (OBJCFLAGS only), and
+# its warnings are its own business.
+ADDITIONAL_CFLAGS += -w -DHAVE_CONFIG_H

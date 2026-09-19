@@ -5,7 +5,7 @@
 	<key>alphabet</key>
 	<string>ABCDEFGHIJKLMNOPQRSTUVWYZabcdefghijklmnopqrstuvwxyz</string>
 	<key>defaultLayout</key>
-	<string>qwerty-us</string>
+	<string>qwerty</string>
 	<key>direction</key>
 	<string>ltr</string>
 	<key>displayName</key>

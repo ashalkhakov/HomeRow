@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>prog dvorak prime</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>prog_dvorak_prime</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>$~</string>
+			<string>+1</string>
+			<string>[2</string>
+			<string>{3</string>
+			<string>(4</string>
+			<string>&amp;5</string>
+			<string>=6</string>
+			<string>)7</string>
+			<string>}8</string>
+			<string>]9</string>
+			<string>*0</string>
+			<string>!%</string>
+			<string>|`</string>
+		</array>
+		<array>
+			<string>;:</string>
+			<string>,&lt;</string>
+			<string>.&gt;</string>
+			<string>pP</string>
+			<string>yY</string>
+			<string>fF</string>
+			<string>gG</string>
+			<string>cC</string>
+			<string>rR</string>
+			<string>lL</string>
+			<string>/?</string>
+			<string>@^</string>
+			<string>\#</string>
+		</array>
+		<array>
+			<string>aA</string>
+			<string>oO</string>
+			<string>eE</string>
+			<string>uU</string>
+			<string>iI</string>
+			<string>dD</string>
+			<string>hH</string>
+			<string>tT</string>
+			<string>nN</string>
+			<string>sS</string>
+			<string>-_</string>
+		</array>
+		<array>
+			<string>'"</string>
+			<string>qQ</string>
+			<string>jJ</string>
+			<string>kK</string>
+			<string>xX</string>
+			<string>bB</string>
+			<string>mM</string>
+			<string>wW</string>
+			<string>vV</string>
+			<string>zZ</string>
+		</array>
+	</array>
+</dict>
+</plist>

@@ -21,8 +21,60 @@ HomeRow/Resources/Languages/*/words-*.txt
     source files and the commit.  The exception is english/words-200.txt,
     which was compiled by hand for HomeRow.
 
+HomeRow/Resources/Layouts/*.plist
+    Keyboard layouts from MonkeyType (same project, licence and commit),
+    converted by Scripts/import-monkeytype-layouts.py; see Layouts/LICENSE.
+
+HomeRow/Resources/Code/Files/<language>/*
+    Source files for code mode, copied unmodified from the projects below
+    by Scripts/import-code.py.  Each keeps its own copyright notice; the
+    licence texts are in HomeRow/Resources/Code/LICENSES, and index.plist
+    records repository, path, commit and licence per file.  All of these
+    licences are compatible with GPL-3.0-or-later.
+
+    valkey-io/valkey             BSD-3-Clause
+    lua/lua                      MIT
+    AFNetworking/AFNetworking    MIT
+    Mantle/Mantle                MIT
+    SDWebImage/SDWebImage        MIT
+    dotnet/runtime               MIT
+    JamesNK/Newtonsoft.Json      MIT
+    python/cpython               PSF-2.0
+    psf/requests                 Apache-2.0
+    expressjs/express            MIT
+    jashkenas/underscore         MIT
+    microsoft/vscode-textmate    MIT
+    golang/go                    BSD-3-Clause
+    spf13/cobra                  Apache-2.0
+    rust-lang/rust               MIT OR Apache-2.0
+    BurntSushi/ripgrep           MIT OR Unlicense
+    jOOQ/sakila                  BSD-2-Clause
+    rbenv/rbenv                  MIT
+    ohmyzsh/ohmyzsh              MIT
+    nvm-sh/nvm                   MIT
+
+HomeRow/Resources/Code/Grammars/*.tmLanguage.json
+    TextMate grammars, unmodified, from the extensions bundled with
+    Visual Studio Code (https://github.com/microsoft/vscode, MIT), which
+    takes each from an upstream project of its own; all MIT.  Grammars/NOTICE
+    names every upstream and commit.
+
     Not used: MonkeyType's quotes, which are excerpts from third-party
     works, and Typing.io's content, which is proprietary.
+
+Compiled in
+-----------
+
+HomeRow/ThirdParty/oniguruma
+    Oniguruma, https://github.com/kkos/oniguruma, the regular expression
+    library TextMate grammars are written for.  Copyright (c) 2002-2021
+    K.Kosako; BSD 2-clause, see COPYING in that folder.  Unmodified apart
+    from a hand-written config.h; README.HomeRow there names the commit.
+
+HomeRowTests/Fixtures/textmate (tests only, not shipped in the app)
+    The tokenizer test cases of vscode-textmate,
+    https://github.com/microsoft/vscode-textmate, Copyright (c) Microsoft
+    Corporation; MIT.  They in turn come from Atom's first-mate (MIT).
 
 Linked at run time
 ------------------

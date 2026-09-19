@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>italian qwerty</string>
+	<key>geometry</key>
+	<string>iso</string>
+	<key>identifier</key>
+	<string>italian_qwerty</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>\|</string>
+			<string>1!</string>
+			<string>2"</string>
+			<string>3&#xA3;</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6&amp;</string>
+			<string>7/</string>
+			<string>8(</string>
+			<string>9)</string>
+			<string>0=</string>
+			<string>&#x2018;?</string>
+			<string>&#xEC;^</string>
+		</array>
+		<array>
+			<string>qQ</string>
+			<string>wW</string>
+			<string>eE</string>
+			<string>rR</string>
+			<string>tT</string>
+			<string>yY</string>
+			<string>uU</string>
+			<string>iI</string>
+			<string>oO</string>
+			<string>pP</string>
+			<string>&#xE8;&#xE9;</string>
+			<string>+*</string>
+		</array>
+		<array>
+			<string>aA</string>
+			<string>sS</string>
+			<string>dD</string>
+			<string>fF</string>
+			<string>gG</string>
+			<string>hH</string>
+			<string>jJ</string>
+			<string>kK</string>
+			<string>lL</string>
+			<string>&#xF2;&#xE7;</string>
+			<string>&#xE0;&#xB0;</string>
+			<string>&#xF9;&#xA7;</string>
+		</array>
+		<array>
+			<string>&lt;&gt;</string>
+			<string>zZ</string>
+			<string>xX</string>
+			<string>cC</string>
+			<string>vV</string>
+			<string>bB</string>
+			<string>nN</string>
+			<string>mM</string>
+			<string>,;</string>
+			<string>.:</string>
+			<string>-_</string>
+		</array>
+	</array>
+</dict>
+</plist>

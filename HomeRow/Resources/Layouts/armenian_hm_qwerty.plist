@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>armenian hm qwerty</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>armenian_hm_qwerty</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>`~`~</string>
+			<string>1!&#x55C;&#x2605;</string>
+			<string>2@&#x2122;&#x20AC;</string>
+			<string>3#&#xA3;&#x2116;</string>
+			<string>4$&#xA2;</string>
+			<string>5%&#x2605;</string>
+			<string>6^&#xA7;</string>
+			<string>7&amp;&#xB6;</string>
+			<string>8*&#x2022;&#xB0;</string>
+			<string>9(&#xAB;&#x2039;</string>
+			<string>0)&#xBB;&#x203A;</string>
+			<string>-_&#x2013;&#x2014;</string>
+			<string>=+&#x2260;&#xB1;</string>
+		</array>
+		<array>
+			<string>&#x573;&#x543;&#x579;&#x549;</string>
+			<string>&#x582;&#x552;</string>
+			<string>&#x565;&#x535;&#x567;&#x537;</string>
+			<string>&#x580;&#x550;&#x57C;&#x54C;</string>
+			<string>&#x57F;&#x54F;&#x569;&#x539;</string>
+			<string>&#x575;&#x545;&#x2020;&#xA5;</string>
+			<string>&#x582;&#x552;&#xF7;&#x55A;</string>
+			<string>&#x56B;&#x53B;&#x201E;&#x201E;</string>
+			<string>&#x578;&#x548;&#x585;&#x555;</string>
+			<string>&#x57A;&#x54A;&#x583;&#x553;</string>
+			<string>[{&#x201C;&#x201D;</string>
+			<string>]}&#x2018;&#x2019;</string>
+			<string>\|&#xAB;&#xBB;</string>
+		</array>
+		<array>
+			<string>&#x561;&#x531;&#x568;&#x538;</string>
+			<string>&#x57D;&#x54D;&#x577;&#x547;</string>
+			<string>&#x564;&#x534;</string>
+			<string>&#x586;&#x556;&#x192;</string>
+			<string>&#x563;&#x533;&#xA9;&#xAE;</string>
+			<string>&#x570;&#x540;</string>
+			<string>&#x571;&#x541;&#x57B;&#x54B;</string>
+			<string>&#x56F;&#x53F;&#x584;&#x554;</string>
+			<string>&#x56C;&#x53C;&#x572;&#x542;</string>
+			<string>;:&#x2026;&#x55F;</string>
+			<string>'"&#x55B;&#x58A;</string>
+		</array>
+		<array>
+			<string>&#x566;&#x536;&#x56A;&#x53A;</string>
+			<string>&#x56D;&#x53D;</string>
+			<string>&#x56E;&#x53E;&#x581;&#x551;</string>
+			<string>&#x57E;&#x54E;&#x587;</string>
+			<string>&#x562;&#x532;</string>
+			<string>&#x576;&#x546;</string>
+			<string>&#x574;&#x544;</string>
+			<string>,&lt;&#x55D;&#x2264;</string>
+			<string>.&gt;&#x589;&#x2265;</string>
+			<string>/?&#x55E;&#x55E;</string>
+		</array>
+	</array>
+</dict>
+</plist>

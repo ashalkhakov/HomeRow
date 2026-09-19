@@ -16,5 +16,17 @@
 	<string>#2F6FDE</string>
 	<key>accent</key>
 	<string>#2F6FDE</string>
+	<key>codeComment</key>
+	<string>#A9A59B</string>
+	<key>codeString</key>
+	<string>#7D9A6B</string>
+	<key>codeKeyword</key>
+	<string>#9B7FB8</string>
+	<key>codeNumber</key>
+	<string>#C0905A</string>
+	<key>codeType</key>
+	<string>#6F9AB8</string>
+	<key>codeFunction</key>
+	<string>#6E8FC9</string>
 </dict>
 </plist>

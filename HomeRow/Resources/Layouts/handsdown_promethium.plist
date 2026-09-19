@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>handsdown promethium</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>handsdown_promethium</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>`~</string>
+			<string>1!</string>
+			<string>2@</string>
+			<string>3#</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6^</string>
+			<string>7&amp;</string>
+			<string>8*</string>
+			<string>9(</string>
+			<string>0)</string>
+			<string>-_</string>
+			<string>=+</string>
+		</array>
+		<array>
+			<string>fF</string>
+			<string>pP</string>
+			<string>dD</string>
+			<string>lL</string>
+			<string>xX</string>
+			<string>;:</string>
+			<string>uU</string>
+			<string>oO</string>
+			<string>yY</string>
+			<string>bB</string>
+			<string>zZ</string>
+			<string>]}</string>
+			<string>\|</string>
+		</array>
+		<array>
+			<string>sS</string>
+			<string>nN</string>
+			<string>tT</string>
+			<string>hH</string>
+			<string>kK</string>
+			<string>,&lt;</string>
+			<string>aA</string>
+			<string>eE</string>
+			<string>iI</string>
+			<string>cC</string>
+			<string>qQ</string>
+		</array>
+		<array>
+			<string>vV</string>
+			<string>wW</string>
+			<string>gG</string>
+			<string>mM</string>
+			<string>jJ</string>
+			<string>-_</string>
+			<string>.&gt;</string>
+			<string>'"</string>
+			<string>=+</string>
+			<string>/?</string>
+		</array>
+	</array>
+</dict>
+</plist>

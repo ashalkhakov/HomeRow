@@ -10,9 +10,11 @@
 #import <Foundation/Foundation.h>
 #import <CoreData/CoreData.h>
 #import "HRManagedObjects.h"
+#import "HRStatistics.h"
 
 @class HRTestSummary;
 @class HRTestConfiguration;
+@class HRLessonSummary;
 
 /* The Core Data stack and the few operations the app needs from it.
  * Apple's CoreData on macOS, FreeCoreData on GNUstep; nothing outside this
@@ -34,6 +36,55 @@
                   configuration:(HRTestConfiguration *)configuration
                            date:(NSDate *)date
                           error:(NSError **)error;
+
+/* The same, for an exercise of a course. */
+- (HRTestResult *)recordSummary:(HRTestSummary *)summary
+                  configuration:(HRTestConfiguration *)configuration
+                     courseFile:(NSString *)courseFile
+                    lessonIndex:(NSUInteger)lessonIndex
+                      stepIndex:(NSUInteger)stepIndex
+                           date:(NSDate *)date
+                          error:(NSError **)error;
+
+/* YES when the store on disk could not be opened or migrated and was set
+ * aside (as HomeRow.sqlite.unreadable-<timestamp>) in favour of a new one. */
+@property (nonatomic, readonly) BOOL didSetAsideUnreadableStore;
+
+/* --- courses ---------------------------------------------------------- */
+
+/* Every course ever started (HRCourseProgress), most recently used first. */
+- (NSArray *)startedCourses;
+/* nil when the course was never started. */
+- (HRCourseProgress *)progressForCourse:(NSString *)courseFile;
+/* Remembers where the learner is; creates the row on first use. */
+- (BOOL)setLessonIndex:(NSUInteger)lessonIndex
+             stepIndex:(NSUInteger)stepIndex
+             forCourse:(NSString *)courseFile
+                 error:(NSError **)error;
+/* All lesson records of a course, keyed by lesson index (NSNumber). */
+- (NSDictionary *)lessonRecordsForCourse:(NSString *)courseFile;
+- (BOOL)noteLessonStarted:(NSUInteger)lessonIndex
+                    title:(NSString *)title
+                 inCourse:(NSString *)courseFile
+                    error:(NSError **)error;
+/* `countsForBest` NO: the summary covers only part of the lesson. */
+- (BOOL)noteLessonCompleted:(NSUInteger)lessonIndex
+                    summary:(HRLessonSummary *)summary
+              countsForBest:(BOOL)countsForBest
+                   inCourse:(NSString *)courseFile
+                      error:(NSError **)error;
+/* Forgets position and lesson records of a course; exercise results stay
+ * in the history. */
+- (BOOL)resetCourse:(NSString *)courseFile error:(NSError **)error;
+
+/* --- statistics ------------------------------------------------------- */
+
+/* Every saved result as a plain value for HRStatistics. */
+- (NSArray *)statSamples;
+/* character -> @{@"hits", @"misses"}, summed over the results of `kind`
+ * (HRStatKindAll: every one) not older than `since` (nil: ever).  The
+ * character is the one that was WANTED when the key was pressed. */
+- (NSDictionary *)keyCountsForKind:(HRStatKind)kind since:(NSDate *)since;
 
 /* Newest first; limit 0 = all. */
 - (NSArray *)recentResultsWithLimit:(NSUInteger)limit error:(NSError **)error;

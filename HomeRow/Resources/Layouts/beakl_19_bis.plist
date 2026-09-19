@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>beakl 19 bis</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>beakl_19_bis</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>`~</string>
+			<string>1!</string>
+			<string>2@</string>
+			<string>3#</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6^</string>
+			<string>7&amp;</string>
+			<string>8*</string>
+			<string>9(</string>
+			<string>0)</string>
+			<string>-_</string>
+			<string>=+</string>
+		</array>
+		<array>
+			<string>qQ</string>
+			<string>yY</string>
+			<string>oO</string>
+			<string>uU</string>
+			<string>zZ</string>
+			<string>wW</string>
+			<string>dD</string>
+			<string>nN</string>
+			<string>cC</string>
+			<string>kK</string>
+			<string>[{</string>
+			<string>]}</string>
+			<string>\|</string>
+		</array>
+		<array>
+			<string>hH</string>
+			<string>iI</string>
+			<string>eE</string>
+			<string>aA</string>
+			<string>,&lt;</string>
+			<string>gG</string>
+			<string>tT</string>
+			<string>rR</string>
+			<string>sS</string>
+			<string>pP</string>
+			<string>;:</string>
+		</array>
+		<array>
+			<string>jJ</string>
+			<string>'"</string>
+			<string>/?</string>
+			<string>.&gt;</string>
+			<string>xX</string>
+			<string>vV</string>
+			<string>mM</string>
+			<string>lL</string>
+			<string>fF</string>
+			<string>bB</string>
+		</array>
+	</array>
+</dict>
+</plist>

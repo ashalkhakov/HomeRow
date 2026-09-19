@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>azerty AFNOR</string>
+	<key>geometry</key>
+	<string>iso</string>
+	<key>identifier</key>
+	<string>azerty_AFNOR</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>@#&#x2D8;</string>
+			<string>&#xE0;1&#xA7;&#xC0;</string>
+			<string>&#xE9;2&#xB4;&#xC9;</string>
+			<string>&#xE9;3`&#xC8;</string>
+			<string>&#xEA;4&amp;&#xCA;</string>
+			<string>(5[&#x2DD;</string>
+			<string>)6]</string>
+			<string>&#x2018;7&#xAF;</string>
+			<string>&#x2019;8_&#x2014;</string>
+			<string>&#xAB;9&#x201C;&#x2039;</string>
+			<string>&#xBB;0&#x201D;&#x203A;</string>
+			<string>'"&#xB0;&#x2DA;</string>
+			<string>^&#xA8;&#x2C7;</string>
+		</array>
+		<array>
+			<string>aA&#xE6;&#xC6;</string>
+			<string>zZ&#xA3;</string>
+			<string>eE&#x20AC;</string>
+			<string>rR&#xAE;</string>
+			<string>tT{&#x2122;</string>
+			<string>yY}</string>
+			<string>uU&#xF9;&#xD9;</string>
+			<string>iI&#x2D9;</string>
+			<string>oO&#x153;&#x152;</string>
+			<string>pP%&#x2030;</string>
+			<string>-&#x2013;&#x2212;&#x2011;</string>
+			<string>+&#xB1;&#x2020;&#x2021;</string>
+		</array>
+		<array>
+			<string>qQ&#x3B8;</string>
+			<string>sS&#xDF;&#x1E9E;</string>
+			<string>dD$</string>
+			<string>fF&#xA4;</string>
+			<string>gG&#xB5;</string>
+			<string>hH</string>
+			<string>jJ</string>
+			<string>kK&#x2044;</string>
+			<string>lL|</string>
+			<string>mM&#x221E;</string>
+			<string>/\&#xF7;&#x221A;</string>
+			<string>*&#xBD;&#xD7;&#xBC;</string>
+		</array>
+		<array>
+			<string>&lt;&gt;&#x2264;&#x2265;</string>
+			<string>wW&#x292;&#x1B7;</string>
+			<string>xX&#xA9;</string>
+			<string>cC&#xE7;&#xC7;</string>
+			<string>vV&#xB8;&#x2DB;</string>
+			<string>bB</string>
+			<string>nN~</string>
+			<string>.?&#xBF;</string>
+			<string>,!&#xA1;</string>
+			<string>:&#x2026;&#xB7;</string>
+			<string>;=&#x2243;&#x2260;</string>
+		</array>
+	</array>
+</dict>
+</plist>

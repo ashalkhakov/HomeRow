@@ -19,6 +19,7 @@
                 <outlet property="testView" destination="YKJ-1U-XXF" id="AuL-5b-I9v"/>
                 <outlet property="resultsView" destination="WXL-Cp-aNf" id="mJd-Uh-kNh"/>
                 <outlet property="chartView" destination="hs0-gC-a05" id="hci-Hw-MPP"/>
+                <outlet property="keyboardView" destination="HRk-bd-Vw1" id="HRk-bd-Ol1"/>
                 <outlet property="modePopUp" destination="RFR-un-zqw" id="tbB-Li-wAy"/>
                 <outlet property="amountPopUp" destination="7wZ-yV-GOe" id="ypX-AQ-oXi"/>
                 <outlet property="punctuationCheck" destination="Uvf-JI-ssD" id="lIb-QT-7IR"/>
@@ -141,6 +142,10 @@
                 <rect key="frame" x="0.0" y="0.0" width="900" height="420"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
+                    <customView hidden="YES" id="HRk-bd-Vw1" customClass="HRKeyboardView">
+                        <rect key="frame" x="0" y="0" width="900" height="200"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" flexibleMaxY="YES"/>
+                    </customView>
                     <customView id="YKJ-1U-XXF" customClass="HRTestView">
                         <rect key="frame" x="0" y="0" width="900" height="372"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

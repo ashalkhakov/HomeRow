@@ -16,7 +16,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -28,7 +28,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -40,7 +40,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -52,7 +52,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -64,7 +64,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>review</string>
 		</dict>
@@ -76,7 +76,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>drills</string>
 		</dict>
@@ -88,7 +88,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>drills</string>
 		</dict>
@@ -100,7 +100,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>numpad</string>
+			<string>none</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -112,7 +112,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -148,7 +148,7 @@
 			<key>language</key>
 			<string>english</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -184,7 +184,7 @@
 			<key>language</key>
 			<string>czech</string>
 			<key>layout</key>
-			<string>qwertz-cz</string>
+			<string>none</string>
 			<key>kind</key>
 			<string>course</string>
 			<key>upstreamWarnings</key>
@@ -198,7 +198,7 @@
 			<key>language</key>
 			<string>spanish</string>
 			<key>layout</key>
-			<string>qwerty-es</string>
+			<string>spanish_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -210,7 +210,7 @@
 			<key>language</key>
 			<string>spanish</string>
 			<key>layout</key>
-			<string>qwerty-es</string>
+			<string>spanish_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -222,7 +222,7 @@
 			<key>language</key>
 			<string>spanish</string>
 			<key>layout</key>
-			<string>dvorak-es</string>
+			<string>spanish_dvorak</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -234,7 +234,7 @@
 			<key>language</key>
 			<string>catalan</string>
 			<key>layout</key>
-			<string>qwerty-es</string>
+			<string>spanish_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -246,7 +246,7 @@
 			<key>language</key>
 			<string>russian</string>
 			<key>layout</key>
-			<string>jcuken-ru</string>
+			<string>russian</string>
 			<key>kind</key>
 			<string>course</string>
 			<key>upstreamWarnings</key>
@@ -260,7 +260,7 @@
 			<key>language</key>
 			<string>russian</string>
 			<key>layout</key>
-			<string>jcuken-ru</string>
+			<string>russian</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -272,7 +272,7 @@
 			<key>language</key>
 			<string>russian</string>
 			<key>layout</key>
-			<string>jcuken-ru</string>
+			<string>russian</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -284,7 +284,7 @@
 			<key>language</key>
 			<string>russian</string>
 			<key>layout</key>
-			<string>jcuken-ru</string>
+			<string>russian</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -296,7 +296,7 @@
 			<key>language</key>
 			<string>bulgarian</string>
 			<key>layout</key>
-			<string>bds-bg</string>
+			<string>bulgarian</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -308,7 +308,7 @@
 			<key>language</key>
 			<string>bulgarian</string>
 			<key>layout</key>
-			<string>bds-bg</string>
+			<string>bulgarian</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -320,7 +320,7 @@
 			<key>language</key>
 			<string>german</string>
 			<key>layout</key>
-			<string>qwertz-de</string>
+			<string>qwertz</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -332,7 +332,7 @@
 			<key>language</key>
 			<string>german</string>
 			<key>layout</key>
-			<string>qwertz-de</string>
+			<string>qwertz</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -344,7 +344,7 @@
 			<key>language</key>
 			<string>german</string>
 			<key>layout</key>
-			<string>neo-de</string>
+			<string>neo</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -356,7 +356,7 @@
 			<key>language</key>
 			<string>german</string>
 			<key>layout</key>
-			<string>numpad</string>
+			<string>none</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -368,7 +368,7 @@
 			<key>language</key>
 			<string>german</string>
 			<key>layout</key>
-			<string>qwertz-de</string>
+			<string>qwertz</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -380,7 +380,7 @@
 			<key>language</key>
 			<string>danish</string>
 			<key>layout</key>
-			<string>qwerty-dk</string>
+			<string>danish_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -392,7 +392,7 @@
 			<key>language</key>
 			<string>danish</string>
 			<key>layout</key>
-			<string>qwerty-dk</string>
+			<string>danish_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -404,7 +404,7 @@
 			<key>language</key>
 			<string>finnish</string>
 			<key>layout</key>
-			<string>qwerty-fi</string>
+			<string>swedish_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -416,7 +416,7 @@
 			<key>language</key>
 			<string>finnish</string>
 			<key>layout</key>
-			<string>qwerty-fi</string>
+			<string>swedish_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -428,7 +428,7 @@
 			<key>language</key>
 			<string>french</string>
 			<key>layout</key>
-			<string>azerty-fr</string>
+			<string>azerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -440,7 +440,7 @@
 			<key>language</key>
 			<string>french</string>
 			<key>layout</key>
-			<string>azerty-fr</string>
+			<string>azerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -452,7 +452,7 @@
 			<key>language</key>
 			<string>hungarian</string>
 			<key>layout</key>
-			<string>qwertz-hu</string>
+			<string>hungarian</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -464,7 +464,7 @@
 			<key>language</key>
 			<string>hungarian</string>
 			<key>layout</key>
-			<string>qwertz-hu</string>
+			<string>hungarian</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -476,7 +476,7 @@
 			<key>language</key>
 			<string>italian</string>
 			<key>layout</key>
-			<string>qwerty-it</string>
+			<string>italian_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -488,7 +488,7 @@
 			<key>language</key>
 			<string>dutch</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -500,7 +500,7 @@
 			<key>language</key>
 			<string>dutch</string>
 			<key>layout</key>
-			<string>qwerty-us</string>
+			<string>qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -512,7 +512,7 @@
 			<key>language</key>
 			<string>norwegian_bokmal</string>
 			<key>layout</key>
-			<string>qwerty-no</string>
+			<string>norwegian_qwerty</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -524,7 +524,7 @@
 			<key>language</key>
 			<string>polish</string>
 			<key>layout</key>
-			<string>qwerty-pl</string>
+			<string>polish_programmers</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -536,7 +536,7 @@
 			<key>language</key>
 			<string>slovenian</string>
 			<key>layout</key>
-			<string>qwertz-si</string>
+			<string>none</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -548,7 +548,7 @@
 			<key>language</key>
 			<string>turkish</string>
 			<key>layout</key>
-			<string>qwerty-tr</string>
+			<string>turkish_q</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>
@@ -560,7 +560,7 @@
 			<key>language</key>
 			<string>romanian</string>
 			<key>layout</key>
-			<string>qwerty-ro</string>
+			<string>none</string>
 			<key>kind</key>
 			<string>course</string>
 		</dict>

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>bulgarian phonetic traditional</string>
+	<key>geometry</key>
+	<string>iso</string>
+	<key>identifier</key>
+	<string>bulgarian_phonetic_traditional</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>&#x447;&#x427;</string>
+			<string>1!</string>
+			<string>2@</string>
+			<string>3&#x2116;</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6&#x20AC;</string>
+			<string>7&#xA7;</string>
+			<string>8*</string>
+			<string>9(</string>
+			<string>0)</string>
+			<string>-_</string>
+			<string>=+</string>
+		</array>
+		<array>
+			<string>&#x44F;&#x42F;</string>
+			<string>&#x432;&#x412;</string>
+			<string>&#x435;&#x415;</string>
+			<string>&#x440;&#x420;</string>
+			<string>&#x442;&#x422;</string>
+			<string>&#x44A;&#x42A;</string>
+			<string>&#x443;&#x423;</string>
+			<string>&#x438;&#x418;</string>
+			<string>&#x43E;&#x41E;</string>
+			<string>&#x43F;&#x41F;</string>
+			<string>&#x448;&#x428;</string>
+			<string>&#x449;&#x429;</string>
+		</array>
+		<array>
+			<string>&#x430;&#x410;</string>
+			<string>&#x441;&#x421;</string>
+			<string>&#x434;&#x414;</string>
+			<string>&#x444;&#x424;</string>
+			<string>&#x433;&#x413;</string>
+			<string>&#x445;&#x425;</string>
+			<string>&#x439;&#x419;</string>
+			<string>&#x43A;&#x41A;</string>
+			<string>&#x43B;&#x41B;</string>
+			<string>;:</string>
+			<string>'"</string>
+			<string>&#x44E;&#x42E;</string>
+		</array>
+		<array>
+			<string>&#x44E;&#x42E;</string>
+			<string>&#x437;&#x417;</string>
+			<string>&#x44C;&#x42C;</string>
+			<string>&#x446;&#x426;</string>
+			<string>&#x436;&#x416;</string>
+			<string>&#x431;&#x411;</string>
+			<string>&#x43D;&#x41D;</string>
+			<string>&#x43C;&#x41C;</string>
+			<string>,&lt;</string>
+			<string>.&gt;</string>
+			<string>/?</string>
+		</array>
+	</array>
+</dict>
+</plist>

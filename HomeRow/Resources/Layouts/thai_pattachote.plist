@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>thai pattachote</string>
+	<key>geometry</key>
+	<string>ansi</string>
+	<key>identifier</key>
+	<string>thai_pattachote</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>&#xE3F;~</string>
+			<string>&#xE45;+</string>
+			<string>&#xE52;"</string>
+			<string>&#xE53;/</string>
+			<string>&#xE54;,</string>
+			<string>&#xE55;?</string>
+			<string>&#xE39;&#xE38;</string>
+			<string>&#xE57;_</string>
+			<string>&#xE58;.</string>
+			<string>&#xE59;(</string>
+			<string>&#xE50;)</string>
+			<string>&#xE51;-</string>
+			<string>&#xE56;%</string>
+		</array>
+		<array>
+			<string>&#xE47;&#xE4A;</string>
+			<string>&#xE15;&#xE24;</string>
+			<string>&#xE22;&#xE46;</string>
+			<string>&#xE2D;&#xE0D;</string>
+			<string>&#xE23;&#xE29;</string>
+			<string>&#xE48;&#xE36;</string>
+			<string>&#xE14;&#xE1D;</string>
+			<string>&#xE21;&#xE0B;</string>
+			<string>&#xE27;&#xE16;</string>
+			<string>&#xE41;&#xE12;</string>
+			<string>&#xE43;&#xE2F;</string>
+			<string>&#xE0C;&#xE26;</string>
+			<string>&#xE03;&#xE05;</string>
+		</array>
+		<array>
+			<string>&#xE49;&#xE4B;</string>
+			<string>&#xE17;&#xE18;</string>
+			<string>&#xE07;&#xE33;</string>
+			<string>&#xE01;&#xE13;</string>
+			<string>&#xE31;&#xE4C;</string>
+			<string>&#xE35;&#xE37;</string>
+			<string>&#xE32;&#xE1C;</string>
+			<string>&#xE19;&#xE0A;</string>
+			<string>&#xE40;&#xE42;</string>
+			<string>&#xE44;&#xE06;</string>
+			<string>&#xE02;&#xE11;</string>
+		</array>
+		<array>
+			<string>&#xE03;&#xE05;</string>
+			<string>&#xE1A;&#xE0E;</string>
+			<string>&#xE1B;&#xE0F;</string>
+			<string>&#xE25;&#xE10;</string>
+			<string>&#xE2B;&#xE20;</string>
+			<string>&#xE34;&#xE31;</string>
+			<string>&#xE04;&#xE28;</string>
+			<string>&#xE2A;&#xE2E;</string>
+			<string>&#xE30;&#xE1F;</string>
+			<string>&#xE08;&#xE09;</string>
+		</array>
+	</array>
+</dict>
+</plist>

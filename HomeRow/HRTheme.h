@@ -23,6 +23,23 @@
 @property (nonatomic, readonly) NSColor *caret;
 @property (nonatomic, readonly) NSColor *accent;
 
+/* Syntax colours for code that is not typed yet, by HRTextStyle (HRWord.h).
+ * Muted on purpose: once typed, text takes the correct/incorrect colours,
+ * and those have to stay the loudest thing on the surface. */
+- (NSColor *)colorForTextStyle:(uint8_t)style;
+
+/* A font whose glyphs really are all one width -- measured, not taken on
+ * trust.  The typing surface puts every character in a cell of its own;
+ * gnustep-gui's -userFixedPitchFontOfSize: asks for "Courier", and where
+ * there is no Courier it quietly answers with the proportional default,
+ * which leaves an "i" adrift in an "m"-wide cell.  So: the user's fixed
+ * font if it is one, else the first monospaced family that is installed
+ * (the AppImage brings DejaVu Sans Mono and Liberation Mono), else any
+ * font with "Mono" in its name that measures up. */
++ (NSFont *)fixedPitchFontOfSize:(CGFloat)size;
+/* For the smoke test: NO when even that search ended on a proportional font. */
++ (BOOL)fontIsFixedPitch:(NSFont *)font;
+
 + (instancetype)themeNamed:(NSString *)name;
 /* The "HRTheme" default; "auto" (the default) follows the system's
  * light/dark setting where there is one. */

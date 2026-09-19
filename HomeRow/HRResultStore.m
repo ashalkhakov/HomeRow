@@ -10,6 +10,7 @@
 #import "HRResultStore.h"
 #import "HRTestSummary.h"
 #import "HRTestConfiguration.h"
+#import "HRCourseRun.h"
 
 @implementation HRResultStore
 
@@ -42,11 +43,45 @@
 
     NSPersistentStoreCoordinator *psc = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
     NSString *type = storeURL ? NSSQLiteStoreType : NSInMemoryStoreType;
-    /* so that adding an attribute later does not orphan everyone's history */
+    /* so that a new model version does not orphan everyone's history */
     NSDictionary *options = @{NSMigratePersistentStoresAutomaticallyOption: @YES,
                               NSInferMappingModelAutomaticallyOption: @YES};
-    if (![psc addPersistentStoreWithType:type configuration:nil URL:storeURL options:options error:error]) {
-        return nil;
+    NSError *openError = nil;
+    if (![psc addPersistentStoreWithType:type configuration:nil URL:storeURL options:options error:&openError]) {
+        /* A store that cannot be opened or migrated must not mean an app
+         * that cannot save: set it aside -- never delete it -- and start a
+         * new one.  The file stays beside the new store for whoever wants
+         * to rescue it. */
+        BOOL recovered = NO;
+        /* Automatic migration looks for the old model in the MAIN bundle
+         * only (Apple's Core Data and FreeCoreData alike), which is the
+         * wrong place under a test runner.  Do by hand what it would have
+         * done, with the bundle we were given. */
+        if (storeURL && [self migrateStoreAtURL:storeURL toModel:model modelDirectory:modelURL]) {
+            psc = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
+            recovered = [psc addPersistentStoreWithType:type configuration:nil URL:storeURL
+                                                 options:options error:&openError] != nil;
+        }
+        if (!recovered && storeURL && [[NSFileManager defaultManager] fileExistsAtPath:[storeURL path]]) {
+            NSString *aside = [NSString stringWithFormat:@"%@.unreadable-%ld", [storeURL path],
+                               (long)[[NSDate date] timeIntervalSince1970]];
+            NSLog(@"HomeRow: the store could not be opened (%@); moving it to %@", openError, aside);
+            if ([[NSFileManager defaultManager] moveItemAtPath:[storeURL path] toPath:aside error:NULL]) {
+                for (NSString *suffix in @[@"-wal", @"-shm"]) {
+                    [[NSFileManager defaultManager] moveItemAtPath:[[storeURL path] stringByAppendingString:suffix]
+                                                            toPath:[aside stringByAppendingString:suffix]
+                                                             error:NULL];
+                }
+                psc = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:model];
+                recovered = [psc addPersistentStoreWithType:type configuration:nil URL:storeURL
+                                                     options:options error:&openError] != nil;
+                _didSetAsideUnreadableStore = recovered;
+            }
+        }
+        if (!recovered) {
+            if (error) *error = openError;
+            return nil;
+        }
     }
     /* The app only touches the store from the main thread.  Plain -init
      * (confinement) is what FreeCoreData offers; with Apple's CoreData it is
@@ -61,8 +96,93 @@
     return self;
 }
 
+/* Lightweight migration, spelled out: find the model version the store was
+ * written with among the .mom files of HomeRow.momd, infer the mapping,
+ * migrate into a new file, and swap the files.  The old store is renamed,
+ * not deleted.  NO means "could not", for any reason; the caller has a
+ * fallback. */
+- (BOOL)migrateStoreAtURL:(NSURL *)storeURL toModel:(NSManagedObjectModel *)model modelDirectory:(NSURL *)momd
+{
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSString *path = [storeURL path];
+    if (![fm fileExistsAtPath:path]) return NO;
+    @try {
+#if defined(__APPLE__)
+        NSDictionary *metadata = [NSPersistentStoreCoordinator metadataForPersistentStoreOfType:NSSQLiteStoreType
+                                                                                            URL:storeURL options:nil error:NULL];
+        /* one file, no -wal/-shm beside it: the swap below is then a rename */
+        NSDictionary *destinationOptions = @{NSSQLitePragmasOption: @{@"journal_mode": @"DELETE"}};
+#else
+        NSDictionary *metadata = [NSPersistentStoreCoordinator metadataForPersistentStoreOfType:NSSQLiteStoreType
+                                                                                            URL:storeURL error:NULL];
+        NSDictionary *destinationOptions = nil;
+#endif
+        if (!metadata || [model isConfiguration:nil compatibleWithStoreMetadata:metadata]) return NO;
+
+        NSManagedObjectModel *source = nil;
+        for (NSString *file in [fm contentsOfDirectoryAtPath:[momd path] error:NULL]) {
+            if (![[file pathExtension] isEqualToString:@"mom"]) continue;
+            NSURL *url = [NSURL fileURLWithPath:[[momd path] stringByAppendingPathComponent:file]];
+            NSManagedObjectModel *candidate = [[NSManagedObjectModel alloc] initWithContentsOfURL:url];
+            if (candidate && [candidate isConfiguration:nil compatibleWithStoreMetadata:metadata]) {
+                source = candidate;
+                break;
+            }
+        }
+        if (!source) return NO;
+
+        NSError *error = nil;
+        NSMappingModel *mapping = [NSMappingModel inferredMappingModelForSourceModel:source
+                                                                    destinationModel:model error:&error];
+        if (!mapping) {
+            NSLog(@"HomeRow: no mapping model could be inferred: %@", error);
+            return NO;
+        }
+        NSString *stamp = [NSString stringWithFormat:@"%ld", (long)[[NSDate date] timeIntervalSince1970]];
+        NSString *migrated = [path stringByAppendingFormat:@".migrating-%@", stamp];
+        NSMigrationManager *manager = [[NSMigrationManager alloc] initWithSourceModel:source destinationModel:model];
+        if (![manager migrateStoreFromURL:storeURL type:NSSQLiteStoreType options:nil withMappingModel:mapping
+                         toDestinationURL:[NSURL fileURLWithPath:migrated] destinationType:NSSQLiteStoreType
+                       destinationOptions:destinationOptions error:&error]) {
+            NSLog(@"HomeRow: migrating the store failed: %@", error);
+            for (NSString *suffix in @[@"", @"-wal", @"-shm"]) {
+                [fm removeItemAtPath:[migrated stringByAppendingString:suffix] error:NULL];
+            }
+            return NO;
+        }
+        NSString *backup = [path stringByAppendingFormat:@".before-migration-%@", stamp];
+        if (![fm moveItemAtPath:path toPath:backup error:NULL]) return NO;
+        /* the old store's sidecars go with it; the new store has none */
+        for (NSString *suffix in @[@"-wal", @"-shm"]) {
+            [fm moveItemAtPath:[path stringByAppendingString:suffix] toPath:[backup stringByAppendingString:suffix] error:NULL];
+        }
+        if (![fm moveItemAtPath:migrated toPath:path error:NULL]) {
+            for (NSString *suffix in @[@"", @"-wal", @"-shm"]) {
+                [fm moveItemAtPath:[backup stringByAppendingString:suffix] toPath:[path stringByAppendingString:suffix] error:NULL];
+            }
+            return NO;
+        }
+        NSLog(@"HomeRow: the store was migrated to the current model; the old one is %@", [backup lastPathComponent]);
+        return YES;
+    } @catch (NSException *exception) {
+        NSLog(@"HomeRow: migrating the store raised %@", exception);
+        return NO;
+    }
+}
+
 - (HRTestResult *)recordSummary:(HRTestSummary *)s
                   configuration:(HRTestConfiguration *)c
+                           date:(NSDate *)date
+                          error:(NSError **)error
+{
+    return [self recordSummary:s configuration:c courseFile:nil lessonIndex:0 stepIndex:0 date:date error:error];
+}
+
+- (HRTestResult *)recordSummary:(HRTestSummary *)s
+                  configuration:(HRTestConfiguration *)c
+                     courseFile:(NSString *)courseFile
+                    lessonIndex:(NSUInteger)lessonIndex
+                      stepIndex:(NSUInteger)stepIndex
                            date:(NSDate *)date
                           error:(NSError **)error
 {
@@ -74,6 +194,11 @@
     r.settingsKey = [c settingsKey];
     r.languageID = c.languageID;
     r.layoutID = c.layoutID;
+    if (courseFile) {
+        r.courseFile = courseFile;
+        r.lessonIndex = @(lessonIndex);
+        r.stepIndex = @(stepIndex);
+    }
     r.wpm = @(s.wpm);
     r.rawWpm = @(s.rawWpm);
     r.accuracy = @(s.accuracy);
@@ -107,6 +232,42 @@
     return r;
 }
 
+- (HRStatSample *)sampleForResult:(HRTestResult *)r
+{
+    HRStatSample *s = [[HRStatSample alloc] init];
+    s.date = r.date;
+    s.mode = r.mode;
+    s.wpm = [r.wpm doubleValue];
+    s.rawWpm = [r.rawWpm doubleValue];
+    s.accuracy = [r.accuracy doubleValue];
+    s.duration = [r.duration doubleValue];
+    return s;
+}
+
+- (NSArray *)statSamples
+{
+    NSMutableArray *out = [NSMutableArray array];
+    for (HRTestResult *r in [self recentResultsWithLimit:0 error:NULL]) [out addObject:[self sampleForResult:r]];
+    return out;
+}
+
+- (NSDictionary *)keyCountsForKind:(HRStatKind)kind since:(NSDate *)since
+{
+    NSMutableDictionary *hits = [NSMutableDictionary dictionary], *misses = [NSMutableDictionary dictionary];
+    for (HRTestResult *r in [self recentResultsWithLimit:0 error:NULL]) {
+        if (since && r.date && [r.date compare:since] == NSOrderedAscending) continue;
+        if (kind != HRStatKindAll && [[self sampleForResult:r] kind] != kind) continue;
+        for (HRKeyStat *k in r.keyStats) {
+            if ([k.character length] == 0) continue;
+            hits[k.character] = @([hits[k.character] unsignedIntegerValue] + [k.hits unsignedIntegerValue]);
+            misses[k.character] = @([misses[k.character] unsignedIntegerValue] + [k.misses unsignedIntegerValue]);
+        }
+    }
+    NSMutableDictionary *out = [NSMutableDictionary dictionary];
+    for (NSString *ch in hits) out[ch] = @{@"hits": hits[ch], @"misses": misses[ch] ?: @0};
+    return out;
+}
+
 - (NSArray *)recentResultsWithLimit:(NSUInteger)limit error:(NSError **)error
 {
     NSFetchRequest *req = [[NSFetchRequest alloc] init];
@@ -124,6 +285,112 @@
     [req setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"wpm" ascending:NO]]];
     [req setFetchLimit:1];
     return [[_context executeFetchRequest:req error:error] firstObject];
+}
+
+#pragma mark - Courses
+
+- (NSArray *)fetch:(NSString *)entity where:(NSPredicate *)predicate
+{
+    NSFetchRequest *req = [[NSFetchRequest alloc] init];
+    [req setEntity:[NSEntityDescription entityForName:entity inManagedObjectContext:_context]];
+    [req setPredicate:predicate];
+    return [_context executeFetchRequest:req error:NULL] ?: @[];
+}
+
+- (BOOL)save:(NSError **)error
+{
+    if ([_context save:error]) return YES;
+    [_context rollback];
+    return NO;
+}
+
+- (NSArray *)startedCourses
+{
+    NSArray *all = [self fetch:@"CourseProgress" where:nil];
+    /* sorted here rather than by the fetch: a nil lastDate must sort last,
+     * and the two Core Datas need not agree on where nil goes */
+    return [all sortedArrayUsingComparator:^NSComparisonResult(HRCourseProgress *a, HRCourseProgress *b) {
+        NSDate *da = a.lastDate ?: [NSDate distantPast], *db = b.lastDate ?: [NSDate distantPast];
+        return [db compare:da];
+    }];
+}
+
+- (HRCourseProgress *)progressForCourse:(NSString *)courseFile
+{
+    return [[self fetch:@"CourseProgress"
+                  where:[NSPredicate predicateWithFormat:@"courseFile == %@", courseFile]] firstObject];
+}
+
+- (BOOL)setLessonIndex:(NSUInteger)lessonIndex stepIndex:(NSUInteger)stepIndex
+             forCourse:(NSString *)courseFile error:(NSError **)error
+{
+    HRCourseProgress *p = [self progressForCourse:courseFile];
+    if (!p) {
+        p = [NSEntityDescription insertNewObjectForEntityForName:@"CourseProgress" inManagedObjectContext:_context];
+        p.courseFile = courseFile;
+        p.startedDate = [NSDate date];
+    }
+    p.lessonIndex = @(lessonIndex);
+    p.stepIndex = @(stepIndex);
+    p.lastDate = [NSDate date];
+    return [self save:error];
+}
+
+- (NSDictionary *)lessonRecordsForCourse:(NSString *)courseFile
+{
+    NSMutableDictionary *byIndex = [NSMutableDictionary dictionary];
+    for (HRLessonRecord *r in [self fetch:@"LessonRecord"
+                                    where:[NSPredicate predicateWithFormat:@"courseFile == %@", courseFile]]) {
+        if (r.lessonIndex) byIndex[r.lessonIndex] = r;
+    }
+    return byIndex;
+}
+
+- (HRLessonRecord *)recordForLesson:(NSUInteger)lessonIndex inCourse:(NSString *)courseFile
+{
+    HRLessonRecord *r = [self lessonRecordsForCourse:courseFile][@(lessonIndex)];
+    if (!r) {
+        r = [NSEntityDescription insertNewObjectForEntityForName:@"LessonRecord" inManagedObjectContext:_context];
+        r.courseFile = courseFile;
+        r.lessonIndex = @(lessonIndex);
+    }
+    return r;
+}
+
+- (BOOL)noteLessonStarted:(NSUInteger)lessonIndex title:(NSString *)title
+                 inCourse:(NSString *)courseFile error:(NSError **)error
+{
+    HRLessonRecord *r = [self recordForLesson:lessonIndex inCourse:courseFile];
+    r.title = title;
+    r.attempts = @([r.attempts integerValue] + 1);
+    r.lastDate = [NSDate date];
+    return [self save:error];
+}
+
+- (BOOL)noteLessonCompleted:(NSUInteger)lessonIndex summary:(HRLessonSummary *)summary
+              countsForBest:(BOOL)countsForBest inCourse:(NSString *)courseFile error:(NSError **)error
+{
+    HRLessonRecord *r = [self recordForLesson:lessonIndex inCourse:courseFile];
+    r.completions = @([r.completions integerValue] + 1);
+    r.lastWpm = @(summary.wpm);
+    r.lastAccuracy = @(summary.accuracy);
+    BOOL first = [r.completions integerValue] == 1;
+    if (countsForBest || first) {
+        if (summary.wpm > [r.bestWpm doubleValue]) r.bestWpm = @(summary.wpm);
+        if (summary.accuracy > [r.bestAccuracy doubleValue]) r.bestAccuracy = @(summary.accuracy);
+    }
+    r.totalDuration = @([r.totalDuration doubleValue] + summary.duration);
+    r.lastDate = [NSDate date];
+    return [self save:error];
+}
+
+- (BOOL)resetCourse:(NSString *)courseFile error:(NSError **)error
+{
+    NSPredicate *mine = [NSPredicate predicateWithFormat:@"courseFile == %@", courseFile];
+    for (NSString *entity in @[@"CourseProgress", @"LessonRecord"]) {
+        for (NSManagedObject *o in [self fetch:entity where:mine]) [_context deleteObject:o];
+    }
+    return [self save:error];
 }
 
 @end

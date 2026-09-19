@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>displayName</key>
+	<string>german dvorak</string>
+	<key>geometry</key>
+	<string>iso</string>
+	<key>identifier</key>
+	<string>german_dvorak</string>
+	<key>rows</key>
+	<array>
+		<array>
+			<string>^&#xB0;</string>
+			<string>1!</string>
+			<string>2"</string>
+			<string>3&#xA7;</string>
+			<string>4$</string>
+			<string>5%</string>
+			<string>6&amp;</string>
+			<string>7/</string>
+			<string>8(</string>
+			<string>9)</string>
+			<string>0=</string>
+			<string>+*</string>
+			<string>&lt;&gt;</string>
+		</array>
+		<array>
+			<string>&#xFC;&#xDC;</string>
+			<string>,;</string>
+			<string>.:</string>
+			<string>pP</string>
+			<string>yY</string>
+			<string>fF</string>
+			<string>gG</string>
+			<string>cC</string>
+			<string>tT</string>
+			<string>zZ</string>
+			<string>&#xDF;?</string>
+			<string>\/</string>
+		</array>
+		<array>
+			<string>aA</string>
+			<string>oO</string>
+			<string>eE</string>
+			<string>iI</string>
+			<string>uU</string>
+			<string>hH</string>
+			<string>dD</string>
+			<string>rR</string>
+			<string>nN</string>
+			<string>sS</string>
+			<string>lL</string>
+			<string>-_</string>
+		</array>
+		<array>
+			<string>&#xE4;&#xC4;</string>
+			<string>&#xF6;&#xD6;</string>
+			<string>qQ</string>
+			<string>jJ</string>
+			<string>kK</string>
+			<string>xX</string>
+			<string>bB</string>
+			<string>mM</string>
+			<string>wW</string>
+			<string>vV</string>
+			<string>#'</string>
+		</array>
+	</array>
+</dict>
+</plist>
