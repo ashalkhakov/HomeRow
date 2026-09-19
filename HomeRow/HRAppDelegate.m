@@ -420,7 +420,15 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
             if (statsOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"StatsWindow.xib: outlet %@ is not connected", name]];
         }
         if (_store) {
-            if ([stats.speedPlot.values count] < 3) [failures addObject:@"the statistics show fewer tests than were typed"];
+            /* on a machine that never ran HomeRow that is two: the words
+             * test and the section of code (the lesson's drills are typed
+             * in no time at all, and a result without a duration is not
+             * kept).  Whatever else the store holds is shown too. */
+            NSUInteger saved = [[_store recentResultsWithLimit:0 error:NULL] count];
+            if (saved < 2 || [stats.speedPlot.values count] != saved) {
+                [failures addObject:[NSString stringWithFormat:@"the statistics show %lu results, the store holds %lu (at least 2 expected)",
+                                     (unsigned long)[stats.speedPlot.values count], (unsigned long)saved]];
+            }
             if ([stats.daysPlot.values count] < 1) [failures addObject:@"the statistics show no day of practice"];
             if ([stats.speedPlot.trend count] != [stats.speedPlot.values count]) [failures addObject:@"the speed chart has no trend line"];
             if ([stats.keyboardView.heatCounts count] == 0) [failures addObject:@"the statistics have no key counts for the heatmap"];
@@ -429,6 +437,15 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
             if (!(lo < hi) || hi > 100.0 || lo < 0.0) [failures addObject:@"the accuracy chart's axis is not within 0...100"];
             [stats.daysPlot getAxisMinimum:&lo maximum:&hi];
             if (lo != 0.0 || !(hi > 0.0)) [failures addObject:@"the bars of the practice chart do not start at zero"];
+            /* values that differ in the last bits only once hung the grid loop */
+            HRPlotView *probe = [[HRPlotView alloc] initWithFrame:NSMakeRect(0, 0, 300, 120)];
+            probe.trend = @[@99.675324675324674];
+            probe.values = @[@99.675324675324703];
+            [probe getAxisMinimum:&lo maximum:&hi];
+            if (!(hi - lo >= 0.5)) [failures addObject:@"a chart of near-equal values has no axis range"];
+            [[[stats window] contentView] addSubview:probe];
+            [probe display];
+            [probe removeFromSuperview];
             stats.speedPlot.highlightedIndex = 0;
             if ([[stats.speedPlot readout] length] == 0) [failures addObject:@"the speed chart has no read-out"];
             [[stats kindPopUp] selectItemWithTag:HRStatKindCode];

@@ -90,7 +90,15 @@ static double HRNiceStep(double range, NSUInteger count)
     /* bars are lengths, and a length starts at zero; a trend is a position,
      * and may be looked at closely */
     if (_style == HRPlotStyleBars || !any) lo = 0.0;
-    if (hi <= lo) hi = lo + 1.0;
+    if (!isfinite(lo) || !isfinite(hi)) { lo = 0.0; hi = 1.0; }
+    /* One value, or several that differ only in the last bits (a value and
+     * its own moving average): that is no range.  Left alone it gave a step
+     * of 1e-14, which added to 99.67 is 99.67 again -- and a grid loop that
+     * never ended. */
+    if (hi - lo < 1e-6 * MAX(1.0, fabs(hi))) {
+        lo = floor(lo);
+        hi = lo + 1.0;
+    }
     double step = HRNiceStep(hi - lo, 4);
     lo = floor(lo / step) * step;
     hi = ceil(hi / step) * step;
@@ -174,7 +182,10 @@ static double HRNiceStep(double range, NSUInteger count)
     CGFloat scale = NSHeight(plot) / (CGFloat)(hi - lo);
 
     /* the grid: there, and nothing more */
-    for (double v = lo; v <= hi + step * 0.001; v += step) {
+    /* counted, not accumulated: whatever the step, this ends */
+    NSUInteger lines = (step > 0.0 && isfinite(step)) ? (NSUInteger)MIN(20.0, floor((hi - lo) / step + 0.001)) : 0;
+    for (NSUInteger k = 0; k <= lines; k++) {
+        double v = lo + (double)k * step;
         CGFloat y = floor(NSMinY(plot) + (CGFloat)(v - lo) * scale) + 0.5;
         [[muted colorWithAlphaComponent:(v == lo ? 0.45 : 0.18)] set];
         [NSBezierPath fillRect:NSMakeRect(NSMinX(plot), y - 0.5, NSWidth(plot), 1.0)];
