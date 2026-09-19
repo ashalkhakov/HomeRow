@@ -83,6 +83,23 @@
 
 #pragma mark - The fixed-pitch font
 
+NSString * const HRFontFamilyDefaultsKey = @"HRFontFamily";
+NSString * const HRProseFontSizeDefaultsKey = @"HRProseFontSize";
+NSString * const HRCodeFontSizeDefaultsKey = @"HRCodeFontSize";
+NSString * const HRThemeDefaultsKey = @"HRTheme";
+
++ (CGFloat)proseFontSize
+{
+    double size = [[NSUserDefaults standardUserDefaults] doubleForKey:HRProseFontSizeDefaultsKey];
+    return (size >= 12.0 && size <= 48.0) ? (CGFloat)size : 24.0;
+}
+
++ (CGFloat)codeFontSize
+{
+    double size = [[NSUserDefaults standardUserDefaults] doubleForKey:HRCodeFontSizeDefaultsKey];
+    return (size >= 9.0 && size <= 32.0) ? (CGFloat)size : 15.0;
+}
+
 + (BOOL)fontIsFixedPitch:(NSFont *)font
 {
     if (!font) return NO;
@@ -94,8 +111,49 @@
     return fabs(narrow - wide) < 0.01 * wide && fabs(other - wide) < 0.01 * wide;
 }
 
++ (NSFont *)fontOfFamily:(NSString *)family size:(CGFloat)size
+{
+    if ([family length] == 0) return nil;
+    NSFont *font = [[NSFontManager sharedFontManager] fontWithFamily:family traits:0 weight:5 size:size];
+    return font ?: [NSFont fontWithName:family size:size];
+}
+
++ (NSArray *)fixedPitchFontFamilies
+{
+    NSFontManager *manager = [NSFontManager sharedFontManager];
+    NSMutableSet *families = [NSMutableSet set];
+    for (NSString *name in [manager availableFontNamesWithTraits:NSFixedPitchFontMask]) {
+        NSString *family = [[NSFont fontWithName:name size:12.0] familyName];
+        if ([family length] > 0 && ![family hasPrefix:@"."]) [families addObject:family];
+    }
+    /* a font manager that does not know which fonts are fixed-pitch (or
+     * claims too much): go by the name, and let the ruler decide */
+    for (NSString *family in [manager availableFontFamilies]) {
+        NSString *lower = [family lowercaseString];
+        if ([lower rangeOfString:@"mono"].location != NSNotFound || [lower rangeOfString:@"courier"].location != NSNotFound
+            || [lower rangeOfString:@"menlo"].location != NSNotFound || [lower rangeOfString:@"consol"].location != NSNotFound) {
+            [families addObject:family];
+        }
+    }
+    NSMutableArray *out = [NSMutableArray array];
+    BOOL canMeasure = [@"m" sizeWithAttributes:@{NSFontAttributeName: [NSFont systemFontOfSize:12.0]}].width > 0.0;
+    for (NSString *family in families) {
+        NSFont *font = [self fontOfFamily:family size:12.0];
+        if (!font) continue;
+        if (canMeasure && ![self fontIsFixedPitch:font]) continue;
+        [out addObject:family];
+    }
+    return [out sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+}
+
 + (NSFont *)fixedPitchFontOfSize:(CGFloat)size
 {
+    /* the family chosen in Preferences, as long as it exists and measures up */
+    NSString *wanted = [[NSUserDefaults standardUserDefaults] stringForKey:HRFontFamilyDefaultsKey];
+    if ([wanted length] > 0) {
+        NSFont *font = [self fontOfFamily:wanted size:size];
+        if (font && ([self fontIsFixedPitch:font] || [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width <= 0.0)) return font;
+    }
     static NSString *chosen = nil;     /* a font name; @"" = the search came up empty */
     if ([chosen length] > 0) {
         NSFont *font = [NSFont fontWithName:chosen size:size];

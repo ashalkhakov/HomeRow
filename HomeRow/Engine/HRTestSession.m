@@ -235,7 +235,7 @@ static const NSUInteger HRMaxExtra = 20;
         return;
     }
     BOOL wordCorrect = [typed isEqualToArray:word.characters];
-    if (!wordCorrect && _configuration.stopOnError) {
+    if (!wordCorrect && _configuration.stopPolicy != HRStopNever) {
         /* the word is not finished: a separator here is a wrong key too */
         [self noteWrongInput:expected refused:YES];
         [self recordKeystrokeCorrect:NO expected:([typed count] < [word.characters count] ? word.characters[[typed count]] : expected) atTime:time];
@@ -269,10 +269,18 @@ static const NSUInteger HRMaxExtra = 20;
     return YES;
 }
 
+/* "No backspace" and "a word must be right before it is left" together
+ * would be a trap: one slip and the test can neither go on nor back.  The
+ * word being typed can then still be corrected. */
+- (BOOL)backspaceIsOff
+{
+    return _configuration.backspacePolicy == HRBackspaceNone && _configuration.stopPolicy != HRStopOnWord;
+}
+
 - (void)deleteBackwardAtTime:(NSTimeInterval)time
 {
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
-    if (_configuration.backspacePolicy == HRBackspaceNone) return;
+    if ([self backspaceIsOff]) return;
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] > 0) {
         [typed removeLastObject];
@@ -284,7 +292,7 @@ static const NSUInteger HRMaxExtra = 20;
 - (void)deleteWordBackwardAtTime:(NSTimeInterval)time
 {
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
-    if (_configuration.backspacePolicy == HRBackspaceNone) return;
+    if ([self backspaceIsOff]) return;
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] == 0 && ![self stepBackIntoPreviousWord]) return;
     [[self currentTyped] removeAllObjects];
@@ -348,7 +356,7 @@ static const NSUInteger HRMaxExtra = 20;
     NSArray *target = word.characters;
     NSUInteger n = [typed count];
     /* a mistake behind the caret comes first -- if it can be taken back */
-    if (_configuration.backspacePolicy != HRBackspaceNone) {
+    if (![self backspaceIsOff]) {
         if (n > [target count]) return @"\b";
         for (NSUInteger i = 0; i < n; i++) {
             if (![typed[i] isEqualToString:target[i]]) return @"\b";

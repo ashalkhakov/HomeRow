@@ -25,25 +25,21 @@
 #import "HRCodeDocument.h"
 #import "HRCodeWindowController.h"
 #import "HRStatsWindowController.h"
+#import "HRPreferencesWindowController.h"
+#import "HRLayoutChooserController.h"
 #import "HRPlotView.h"
 #import <objc/runtime.h>
 
 static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 static NSString * const HRCurrentCourseDefaultsKey = @"HRCurrentCourse";
-/* the keyboard shows by default while following a course, and not otherwise */
 /* the file being typed in code mode, and the files opened from disk */
 static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
 static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
-static NSString * const HRBeepOnErrorDefaultsKey = @"HRBeepOnError";
-static NSString * const HRKeyboardInCourseDefaultsKey = @"HRShowKeyboardInCourse";
-static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
-/* code has a setting of its own, on to begin with: brackets, operators and
- * the Shift they need are where a keyboard to glance at helps most */
-static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
+/* (when the keyboard shows and the beep: HRPreferencesWindowController.h) */
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
-@interface HRAppDelegate () <HRCourseWindowDelegate, HRCodeWindowDelegate>
+@interface HRAppDelegate () <HRCourseWindowDelegate, HRCodeWindowDelegate, HRPreferencesDelegate, HRLayoutChooserDelegate>
 @end
 
 @implementation HRAppDelegate
@@ -60,7 +56,8 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     NSMenu *_wordListMenu;
     NSMutableDictionary *_scripts;   /* course file -> HRTypScript, parsed on demand */
 
-    NSMenu *_layoutMenu;
+    NSMenuItem *_layoutMenuItem;
+    HRLayoutChooserController *_layoutChooser;
     NSMenuItem *_keyboardMenuItem;
     NSMenuItem *_testKeyboardMenuItem;   /* the same command in the Test menu, where code and tests look for it */
     NSMenu *_courseMenu;
@@ -82,6 +79,7 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     HRCodeLibrary *_codeLibrary;
     HRCodeWindowController *_codeWindow;
     HRStatsWindowController *_statsWindow;
+    HRPreferencesWindowController *_preferencesWindow;
     HRCodeFile *_codeFile;
     NSUInteger _codeSection;
     NSUInteger _codeSectionCount;
@@ -109,23 +107,10 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     /* typing still works without history; say why there is none */
     if (!_store) NSLog(@"HomeRow: results will not be saved: %@", error);
 
-    _theme = [HRTheme currentTheme];
-    _testView.theme = _theme;
     _testView.delegate = self;
-    _testView.beepsOnError = [[NSUserDefaults standardUserDefaults] boolForKey:HRBeepOnErrorDefaultsKey];
-    _chartView.theme = _theme;
-    _keyboardView.theme = _theme;
     [_keyboardView setHidden:YES];
-    _resultsView.backgroundColor = _theme.background;
     _resultsView.target = self;
-    [_window setBackgroundColor:_theme.background];
-    /* not array literals: an unconnected outlet is the smoke test's to
-     * report, not a nil-insertion exception's */
-    [_wpmField setTextColor:_theme.accent];
-    [_accuracyField setTextColor:_theme.accent];
-    [_detailField setTextColor:_theme.untyped];
-    [_hintField setTextColor:_theme.untyped];
-    [_liveField setTextColor:_theme.untyped];
+    [self applyAppearance];
 
     [self buildMenus];
     [self syncControls];
@@ -495,6 +480,106 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
         [[stats window] orderOut:self];
     }
 
+    /* Preferences: every control connected, and a change made there takes
+     * effect here -- then everything is put back as it was found. */
+    {
+        NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+        NSArray *keys = @[HRThemeDefaultsKey, HRProseFontSizeDefaultsKey, HRCodeFontSizeDefaultsKey, HRFontFamilyDefaultsKey,
+                          HRBeepOnErrorDefaultsKey, HRKeyboardInTestsDefaultsKey];
+        NSMutableDictionary *before = [NSMutableDictionary dictionary];
+        for (NSString *key in keys) if ([d objectForKey:key]) before[key] = [d objectForKey:key];
+        HRStopPolicy stopBefore = _configuration.stopPolicy;
+        HRBackspacePolicy backspaceBefore = _configuration.backspacePolicy;
+
+        HRPreferencesWindowController *prefs = [self preferencesWindow];
+        [prefs showWindow:self];
+        [prefs sync];
+        NSDictionary *prefsOutlets = @{@"themePopUp": prefs.themePopUp ?: (id)[NSNull null], @"fontPopUp": prefs.fontPopUp ?: (id)[NSNull null],
+            @"proseSizePopUp": prefs.proseSizePopUp ?: (id)[NSNull null], @"codeSizePopUp": prefs.codeSizePopUp ?: (id)[NSNull null],
+            @"stopPopUp": prefs.stopPopUp ?: (id)[NSNull null], @"backspacePopUp": prefs.backspacePopUp ?: (id)[NSNull null],
+            @"beepCheck": prefs.beepCheck ?: (id)[NSNull null], @"layoutField": prefs.layoutField ?: (id)[NSNull null],
+            @"layoutButton": prefs.layoutButton ?: (id)[NSNull null],
+            @"keyboardCourseCheck": prefs.keyboardCourseCheck ?: (id)[NSNull null], @"keyboardCodeCheck": prefs.keyboardCodeCheck ?: (id)[NSNull null],
+            @"keyboardTestsCheck": prefs.keyboardTestsCheck ?: (id)[NSNull null], @"commentsCheck": prefs.commentsCheck ?: (id)[NSNull null],
+            @"dataField": prefs.dataField ?: (id)[NSNull null], @"revealButton": prefs.revealButton ?: (id)[NSNull null]};
+        for (NSString *name in prefsOutlets) {
+            if (prefsOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"PreferencesWindow.xib: outlet %@ is not connected", name]];
+        }
+        if (![[prefs.layoutField stringValue] isEqualToString:[HRLayoutChooserController titleForIdentifier:_configuration.layoutID]]) {
+            [failures addObject:@"Preferences does not show the current layout"];
+        }
+        /* the layout chooser: searched, previewed, chosen -- and put back */
+        {
+            NSString *layoutBefore = [_configuration.layoutID copy];
+            HRLayoutChooserController *chooser = [self layoutChooser];
+            [prefs chooseLayout:self];
+            NSDictionary *chooserOutlets = @{@"searchField": chooser.searchField ?: (id)[NSNull null], @"layoutTable": chooser.layoutTable ?: (id)[NSNull null],
+                @"keyboardView": chooser.keyboardView ?: (id)[NSNull null], @"chooseButton": chooser.chooseButton ?: (id)[NSNull null],
+                @"countField": chooser.countField ?: (id)[NSNull null]};
+            for (NSString *name in chooserOutlets) {
+                if (chooserOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"LayoutChooser.xib: outlet %@ is not connected", name]];
+            }
+            NSArray *everything = [chooser identifiersMatching:@""];
+            if ([everything count] < 100 || ![[everything firstObject] isEqualToString:@"qwerty"]) {
+                [failures addObject:@"the layout chooser does not lead with the well-known layouts"];
+            }
+            NSArray *colemaks = [chooser identifiersMatching:@"col dh"];
+            if ([colemaks count] == 0 || [colemaks count] > 20 || ![colemaks containsObject:@"colemak_dh"]) {
+                [failures addObject:@"searching the layouts for \"col dh\" does not find colemak dh"];
+            }
+            if ([[chooser identifiersMatching:@"zzzz"] count] != 0) [failures addObject:@"a search that matches nothing still lists layouts"];
+            [chooser.searchField setStringValue:@"dvorak"];
+            [chooser searchChanged:self];
+            if ([chooser.layoutTable numberOfRows] < 1 || [chooser.layoutTable numberOfRows] >= (NSInteger)[everything count]) {
+                [failures addObject:@"the layout list does not follow the search field"];
+            }
+            if (![chooser.keyboardView.keyboardLayout.identifier isEqualToString:@"dvorak"]) {
+                [failures addObject:@"the layout chooser does not preview the selected layout"];
+            }
+            [[[chooser window] contentView] display];
+            [chooser choose:self];
+            if (![_configuration.layoutID isEqualToString:@"dvorak"] || ![[prefs.layoutField stringValue] isEqualToString:@"dvorak"]) {
+                [failures addObject:@"choosing a layout did not take effect"];
+            }
+            if ([[_layoutMenuItem title] rangeOfString:@"dvorak"].location == NSNotFound) [failures addObject:@"the Language menu does not name the layout"];
+            [self layoutChooser:chooser didChoose:layoutBefore];
+        }
+
+        HRTestSession *sessionBefore = _session;
+        [prefs.stopPopUp selectItemAtIndex:2];       /* on every word */
+        [prefs.backspacePopUp selectItemAtIndex:1];  /* current word only */
+        [prefs.themePopUp selectItemAtIndex:([_theme.name isEqualToString:@"dark"] ? 1 : 2)];
+        [prefs.proseSizePopUp selectItemAtIndex:0];  /* 16 */
+        [prefs.keyboardTestsCheck setState:NSControlStateValueOn];
+        NSString *themeBefore = [_theme.name copy];
+        [prefs changed:self];
+        if (_configuration.stopPolicy != HRStopOnWord || _configuration.backspacePolicy != HRBackspaceCurrentWord) {
+            [failures addObject:@"Preferences did not change the typing rules"];
+        }
+        if (_session == sessionBefore || _session.configuration.stopPolicy != HRStopOnWord) {
+            [failures addObject:@"the test under way did not start over under the new rules"];
+        }
+        if ([_theme.name isEqualToString:themeBefore] || _testView.theme != _theme) [failures addObject:@"Preferences did not switch the theme"];
+        if (fabs([_testView.font pointSize] - 16.0) > 0.01) [failures addObject:@"Preferences did not change the text size"];
+        if (!_keyboardShown) [failures addObject:@"Preferences did not bring up the keyboard"];
+        NSDictionary *saved = [d dictionaryForKey:HRConfigurationDefaultsKey];
+        if ([saved[@"stopPolicy"] integerValue] != HRStopOnWord) [failures addObject:@"Preferences did not save the configuration"];
+        [[_window contentView] display];
+        [[[prefs window] contentView] display];
+
+        for (NSString *key in keys) {
+            if (before[key]) [d setObject:before[key] forKey:key]; else [d removeObjectForKey:key];
+        }
+        _configuration.stopPolicy = stopBefore;
+        _configuration.backspacePolicy = backspaceBefore;
+        [self saveConfiguration];
+        [self applyAppearance];
+        [self syncKeyboard];
+        [prefs sync];
+        [[prefs window] orderOut:self];
+        [self startNewTest];
+    }
+
     /* every character gets a cell of its own, so the font had better be
      * fixed-pitch: measured here, because gnustep-gui hands out a proportional
      * font without a word when it cannot find "Courier".  (A backend that
@@ -673,6 +758,7 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     _testView.beepsOnError = !_testView.beepsOnError;
     [[NSUserDefaults standardUserDefaults] setBool:_testView.beepsOnError forKey:HRBeepOnErrorDefaultsKey];
     [self syncMenus];
+    [_preferencesWindow sync];
 }
 
 - (IBAction)restartTest:(id)sender
@@ -736,21 +822,31 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     /* Language > Keyboard Layout: what the on-screen keyboard draws when no
      * course says otherwise.  It describes the system's layout; it never
      * changes it. */
-    _layoutMenu = [[NSMenu alloc] initWithTitle:HRLoc(@"Keyboard Layout")];
-    for (NSString *identifier in [HRKeyboardLayout identifiersInDirectory:[self layoutsDirectory]]) {
-        NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:[identifier stringByReplacingOccurrencesOfString:@"_" withString:@" "]
-                                                      action:@selector(selectLayout:) keyEquivalent:@""];
-        [item setTarget:self];
-        [item setRepresentedObject:identifier];
-        [_layoutMenu addItem:item];
-    }
-    NSMenuItem *layouts = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Keyboard Layout") action:NULL keyEquivalent:@""];
-    [layouts setSubmenu:_layoutMenu];
-    [_languageMenu insertItem:layouts atIndex:1];
+    /* one item that names the layout and opens the chooser: a submenu of 239
+     * layouts could be scrolled but hardly used */
+    _layoutMenuItem = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Keyboard Layout\u2026") action:@selector(showLayoutChooser:)
+                                          keyEquivalent:@""];
+    [_layoutMenuItem setTarget:self];
+    [_languageMenu insertItem:_layoutMenuItem atIndex:1];
 
     _courses = [NSDictionary dictionaryWithContentsOfFile:
                 [[self lessonsDirectory] stringByAppendingPathComponent:@"index.plist"]][@"courses"] ?: @[];
     _scripts = [NSMutableDictionary dictionary];
+
+    /* Preferences… under About, in the application menu (the first one) */
+    NSMenu *appMenu = [main numberOfItems] > 0 ? [[main itemAtIndex:0] submenu] : nil;
+    if (appMenu) {
+        NSMenuItem *prefsItem = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Preferences\u2026") action:@selector(showPreferences:)
+                                                    keyEquivalent:@","];
+        [prefsItem setTarget:self];
+        /* About / ---- / Preferences… / ---- / Services … */
+        NSInteger where = MIN((NSInteger)1, [appMenu numberOfItems]);
+        if (where < [appMenu numberOfItems] && [[appMenu itemAtIndex:where] isSeparatorItem]) where++;
+        [appMenu insertItem:prefsItem atIndex:where];
+        if (where + 1 < [appMenu numberOfItems] && ![[appMenu itemAtIndex:where + 1] isSeparatorItem]) {
+            [appMenu insertItem:(NSMenuItem *)[NSMenuItem separatorItem] atIndex:where + 1];
+        }
+    }
 
     NSMenu *testMenu = [[main itemWithTitle:@"Test"] submenu];
     if (testMenu) {
@@ -912,10 +1008,8 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
         BOOL on = [[item representedObject] isEqual:[self currentLanguage].identifier];
         [item setState:(on ? NSControlStateValueOn : NSControlStateValueOff)];
     }
-    for (NSMenuItem *item in [_layoutMenu itemArray]) {
-        BOOL on = [[item representedObject] isEqual:_configuration.layoutID];
-        [item setState:(on ? NSControlStateValueOn : NSControlStateValueOff)];
-    }
+    [_layoutMenuItem setTitle:[NSString stringWithFormat:HRLoc(@"Keyboard Layout: %@\u2026"),
+                               [HRLayoutChooserController titleForIdentifier:(_configuration.layoutID ?: @"qwerty")]]];
     [_wordListMenu removeAllItems];
     HRLanguage *language = [self currentLanguage];
     NSString *current = [self currentWordListName];
@@ -954,6 +1048,7 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
 {
     _configuration.layoutID = [sender representedObject];
     _statsWindow.keyboardLayout = [self layoutNamed:_configuration.layoutID];
+    [_preferencesWindow sync];
     [self saveConfiguration];
     [self syncMenus];
     [self syncKeyboard];
@@ -1386,6 +1481,113 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     [self startSection:section ofCodeFile:file];
 }
 
+#pragma mark - Preferences
+
+/* Theme, fonts and the beep: at launch, and again whenever Preferences
+ * changes one of them. */
+- (void)applyAppearance
+{
+    _theme = [HRTheme currentTheme];
+    _testView.theme = _theme;
+    _testView.font = [HRTheme fixedPitchFontOfSize:[HRTheme proseFontSize]];
+    _testView.beepsOnError = [[NSUserDefaults standardUserDefaults] boolForKey:HRBeepOnErrorDefaultsKey];
+    _chartView.theme = _theme;
+    _keyboardView.theme = _theme;
+    _layoutChooser.theme = _theme;
+    _resultsView.backgroundColor = _theme.background;
+    [_resultsView setNeedsDisplay:YES];
+    [_window setBackgroundColor:_theme.background];
+    /* not array literals: an unconnected outlet is the smoke test's to
+     * report, not a nil-insertion exception's */
+    [_wpmField setTextColor:_theme.accent];
+    [_accuracyField setTextColor:_theme.accent];
+    [_detailField setTextColor:_theme.untyped];
+    [_hintField setTextColor:_theme.untyped];
+    [_liveField setTextColor:_theme.untyped];
+    /* the Statistics window takes its theme when it is built: build it anew */
+    if (_statsWindow) {
+        BOOL wasOpen = [[_statsWindow window] isVisible];
+        [[_statsWindow window] orderOut:self];
+        _statsWindow = nil;
+        if (wasOpen) [self showStatistics:self];
+    }
+    [[_window contentView] setNeedsDisplay:YES];
+    [self syncMenus];
+}
+
+- (HRPreferencesWindowController *)preferencesWindow
+{
+    if (!_preferencesWindow) _preferencesWindow = [[HRPreferencesWindowController alloc] initWithDelegate:self];
+    return _preferencesWindow;
+}
+
+- (IBAction)showPreferences:(id)sender
+{
+    [[self preferencesWindow] showWindow:self];
+    [[self preferencesWindow] sync];
+}
+
+- (HRTestConfiguration *)configurationForPreferences:(HRPreferencesWindowController *)controller
+{
+    return _configuration;
+}
+
+- (void)preferencesWantsLayoutChooser:(HRPreferencesWindowController *)controller
+{
+    [self showLayoutChooser:controller];
+}
+
+#pragma mark - Choosing a keyboard layout
+
+- (HRLayoutChooserController *)layoutChooser
+{
+    if (!_layoutChooser) _layoutChooser = [[HRLayoutChooserController alloc] initWithDelegate:self theme:_theme];
+    return _layoutChooser;
+}
+
+- (IBAction)showLayoutChooser:(id)sender
+{
+    [[self layoutChooser] chooseStartingFrom:(_configuration.layoutID ?: @"qwerty")];
+}
+
+- (NSArray *)layoutIdentifiersForChooser:(HRLayoutChooserController *)chooser
+{
+    return [HRKeyboardLayout identifiersInDirectory:[self layoutsDirectory]];
+}
+
+- (HRKeyboardLayout *)layoutChooser:(HRLayoutChooserController *)chooser layoutNamed:(NSString *)identifier
+{
+    return [self layoutNamed:identifier];
+}
+
+- (void)layoutChooser:(HRLayoutChooserController *)chooser didChoose:(NSString *)identifier
+{
+    NSMenuItem *carrier = [[NSMenuItem alloc] init];
+    [carrier setRepresentedObject:identifier];
+    [self selectLayout:carrier];
+}
+
+- (NSURL *)storeURLForPreferences:(HRPreferencesWindowController *)controller
+{
+    return _store ? [HRResultStore defaultStoreURL] : nil;
+}
+
+- (void)preferences:(HRPreferencesWindowController *)controller didChange:(HRPreferencesChange)change
+{
+    [self saveConfiguration];
+    if (change & HRPreferencesChangedAppearance) [self applyAppearance];
+    if (change & HRPreferencesChangedKeyboard) {
+        _statsWindow.keyboardLayout = [self layoutNamed:_configuration.layoutID];
+        [self syncMenus];
+        [self syncKeyboard];
+    }
+    /* new rules: the test that is being typed starts over under them; a
+     * result on screen stays where it is */
+    if ((change & HRPreferencesChangedTyping) && [_resultsView isHidden] && _testView.pageText == nil) {
+        [self startNewTest];
+    }
+}
+
 #pragma mark - Statistics
 
 - (HRStatsWindowController *)statsWindow
@@ -1432,6 +1634,7 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
 {
     [[NSUserDefaults standardUserDefaults] setBool:![self wantsKeyboard] forKey:[self keyboardDefaultsKey]];
     [self syncKeyboard];
+    [_preferencesWindow sync];
 }
 
 /* Which layout, whether it shows, what is lit.  A course names its layout

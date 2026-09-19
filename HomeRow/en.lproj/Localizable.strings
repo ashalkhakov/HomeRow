@@ -84,3 +84,24 @@
 "Results are not being saved, so there is nothing to show." = "Results are not being saved, so there is nothing to show.";
 "Missed most often:   %@      (the deepest tint is %.0f%% of presses)" = "Missed most often:   %@      (the deepest tint is %.0f%% of presses)";
 "No key stands out yet." = "No key stands out yet.";
+
+/* preferences */
+"Preferences\U2026" = "Preferences\U2026";
+"Follow the system" = "Follow the system";
+"Light" = "Light";
+"Dark" = "Dark";
+"Automatic" = "Automatic";
+"Never \U2014 mistakes go in" = "Never \U2014 mistakes go in";
+"On every letter \U2014 a wrong key does not go in" = "On every letter \U2014 a wrong key does not go in";
+"On every word \U2014 a word must be right to be left" = "On every word \U2014 a word must be right to be left";
+"Anywhere, back into earlier mistakes" = "Anywhere, back into earlier mistakes";
+"Only in the word being typed" = "Only in the word being typed";
+"Off" = "Off";
+"Show in Finder" = "Show in Finder";
+"Results are not being saved." = "Results are not being saved.";
+
+/* layout chooser */
+"Keyboard Layout\U2026" = "Keyboard Layout\U2026";
+"Keyboard Layout: %@\U2026" = "Keyboard Layout: %@\U2026";
+"%lu layouts" = "%lu layouts";
+"%lu of %lu layouts" = "%lu of %lu layouts";

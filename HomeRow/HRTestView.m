@@ -39,7 +39,7 @@ static BOOL HRInputLogging(void)
 
 - (void)setUpDefaults
 {
-    if (!_font) _font = [HRTheme fixedPitchFontOfSize:24.0];
+    if (!_font) _font = [HRTheme fixedPitchFontOfSize:[HRTheme proseFontSize]];
 }
 
 - (instancetype)initWithFrame:(NSRect)frame
@@ -337,7 +337,7 @@ static BOOL HRInputLogging(void)
 
 - (void)drawCodeInRect:(NSRect)bounds
 {
-    NSFont *font = [HRTheme fixedPitchFontOfSize:15.0];
+    NSFont *font = [HRTheme fixedPitchFontOfSize:[HRTheme codeFontSize]];
     CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width;
     CGFloat lineHeight = ceil(([font ascender] - [font descender]) * 1.35);
     if (advance <= 0.0 || lineHeight <= 0.0) return;

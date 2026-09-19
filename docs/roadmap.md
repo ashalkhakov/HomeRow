@@ -33,9 +33,11 @@ plans.
       arrives. Press-and-hold accents are switched off for HomeRow (a held key
       repeats). Confirmed on macOS with Option+E, E (`-HRLogInput YES` traces
       the exchange); still to try: a layout with real dead keys.
-- [ ] **Preferences window** — font and size for prose and for code, stop on
-      error (off / letter / word), backspace policy, sounds, theme, where the
-      data lives. Today the few settings there are sit in menus.
+- [x] **Preferences window** — theme, font family, size for prose and for
+      code, stop on a mistake (never / letter / word), backspace policy, beep,
+      keyboard layout and when the keyboard shows, comments in code, where the
+      data lives. *Not seen on a display yet.* Later: sounds beyond the beep,
+      a tab width for code, moving the data.
 - [ ] **Statistics, further slices** — a history list of single results;
       progress charts per course and per file; *speed* per key (only error
       rate so far); personal bests; export and import (JSON/CSV).

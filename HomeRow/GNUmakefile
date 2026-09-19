@@ -27,6 +27,8 @@ HomeRow_RESOURCE_FILES = \
     Resources/CourseWindow.xib \
     Resources/CodeWindow.xib \
     Resources/StatsWindow.xib \
+    Resources/PreferencesWindow.xib \
+    Resources/LayoutChooser.xib \
     Resources/Code \
     Resources/HomeRow.png \
     Resources/Languages \
@@ -51,9 +53,11 @@ HomeRow_OBJC_FILES = \
     HRCourseWindowController.m \
     HRCodeWindowController.m \
     HRPlotView.m \
+    HRPreferencesWindowController.m \
     HRStatTilesView.m \
     HRStatsWindowController.m \
     HRKeyboardView.m \
+    HRLayoutChooserController.m \
     HRManagedObjects.m \
     HRResultStore.m \
     HRResultsView.m \

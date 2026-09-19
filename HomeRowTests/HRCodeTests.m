@@ -191,4 +191,35 @@
     XCTAssertTrue(s.lastWrongInputWasRefused);
 }
 
+/* Stop on word: the mistake goes in, but the word cannot be left with it --
+ * and "no backspace" does not make that a trap. */
+- (void)testStopOnWordHoldsTheWordUntilItIsRight
+{
+    HRTestConfiguration *c = [HRTestConfiguration defaultConfiguration];
+    c.mode = HRTestModeCustom;
+    c.stopPolicy = HRStopOnWord;
+    c.backspacePolicy = HRBackspaceNone;
+    HRTestSession *s = [[HRTestSession alloc] initWithConfiguration:c
+                                                             source:[[HRFixedTextSource alloc] initWithText:@"ab cd"]];
+    [s insertText:@"ax" atTime:0.0];
+    XCTAssertEqual([s caretIndexInCurrentWord], (NSUInteger)2, @"the x went in");
+    [s insertText:@" " atTime:0.1];
+    XCTAssertEqual(s.currentWordIndex, (NSUInteger)0, @"but the word holds");
+    XCTAssertTrue(s.lastWrongInputWasRefused);
+    XCTAssertEqualObjects([s expectedInput], @"\b");
+    [s deleteBackwardAtTime:0.2];
+    XCTAssertEqual([s caretIndexInCurrentWord], (NSUInteger)1, @"no-backspace gives way inside the held word");
+    [s insertText:@"b cd" atTime:0.3];
+    XCTAssertEqual(s.state, HRSessionFinished);
+
+    /* the old BOOL still reads and writes, and old saved settings load */
+    c.stopOnError = YES;
+    XCTAssertEqual(c.stopPolicy, HRStopOnLetter);
+    HRTestConfiguration *old = [[HRTestConfiguration alloc] initWithDictionary:@{@"stopOnError": @YES, @"backspacePolicy": @99}];
+    XCTAssertEqual(old.stopPolicy, HRStopOnLetter);
+    XCTAssertEqual(old.backspacePolicy, HRBackspaceNone, @"nonsense is clamped");
+    HRTestConfiguration *round = [[HRTestConfiguration alloc] initWithDictionary:[c dictionaryRepresentation]];
+    XCTAssertEqual(round.stopPolicy, HRStopOnLetter);
+}
+
 @end

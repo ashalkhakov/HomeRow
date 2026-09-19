@@ -14,6 +14,7 @@
 | Cmd/Ctrl+4 | the Code window |
 | Cmd/Ctrl+L | the Courses window |
 | Cmd/Ctrl+Shift+S | the Statistics window |
+| Cmd/Ctrl+, | Preferences |
 | Return or Space | next page, while a lesson is explaining something |
 
 The **Language** menu picks the language, the word list and the keyboard
@@ -83,3 +84,25 @@ test and the line the average of the last ten; minutes of practice day by
 day, gaps included; and the keyboard tinted by how often each key is missed
 per press, with the worst keys named underneath. Move the mouse over a chart
 to read a single test or day.
+
+## Preferences
+
+**HomeRow ▸ Preferences…** (Cmd/Ctrl+,). Every control applies at once.
+
+- **Appearance** — theme (follow the system, light, dark); the font, from the
+  fixed-pitch families on this machine, or *Automatic*; text size for prose
+  and, separately, for code.
+- **Typing** — *Stop on a mistake*: never (mistakes go in and can be left
+  behind), on every letter (a wrong key does not go in; code mode always works
+  this way), or on every word (mistakes go in, but the word must be right
+  before it can be left). *Backspace*: anywhere, only in the word being typed,
+  or off — except that a word held by "stop on every word" can always be
+  corrected. *Beep on a wrong key.* Changing a rule starts the test under way
+  over.
+- **On-screen keyboard** — the layout it draws (*Choose…* opens a list that
+  can be searched — type "col" for Colemak and its variants — with the
+  well-known layouts first and a preview of the selected one; the same list
+  is under **Language ▸ Keyboard Layout…**), and whether the keyboard shows
+  in courses, in code and in the free tests.
+- **Code** — whether comments are typed too.
+- **Your data** — where the results are kept, with a button to show the file.
