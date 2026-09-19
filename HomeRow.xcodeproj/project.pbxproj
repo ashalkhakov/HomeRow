@@ -39,6 +39,7 @@
 		338F411ED589352EC560F3EB /* regcomp.c in Sources */ = {isa = PBXBuildFile; fileRef = D5C60F26C075E702EE1514E1 /* regcomp.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		33BAE0D1BABC5757370F724B /* Code in Resources */ = {isa = PBXBuildFile; fileRef = AA9B07ECAFE5DE0E8A6D8740 /* Code */; };
 		35225FB303C8FBE78E108111 /* Layouts in Resources */ = {isa = PBXBuildFile; fileRef = 9E7AE698E63DE96276661C9F /* Layouts */; };
+		3757E7CCF2FCEA74702631E8 /* HRResultExchangeTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 407EF1C0F14ABC2CE86F98A0 /* HRResultExchangeTests.m */; };
 		38175897A96499D52BB79C2A /* HRTestConfiguration.m in Sources */ = {isa = PBXBuildFile; fileRef = 7651FF7E25FBD6B22C39FB27 /* HRTestConfiguration.m */; };
 		381EC3A2FAEA858764B0B372 /* ascii.c in Sources */ = {isa = PBXBuildFile; fileRef = 4E8CBD5CF8A06D31F95ADD85 /* ascii.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		39676341CD4F08E3A5550B5B /* HRClock.m in Sources */ = {isa = PBXBuildFile; fileRef = 335094218C9F8E5987D8980E /* HRClock.m */; };
@@ -53,6 +54,7 @@
 		535FB3BA8ACBECA6875D8A06 /* regtrav.c in Sources */ = {isa = PBXBuildFile; fileRef = 88A0FDA66F1C7DC5D96E937C /* regtrav.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		53D88223121A52B101262DA7 /* HRTextSourceTests.m in Sources */ = {isa = PBXBuildFile; fileRef = EC28381FAF8FF2C076D3FB88 /* HRTextSourceTests.m */; };
 		5618BB840452B1D772F1737A /* unicode_fold2_key.c in Sources */ = {isa = PBXBuildFile; fileRef = B653D52AC8B0E3F4DACF7CFB /* unicode_fold2_key.c */; settings = {COMPILER_FLAGS = "-w"; }; };
+		561FC28584EB97BD01126EB7 /* HRResultExchange.m in Sources */ = {isa = PBXBuildFile; fileRef = F8BC17DD5BE54C1C1D795FFF /* HRResultExchange.m */; };
 		567646BE28612DEF5AA98F95 /* HRRegex.m in Sources */ = {isa = PBXBuildFile; fileRef = EACB2F8FFD0918490B319D65 /* HRRegex.m */; };
 		59B46B36B74999D089BB79EC /* HRTestSummary.m in Sources */ = {isa = PBXBuildFile; fileRef = B4A7C13DDBEAC00C0040DF66 /* HRTestSummary.m */; };
 		5CE7BBA7A5F27CA444410EC3 /* StatsWindow.xib in Resources */ = {isa = PBXBuildFile; fileRef = C332DBE06288CC7F4A6AEBC6 /* StatsWindow.xib */; };
@@ -70,6 +72,7 @@
 		753F591D5C6453291A4EB499 /* regcomp.c in Sources */ = {isa = PBXBuildFile; fileRef = D5C60F26C075E702EE1514E1 /* regcomp.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		760C45C93A7118F77A4256C3 /* HRSessionTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 3A4867FA2E5E868F0BE97ACF /* HRSessionTests.m */; };
 		76C81C825B57D613CEEDB5CB /* HRWord.m in Sources */ = {isa = PBXBuildFile; fileRef = C0A425F22DF4C68751F0F267 /* HRWord.m */; };
+		775B589048197AC52481AAA6 /* HRResultExchange.m in Sources */ = {isa = PBXBuildFile; fileRef = F8BC17DD5BE54C1C1D795FFF /* HRResultExchange.m */; };
 		78C474AE1E869F0C3B6A27DB /* HRRegexTests.m in Sources */ = {isa = PBXBuildFile; fileRef = CF14938BC70685B40F2BE7DF /* HRRegexTests.m */; };
 		79167B35ED051CB9984A4234 /* utf16_le.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A8F36A03FAA5212FE599EAD /* utf16_le.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		8104D80551905181DE61C62F /* HRLanguageTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 05F81AFC19398833C60203E1 /* HRLanguageTests.m */; };
@@ -166,6 +169,7 @@
 		395879FCFD26E9BD13AEE954 /* HomeRow.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HomeRow.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3A4867FA2E5E868F0BE97ACF /* HRSessionTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRSessionTests.m; sourceTree = "<group>"; };
 		3B162A6DF3F8851F2A13EEE1 /* HRKeyboardView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRKeyboardView.h; sourceTree = "<group>"; };
+		407EF1C0F14ABC2CE86F98A0 /* HRResultExchangeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRResultExchangeTests.m; sourceTree = "<group>"; };
 		46EEDA07DE19C3A036C795EC /* HRTestSummary.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRTestSummary.h; sourceTree = "<group>"; };
 		4D4F52EA190D4AB8B5FFA2A8 /* HRManagedObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRManagedObjects.h; sourceTree = "<group>"; };
 		4E8CBD5CF8A06D31F95ADD85 /* ascii.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = ascii.c; sourceTree = "<group>"; };
@@ -192,6 +196,7 @@
 		774B9F35935FABE291DEAC6C /* HRLanguage.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRLanguage.m; sourceTree = "<group>"; };
 		8348A120B15EC05EBCB9F7A5 /* HRTestSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRTestSession.h; sourceTree = "<group>"; };
 		835A781577432BE555A35623 /* HRTestView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRTestView.h; sourceTree = "<group>"; };
+		8713F94FCC8FFBAC8DBFDB7B /* HomeRow3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = HomeRow3.xcdatamodel; sourceTree = "<group>"; };
 		87BDF60DED43C362DECDAD82 /* HRKeyboardLayout.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRKeyboardLayout.m; sourceTree = "<group>"; };
 		887AA73D0F9869E2CD9256AC /* HRTheme.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRTheme.m; sourceTree = "<group>"; };
 		88A0FDA66F1C7DC5D96E937C /* regtrav.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = regtrav.c; sourceTree = "<group>"; };
@@ -201,6 +206,7 @@
 		8F44104070CDAD43E3070A05 /* HRCodeLibrary.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRCodeLibrary.h; sourceTree = "<group>"; };
 		8F7B479F4B5CA8D5F994FB86 /* HRTestView.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRTestView.m; sourceTree = "<group>"; };
 		91E18EEB5065BA78288CB24E /* HRPreferencesWindowController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRPreferencesWindowController.m; sourceTree = "<group>"; };
+		941F0586C5639C751F7A84E1 /* HRResultExchange.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRResultExchange.h; sourceTree = "<group>"; };
 		95D2FBB4E77838CD27EADFAB /* HRGNUstepCompat.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRGNUstepCompat.h; sourceTree = "<group>"; };
 		9AFF612DC68E0331A8D886AF /* HRTextMateGrammar.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRTextMateGrammar.h; sourceTree = "<group>"; };
 		9C84A094C072C97946E3E867 /* HRWeakSpots.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRWeakSpots.m; sourceTree = "<group>"; };
@@ -249,6 +255,7 @@
 		EDA633D524AD0BB848E0C5C7 /* PreferencesWindow.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PreferencesWindow.xib; sourceTree = "<group>"; };
 		F0DDF2FBC24ECE522D9BD6DF /* regext.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = regext.c; sourceTree = "<group>"; };
 		F1F3C834A253720BBEF0DEFB /* HRWeakSpotsTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRWeakSpotsTests.m; sourceTree = "<group>"; };
+		F8BC17DD5BE54C1C1D795FFF /* HRResultExchange.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRResultExchange.m; sourceTree = "<group>"; };
 		FD49F1D2553AB14D5E553904 /* HRAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRAppDelegate.h; sourceTree = "<group>"; };
 		FE9EEF232FDB28584E2577F2 /* HRCodeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRCodeTests.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -345,6 +352,8 @@
 				D0EA0DC0B2E877D06D6811DF /* HRRandom.m */,
 				107E5660AA0B2F642D838F84 /* HRRegex.h */,
 				EACB2F8FFD0918490B319D65 /* HRRegex.m */,
+				941F0586C5639C751F7A84E1 /* HRResultExchange.h */,
+				F8BC17DD5BE54C1C1D795FFF /* HRResultExchange.m */,
 				5E61D206D54C696B11546BBB /* HRStatistics.h */,
 				0754630AD2B9E29DFBA7C9EF /* HRStatistics.m */,
 				CAAE92A17429ACE9C2851297 /* HRTestConfiguration.h */,
@@ -437,6 +446,7 @@
 				C8A1FB8B34F38CCDBBF9927F /* HRKeyboardLayoutTests.m */,
 				05F81AFC19398833C60203E1 /* HRLanguageTests.m */,
 				CF14938BC70685B40F2BE7DF /* HRRegexTests.m */,
+				407EF1C0F14ABC2CE86F98A0 /* HRResultExchangeTests.m */,
 				AAFDF63F888B4143A2B186B2 /* HRResultStoreTests.m */,
 				A829C576C1166BA59993CFA8 /* HRScorerTests.m */,
 				3A4867FA2E5E868F0BE97ACF /* HRSessionTests.m */,
@@ -574,6 +584,7 @@
 				F5330D6087FDA723D02B3D97 /* HRLanguage.m in Sources */,
 				DDB9547F73D671C6D1BFECE9 /* HRRandom.m in Sources */,
 				A1970F8A57B2D44562752F79 /* HRRegex.m in Sources */,
+				775B589048197AC52481AAA6 /* HRResultExchange.m in Sources */,
 				06F089EDD6EC574C70471C2E /* HRStatistics.m in Sources */,
 				A5BCE2DFAC0EF71AC5BD31BF /* HRTestConfiguration.m in Sources */,
 				DF5475B2F761DFFCF9AB5BCF /* HRTestSession.m in Sources */,
@@ -630,6 +641,7 @@
 				84921F7366F4B1B4DFFC900B /* HRKeyboardLayoutTests.m in Sources */,
 				8104D80551905181DE61C62F /* HRLanguageTests.m in Sources */,
 				78C474AE1E869F0C3B6A27DB /* HRRegexTests.m in Sources */,
+				3757E7CCF2FCEA74702631E8 /* HRResultExchangeTests.m in Sources */,
 				5F242535CE7D0F7864FE4567 /* HRResultStoreTests.m in Sources */,
 				2964140427C655B8751F6038 /* HRScorerTests.m in Sources */,
 				760C45C93A7118F77A4256C3 /* HRSessionTests.m in Sources */,
@@ -646,6 +658,7 @@
 				47CD7CC89351A29A9CC0A459 /* HRLanguage.m in Sources */,
 				AA9C0BDFB83DF819DB570E38 /* HRRandom.m in Sources */,
 				567646BE28612DEF5AA98F95 /* HRRegex.m in Sources */,
+				561FC28584EB97BD01126EB7 /* HRResultExchange.m in Sources */,
 				E8E3FC3755F0CE61922DBBFD /* HRStatistics.m in Sources */,
 				38175897A96499D52BB79C2A /* HRTestConfiguration.m in Sources */,
 				9FE22781EE5C158B5B02F1AD /* HRTestSession.m in Sources */,
@@ -855,10 +868,11 @@
 		59E422D56244B9DCA01596B7 /* HomeRow.xcdatamodeld */ = {
 			isa = XCVersionGroup;
 			children = (
+				8713F94FCC8FFBAC8DBFDB7B /* HomeRow3.xcdatamodel */,
 				35C326BD4E2C8D87ED8CE206 /* HomeRow2.xcdatamodel */,
 				11345019E5CBCFD73B4A2E7A /* HomeRow.xcdatamodel */,
 			);
-			currentVersion = 35C326BD4E2C8D87ED8CE206 /* HomeRow2.xcdatamodel */;
+			currentVersion = 8713F94FCC8FFBAC8DBFDB7B /* HomeRow3.xcdatamodel */;
 			path = HomeRow.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

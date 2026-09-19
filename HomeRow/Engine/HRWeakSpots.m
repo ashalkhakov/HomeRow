@@ -17,6 +17,17 @@
     NSDictionary *_weakness;
 }
 
++ (NSDictionary *)counts:(NSDictionary *)counts keepingCharacters:(NSSet *)characters
+{
+    if (!characters) return counts;
+    NSMutableDictionary *kept = [NSMutableDictionary dictionary];
+    for (NSString *ch in counts) {
+        /* space and Return belong to every text; they count towards the averages */
+        if ([characters containsObject:ch] || [ch isEqualToString:@" "] || [ch isEqualToString:@"\n"]) kept[ch] = counts[ch];
+    }
+    return kept;
+}
+
 + (instancetype)weakSpotsFromCounts:(NSDictionary *)counts minimumKeyPresses:(NSUInteger)minimumKeyPresses
               minimumTotalPresses:(NSUInteger)minimumTotalPresses maximum:(NSUInteger)maximum
 {
@@ -39,16 +50,38 @@
         [weak addObject:k];
         if (maximum > 0 && [weak count] >= maximum) break;
     }
-    if ([weak count] == 0) return nil;
-
-    HRWeakSpots *w = [[self alloc] init];
-    double worst = [(HRStatKey *)weak[0] errorRate];
     NSMutableArray *characters = [NSMutableArray array];
     NSMutableDictionary *weakness = [NSMutableDictionary dictionary];
+    double worst = [weak count] > 0 ? [(HRStatKey *)weak[0] errorRate] : 0.0;
     for (HRStatKey *k in weak) {
         [characters addObject:k.character];
         weakness[k.character] = @(worst > 0.0 ? [k errorRate] / worst : 1.0);
     }
+    NSArray *missed = [characters copy];
+
+    /* slow keys fill what room the missed ones leave */
+    NSMutableArray *slowOnes = [NSMutableArray array];
+    NSTimeInterval average = [HRStatistics averageKeyTimeInCounts:counts];
+    if (average > 0.0) {
+        double slowest = 0.0;
+        for (HRStatKey *k in [HRStatistics slowKeysFromCounts:counts minimumTimed:minimumKeyPresses]) {
+            if (maximum > 0 && [characters count] >= maximum) break;
+            if ([k.character isEqualToString:@" "] || [k.character isEqualToString:@"\n"]) continue;
+            if ([k averageTime] < average * 1.33) break;   /* sorted: the rest is faster still */
+            if ([characters containsObject:k.character]) continue;
+            double excess = [k averageTime] / average - 1.0;
+            if (slowest == 0.0) slowest = excess;
+            [characters addObject:k.character];
+            [slowOnes addObject:k.character];
+            /* a slow key is pressed right, only late: it weighs less than a missed one */
+            weakness[k.character] = @(0.6 * (slowest > 0.0 ? excess / slowest : 1.0));
+        }
+    }
+    if ([characters count] == 0) return nil;
+
+    HRWeakSpots *w = [[self alloc] init];
+    w->_missedCharacters = missed;
+    w->_slowCharacters = [slowOnes copy];
     w->_characters = [characters copy];
     w->_weakness = [weakness copy];
     w->_overallErrorRate = overall;

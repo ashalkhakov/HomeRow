@@ -93,6 +93,24 @@
  * character is the one that was WANTED when the key was pressed. */
 - (NSDictionary *)keyCountsForKind:(HRStatKind)kind since:(NSDate *)since;
 
+/* --- history ---------------------------------------------------------- */
+
+/* The best result (by WPM) of every setting of the time and words tests
+ * that has one, best first: HRTestResult. */
+- (NSArray *)personalBests;
+/* Removes one result with its key stats.  Lesson records and the place in
+ * a course are not touched. */
+- (BOOL)deleteResult:(HRTestResult *)result error:(NSError **)error;
+
+/* Every result as a record for HRResultExchange, oldest first.  Results
+ * from before there were uuids are given one on the way (and keep it), so
+ * that exporting twice and importing both adds nothing twice. */
+- (NSArray *)exportRecords;
+/* Adds the records that are not here yet: the same uuid, or -- for files
+ * without them -- the same moment, mode and speed, is "here".  Returns how
+ * many were added; `duplicates` how many were not.  One save for all. */
+- (NSUInteger)importRecords:(NSArray *)records duplicates:(NSUInteger *)duplicates error:(NSError **)error;
+
 /* Newest first; limit 0 = all. */
 - (NSArray *)recentResultsWithLimit:(NSUInteger)limit error:(NSError **)error;
 

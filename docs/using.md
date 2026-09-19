@@ -77,23 +77,40 @@ file and some source, not writing a lexer.
 
 ## Statistics
 
-**Test ▸ Statistics…** (Cmd/Ctrl+Shift+S) shows what the saved results add up
-to, for everything or for tests, courses or code alone, over the last 7, 30
-or 90 days or all time: headline numbers (tests, time typing, average, recent
-and best speed, accuracy); speed and accuracy test after test, each dot a
-test and the line the average of the last ten; minutes of practice day by
-day, gaps included; and the keyboard tinted by how often each key is missed
-per press, with the worst keys named underneath. Move the mouse over a chart
-to read a single test or day.
+**Test ▸ Statistics…** (Cmd/Ctrl+Shift+S) has three panes. *Overview* and
+*History* can be narrowed to tests, courses or code, and to the last 7, 30 or
+90 days.
+
+**Overview** — headline numbers (tests, time typing, average, recent and best
+speed, accuracy); speed and accuracy test after test, each dot a test and the
+line the average of the last ten; minutes of practice day by day, gaps
+included; and the keyboard as a heatmap, with the worst keys named underneath.
+*Keys by mistakes* tints a key by how often it is missed per press (the worst
+of its characters); *Keys by speed* by how long it takes, from the fastest key
+(plain) to the slowest. Move the mouse over a chart to read a single test or
+day.
+
+**History** — every saved result, newest first, personal bests starred.
+Select one for its per-second chart and character counts. *Delete…* removes the selected results — several
+can be selected — from the history and the statistics. *Export…* writes everything
+to a file: name it `.json` to keep all of it, or `.csv` for a spreadsheet —
+the CSV has MonkeyType's columns, so tools written for MonkeyType exports read
+it. *Import…* reads a HomeRow file of either kind, or a `results.csv` exported
+from MonkeyType; nothing is ever added twice. That is also how a history moves
+from one machine to another. The formats: [results-format.md](results-format.md).
+
+**Progress** — one course or code file at a time: best speed lesson by lesson,
+and the mistakes in the best run, with how much of it is done.
 
 ## Practising weak keys
 
 **Test ▸ Practise Weak Keys** (Cmd/Ctrl+5), the *weak keys* entry of the mode
 pop-up, or the button in the Statistics window. HomeRow looks at the hits and
 misses of the last thirty days (of everything, if that is too little) and
-takes up to six keys that you miss clearly more often than you miss keys on
-the whole — half again your overall error rate, at least one miss in a
-hundred, and only keys pressed often enough to judge. The round is forty words
+takes up to six keys: first those you *miss* clearly more often than you miss
+keys on the whole — half again your overall error rate, at least one miss in a
+hundred — then those that are clearly *slow*, a third slower than your keys
+are on average; in both cases only keys pressed often enough to judge. The round is forty words
 from the current word list, named in the caption above the text:
 
 - words containing the weak letters come up much more often, though not
@@ -102,6 +119,14 @@ from the current word list, named in the caption above the text:
 - what no word contains — digits, brackets, the symbols of code — is attached
   to words: wrapped around them when it is one of a pair, otherwise put before
   or after.
+
+Only keys that can come up count: those on the keyboard layout in use and in
+the current word list. What a German course left on record does not turn up
+in an English round on a US keyboard — switch the language and the layout,
+and it does.
+
+The words come from the language chosen in the **Language** menu, which the
+caption names. Following a course in another language does not change it.
 
 Return after a round starts the next, worked out afresh. With too little on
 record, or no key standing out, it says so instead. Rounds are saved like

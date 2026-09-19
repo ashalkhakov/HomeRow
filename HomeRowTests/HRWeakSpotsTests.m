@@ -107,4 +107,50 @@
     XCTAssertGreaterThan(wrapped, (NSUInteger)3);
 }
 
+/* Slow keys: pressed right, but late.  They fill what room the missed keys
+ * leave, and a key that is both is listed once, as missed. */
+- (void)testSlowKeysFollowTheMissedOnes
+{
+    NSDictionary *counts = @{
+        @"e": @{@"hits": @990, @"misses": @10, @"timed": @900, @"time": @135.0},   /* 0.15 s */
+        @"t": @{@"hits": @980, @"misses": @20, @"timed": @900, @"time": @144.0},   /* 0.16 s */
+        @"q": @{@"hits": @40, @"misses": @10, @"timed": @30, @"time": @12.0},      /* missed AND slow */
+        @"b": @{@"hits": @200, @"misses": @2, @"timed": @180, @"time": @54.0},     /* 0.30 s: slow */
+        @"x": @{@"hits": @6, @"misses": @0, @"timed": @5, @"time": @5.0},          /* slow, but five presses */
+        @" ": @{@"hits": @500, @"misses": @5, @"timed": @450, @"time": @60.0}};
+    HRWeakSpots *w = [HRWeakSpots weakSpotsFromCounts:counts minimumKeyPresses:10 minimumTotalPresses:200 maximum:6];
+    NSArray *missed = @[@"q"], *slow = @[@"b"], *both = @[@"q", @"b"];
+    XCTAssertEqualObjects(w.missedCharacters, missed);
+    XCTAssertEqualObjects(w.slowCharacters, slow);
+    XCTAssertEqualObjects(w.characters, both);
+    XCTAssertLessThan([w weaknessOfCharacter:@"b"], [w weaknessOfCharacter:@"q"]);
+    XCTAssertGreaterThan([w weaknessOfCharacter:@"b"], 0.0);
+
+    /* nothing missed, something slow: still a verdict */
+    NSDictionary *accurate = @{@"e": @{@"hits": @1000, @"misses": @0, @"timed": @900, @"time": @135.0},
+                               @"b": @{@"hits": @200, @"misses": @0, @"timed": @180, @"time": @54.0}};
+    HRWeakSpots *onlySlow = [HRWeakSpots weakSpotsFromCounts:accurate minimumKeyPresses:10 minimumTotalPresses:200 maximum:6];
+    XCTAssertEqualObjects(onlySlow.characters, slow);
+    XCTAssertEqual([onlySlow.missedCharacters count], (NSUInteger)0);
+}
+
+/* What a German course left behind is not an English typist's weak spot. */
+- (void)testOnlyWhatCanComeUpIsPractised
+{
+    NSMutableDictionary *counts = [[self counts] mutableCopy];
+    counts[@"\u00FC"] = @{@"hits": @10, @"misses": @15};
+    counts[@"\u00E9"] = @{@"hits": @9, @"misses": @5};
+    HRWeakSpots *all = [HRWeakSpots weakSpotsFromCounts:counts minimumKeyPresses:10 minimumTotalPresses:200 maximum:6];
+    XCTAssertEqualObjects([all.characters firstObject], @"\u00FC", @"unfiltered, the umlaut leads");
+
+    NSSet *usEnglish = [NSSet setWithArray:@[@"e", @"t", @"q", @"#", @"T", @"z"]];
+    NSDictionary *kept = [HRWeakSpots counts:counts keepingCharacters:usEnglish];
+    XCTAssertNil(kept[@"\u00FC"]);
+    XCTAssertNotNil(kept[@" "], @"space stays: it counts towards the averages");
+    HRWeakSpots *here = [HRWeakSpots weakSpotsFromCounts:kept minimumKeyPresses:10 minimumTotalPresses:200 maximum:6];
+    NSArray *expected = @[@"#", @"q", @"T"];
+    XCTAssertEqualObjects(here.characters, expected);
+    XCTAssertEqualObjects([HRWeakSpots counts:counts keepingCharacters:nil], counts, @"no set, no filter");
+}
+
 @end

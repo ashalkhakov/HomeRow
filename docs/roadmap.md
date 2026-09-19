@@ -11,7 +11,7 @@ plans.
 2. Dead keys on macOS (fixed)
 3. Preferences window (done)
 4. Weak-spot practice (done)
-5. History list and export
+5. History list and export (done)
 6. Tag `v0.1`
 
 ## Known bugs
@@ -38,14 +38,16 @@ plans.
       keyboard layout and when the keyboard shows, comments in code, where the
       data lives. *Not seen on a display yet.* Later: sounds beyond the beep,
       a tab width for code, moving the data.
-- [ ] **Statistics, further slices** — a history list of single results;
-      progress charts per course and per file; *speed* per key (only error
-      rate so far); personal bests; export and import (JSON/CSV).
+- [x] **Statistics, further slices** — History pane (every result, its
+      per-second chart, delete), personal bests, export to JSON and to a
+      MonkeyType-compatible CSV, import of both and of MonkeyType's own
+      export, time per key (data model 3) with a speed heatmap, Progress pane
+      per course and code file. Still open: charts of a single setting over
+      time; bigrams.
 - [x] **Weak-spot practice** — rounds of words weighted towards the keys
       that are *missed* clearly more often than the typist's average; weak
-      capitals and symbols are worked into the words. Still to come: *slow*
-      keys (needs per-key timing, which results do not store yet) and letter
-      pairs.
+      capitals and symbols are worked into the words; *slow* keys follow the
+      missed ones. Still to come: letter pairs.
 - [ ] **Generated courses** — lesson plan × layout × language, for everything
       GNU Typist has no course for. With it: layout packs for Czech, Slovenian
       and Romanian, and a numeric keypad drawing.
@@ -61,6 +63,11 @@ plans.
 
 ## Ideas beyond the plan
 
+- **Sync** — every result has a uuid and is never edited once saved, so two
+  stores merge by union; the machinery belongs in FreeCoreData, not here
+  (change tracking, a transport), and course progress needs a merge rule
+  first. Until then: export on one machine, import on the other. See
+  [results-format.md](results-format.md).
 - **Bigram and word statistics** — slow pairs ("th", "br") explain speed
   better than single keys; needs the per-keystroke log the feature set
   describes.

@@ -43,7 +43,10 @@ typedef NS_ENUM(NSInteger, HRStatKind) {
 @property (nonatomic, copy) NSString *character;
 @property (nonatomic) NSUInteger hits;
 @property (nonatomic) NSUInteger misses;
+@property (nonatomic) NSUInteger timedHits;      /* hits whose time was taken */
+@property (nonatomic) NSTimeInterval totalTime;  /* what those took together */
 - (double)errorRate;                             /* misses / (hits + misses), 0...1 */
+- (NSTimeInterval)averageTime;                   /* seconds per timed hit; 0 when none */
 @end
 
 @interface HRStatistics : NSObject
@@ -78,6 +81,14 @@ typedef NS_ENUM(NSInteger, HRStatKind) {
  * `minimumPresses` times are left out (one slip in two presses is not 50%
  * of anything).  `counts`: character -> @{@"hits", @"misses"}. */
 + (NSArray *)keysFromCounts:(NSDictionary *)counts minimumPresses:(NSUInteger)minimumPresses;
+
+/* Keys sorted by the time they take, slowest first; those timed fewer than
+ * `minimumTimed` times are left out.  Same `counts`, with @"timed" and
+ * @"time" beside the hits and misses (results saved before timing was
+ * recorded simply have none). */
++ (NSArray *)slowKeysFromCounts:(NSDictionary *)counts minimumTimed:(NSUInteger)minimumTimed;
+/* Seconds per timed hit over all keys; 0 when nothing was timed. */
++ (NSTimeInterval)averageKeyTimeInCounts:(NSDictionary *)counts;
 
 /* "Jan 10" -- by arithmetic, for the same reason -days avoids NSCalendar
  * (NSDateFormatter is as empty-handed without ICU). */

@@ -45,6 +45,8 @@
 @property (nonatomic, copy) NSString *courseFile;
 @property (nonatomic, strong) NSNumber *lessonIndex;
 @property (nonatomic, strong) NSNumber *stepIndex;
+/* model 3: what the result is called wherever it goes -- export, import, one day sync */
+@property (nonatomic, copy) NSString *uuid;
 
 @property (nonatomic, strong) NSSet *keyStats;
 
@@ -57,6 +59,9 @@
 @property (nonatomic, copy) NSString *character;
 @property (nonatomic, strong) NSNumber *hits;
 @property (nonatomic, strong) NSNumber *misses;
+/* model 3: the hits that were timed, and what they took together (seconds) */
+@property (nonatomic, strong) NSNumber *timedHits;
+@property (nonatomic, strong) NSNumber *totalTime;
 @property (nonatomic, strong) HRTestResult *result;
 
 @end

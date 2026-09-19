@@ -228,4 +228,33 @@
     XCTAssertEqualWithAccuracy(r.wpm, 9.0 / 5.0 * 10.0, 1e-9);
 }
 
+/* The time a key takes: from the keystroke before it, when both were right
+ * and there was no pause in between. */
+- (void)testKeysAreTimedWhenTheRunIsClean
+{
+    HRTestConfiguration *c = [HRTestConfiguration defaultConfiguration];
+    c.mode = HRTestModeCustom;
+    HRTestSession *s = [[HRTestSession alloc] initWithConfiguration:c
+                                                             source:[[HRFixedTextSource alloc] initWithText:@"abcab x"]];
+    [s insertText:@"a" atTime:10.0];    /* the first key has nothing before it */
+    [s insertText:@"b" atTime:10.2];    /* b: 0.2 */
+    [s insertText:@"x" atTime:10.3];    /* wrong */
+    [s deleteBackwardAtTime:10.4];
+    [s insertText:@"c" atTime:10.5];    /* after a mistake and Backspace: not timed */
+    [s insertText:@"a" atTime:10.8];    /* a: 0.3 */
+    [s insertText:@"b" atTime:15.0];    /* a pause: not timed */
+    [s insertText:@" " atTime:15.1];    /* space: 0.1 */
+    [s insertText:@"x" atTime:15.25];   /* x: 0.15 */
+    XCTAssertEqual(s.state, HRSessionFinished);
+    NSDictionary *k = [s summary].keyStats;
+    XCTAssertEqual([k[@"a"][@"timed"] unsignedIntegerValue], (NSUInteger)1);
+    XCTAssertEqualWithAccuracy([k[@"a"][@"time"] doubleValue], 0.3, 1e-9);
+    XCTAssertEqual([k[@"b"][@"timed"] unsignedIntegerValue], (NSUInteger)1);
+    XCTAssertEqualWithAccuracy([k[@"b"][@"time"] doubleValue], 0.2, 1e-9);
+    XCTAssertEqual([k[@"c"][@"timed"] unsignedIntegerValue], (NSUInteger)0);
+    XCTAssertEqualWithAccuracy([k[@" "][@"time"] doubleValue], 0.1, 1e-9);
+    XCTAssertEqualWithAccuracy([k[@"x"][@"time"] doubleValue], 0.15, 1e-9);
+    XCTAssertEqual([k[@"b"][@"hits"] unsignedIntegerValue], (NSUInteger)2, @"counted as before");
+}
+
 @end

@@ -14,6 +14,8 @@
 static const NSUInteger HRLookahead = 60;
 /* Extra characters accepted past a word's end; more is only noise. */
 static const NSUInteger HRMaxExtra = 20;
+/* a key that took longer than this was not being typed: it was being looked for, or waited on */
+static const NSTimeInterval HRLongestKeyTime = 2.0;
 
 @implementation HRTestSession
 {
@@ -25,6 +27,9 @@ static const NSUInteger HRMaxExtra = 20;
 
     NSTimeInterval _startTime;
     NSTimeInterval _endTime;
+
+    NSTimeInterval _lastKeystrokeTime;   /* for the time a key takes, see -recordKeystrokeCorrect: */
+    BOOL _lastKeystrokeWasCorrect, _haveLastKeystroke;
 
     NSUInteger _correctKeystrokes;
     NSUInteger _incorrectKeystrokes;
@@ -135,7 +140,19 @@ static const NSUInteger HRMaxExtra = 20;
         }
         NSString *k = correct ? @"hits" : @"misses";
         s[k] = @([s[k] unsignedIntegerValue] + 1);
+        /* How long the key took: the time since the keystroke before it --
+         * for a key that was hit, straight after a key that was hit.  After
+         * a mistake the hand is somewhere else; after a pause the mind was;
+         * and text typed in one go (paste, tests) has no time in it. */
+        NSTimeInterval gap = time - _lastKeystrokeTime;
+        if (correct && _lastKeystrokeWasCorrect && _haveLastKeystroke && gap > 0.0 && gap <= HRLongestKeyTime) {
+            s[@"time"] = @([s[@"time"] doubleValue] + gap);
+            s[@"timed"] = @([s[@"timed"] unsignedIntegerValue] + 1);
+        }
     }
+    _lastKeystrokeTime = time;
+    _lastKeystrokeWasCorrect = correct;
+    _haveLastKeystroke = YES;
 }
 
 #pragma mark - Input
@@ -281,6 +298,7 @@ static const NSUInteger HRMaxExtra = 20;
 {
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
     if ([self backspaceIsOff]) return;
+    _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] > 0) {
         [typed removeLastObject];
@@ -293,6 +311,7 @@ static const NSUInteger HRMaxExtra = 20;
 {
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
     if ([self backspaceIsOff]) return;
+    _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] == 0 && ![self stepBackIntoPreviousWord]) return;
     [[self currentTyped] removeAllObjects];

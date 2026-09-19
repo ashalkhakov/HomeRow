@@ -31,6 +31,11 @@
     return total > 0 ? (double)_misses / (double)total : 0.0;
 }
 
+- (NSTimeInterval)averageTime
+{
+    return _timedHits > 0 ? _totalTime / (double)_timedHits : 0.0;
+}
+
 @end
 
 @implementation HRStatistics
@@ -144,6 +149,8 @@
         k.character = ch;
         k.hits = [counts[ch][@"hits"] unsignedIntegerValue];
         k.misses = [counts[ch][@"misses"] unsignedIntegerValue];
+        k.timedHits = [counts[ch][@"timed"] unsignedIntegerValue];
+        k.totalTime = [counts[ch][@"time"] doubleValue];
         if (k.hits + k.misses < minimumPresses) continue;
         [keys addObject:k];
     }
@@ -154,6 +161,31 @@
         return [a.character compare:b.character];
     }];
     return keys;
+}
+
++ (NSArray *)slowKeysFromCounts:(NSDictionary *)counts minimumTimed:(NSUInteger)minimumTimed
+{
+    NSMutableArray *keys = [NSMutableArray array];
+    for (HRStatKey *k in [self keysFromCounts:counts minimumPresses:0]) {
+        if (k.timedHits == 0 || k.timedHits < minimumTimed) continue;
+        [keys addObject:k];
+    }
+    [keys sortUsingComparator:^NSComparisonResult(HRStatKey *a, HRStatKey *b) {
+        double ta = [a averageTime], tb = [b averageTime];
+        if (ta != tb) return ta > tb ? NSOrderedAscending : NSOrderedDescending;
+        return [a.character compare:b.character];
+    }];
+    return keys;
+}
+
++ (NSTimeInterval)averageKeyTimeInCounts:(NSDictionary *)counts
+{
+    double time = 0.0, timed = 0.0;
+    for (NSString *ch in counts) {
+        time += [counts[ch][@"time"] doubleValue];
+        timed += [counts[ch][@"timed"] doubleValue];
+    }
+    return timed > 0.0 ? time / timed : 0.0;
 }
 
 + (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone year:(long *)outYear

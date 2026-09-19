@@ -29,6 +29,7 @@
 #import "HRLayoutChooserController.h"
 #import "HRWeakSpots.h"
 #import "HRPlotView.h"
+#import "HRStatTilesView.h"
 #import <objc/runtime.h>
 
 static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
@@ -40,7 +41,7 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
-@interface HRAppDelegate () <HRCourseWindowDelegate, HRCodeWindowDelegate, HRPreferencesDelegate, HRLayoutChooserDelegate>
+@interface HRAppDelegate () <HRCourseWindowDelegate, HRCodeWindowDelegate, HRPreferencesDelegate, HRLayoutChooserDelegate, HRStatsSubjectSource>
 @end
 
 @implementation HRAppDelegate
@@ -246,6 +247,24 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         [failures addObject:@"the first lesson of q.typ did not start"];
     } else {
         if (!_keyboardShown || [_keyboardView isHidden]) [failures addObject:@"the keyboard is not shown in a course"];
+        /* a German course is followed for a moment: its results are German, the tests stay as they were */
+        {
+            NSString *languageBefore = [_configuration.languageID copy];
+            NSString *german = nil;
+            for (NSDictionary *course in _courses) if ([course[@"language"] isEqual:@"german"]) { german = course[@"file"]; break; }
+            if (german) {
+                /* leave no trace of it: unless the course was already being followed, forget it again */
+                BOOL followed = [_store progressForCourse:german] != nil;
+                [self startLesson:0 ofCourse:german atStep:0];
+                for (NSUInteger guard = 0; _run && _testView.pageText && guard < 50; guard++) [self testViewDidDismissPage:_testView];
+                if (_session && ![_session.configuration.languageID isEqualToString:@"german"]) {
+                    [failures addObject:@"a German lesson does not record its language"];
+                }
+                if (![_configuration.languageID isEqual:languageBefore]) [failures addObject:@"following a German course changed the language of the tests"];
+                if (!followed) [_store resetCourse:german error:NULL];
+                [self startLesson:0 ofCourse:@"q.typ" atStep:0];
+            }
+        }
         NSRect contentBounds = [[_window contentView] bounds];
         if (NSMaxY([_modePopUp frame]) < NSMaxY(contentBounds) - 30.0
             || NSMaxY([_testView frame]) > NSMinY([_modePopUp frame])
@@ -412,6 +431,7 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     {
         HRStatsWindowController *stats = [self statsWindow];
         [stats showWindow:self];
+        stats.pane = HRStatsPaneOverview;
         [[stats kindPopUp] selectItemWithTag:HRStatKindAll];
         [[stats periodPopUp] selectItemWithTag:0];
         [stats filterChanged:self];
@@ -419,7 +439,14 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
             @"tilesView": (id)stats.tilesView ?: [NSNull null], @"speedPlot": (id)stats.speedPlot ?: [NSNull null],
             @"accuracyPlot": (id)stats.accuracyPlot ?: [NSNull null], @"daysPlot": (id)stats.daysPlot ?: [NSNull null],
             @"keyboardView": (id)stats.keyboardView ?: [NSNull null], @"keysField": stats.keysField ?: [NSNull null],
-            @"practiceButton": (id)stats.practiceButton ?: [NSNull null]};
+            @"practiceButton": (id)stats.practiceButton ?: [NSNull null],
+            @"tabView": (id)stats.tabView ?: [NSNull null], @"heatPopUp": (id)stats.heatPopUp ?: [NSNull null],
+            @"historyScroll": (id)stats.historyScroll ?: [NSNull null], @"historyTable": (id)stats.historyTable ?: [NSNull null],
+            @"resultChart": (id)stats.resultChart ?: [NSNull null], @"resultField": (id)stats.resultField ?: [NSNull null],
+            @"deleteButton": (id)stats.deleteButton ?: [NSNull null], @"exportButton": (id)stats.exportButton ?: [NSNull null],
+            @"importButton": (id)stats.importButton ?: [NSNull null], @"subjectPopUp": (id)stats.subjectPopUp ?: [NSNull null],
+            @"progressField": (id)stats.progressField ?: [NSNull null], @"lessonSpeedPlot": (id)stats.lessonSpeedPlot ?: [NSNull null],
+            @"lessonAccuracyPlot": (id)stats.lessonAccuracyPlot ?: [NSNull null]};
         for (NSString *name in statsOutlets) {
             if (statsOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"StatsWindow.xib: outlet %@ is not connected", name]];
         }
@@ -468,12 +495,13 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
             [stats filterChanged:self];
             if ([stats.speedPlot.values count] < 1) [failures addObject:@"the statistics do not show the section of code that was typed"];
         }
-        NSRect content = [[[stats window] contentView] bounds];
+        if (!NSContainsRect([[[stats window] contentView] bounds], [stats.tabView frame])) [failures addObject:@"the Statistics tabs leave the window"];
         NSRect previous = NSZeroRect;
-        for (NSView *v in @[stats.keysField ?: (id)_window.contentView, stats.keyboardView ?: (id)_window.contentView, stats.daysPlot ?: (id)_window.contentView,
+        for (NSView *v in @[stats.keysField ?: (id)_window.contentView, stats.keyboardView ?: (id)_window.contentView,
+                            stats.heatPopUp ?: (id)_window.contentView, stats.daysPlot ?: (id)_window.contentView,
                             stats.accuracyPlot ?: (id)_window.contentView, stats.speedPlot ?: (id)_window.contentView, stats.tilesView ?: (id)_window.contentView]) {
-            if (!NSContainsRect(content, [v frame]) || NSMinY([v frame]) < NSMaxY(previous) - 0.5) {
-                [failures addObject:@"the Statistics window's views overlap or leave the window"];
+            if (!NSContainsRect([[v superview] bounds], [v frame]) || NSMinY([v frame]) < NSMaxY(previous) - 0.5) {
+                [failures addObject:@"the Statistics window's views overlap or leave their pane"];
                 break;
             }
             previous = [v frame];
@@ -481,6 +509,67 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         [[[stats window] contentView] display];
         printf("HomeRow smoke test: statistics over %lu results, %lu days\n",
                (unsigned long)[stats.speedPlot.values count], (unsigned long)[stats.daysPlot.values count]);
+
+        /* the keyboard by speed: the words test above was typed in two goes
+         * with no time between the keys, so there is nothing timed yet --
+         * and the pane must say so rather than show an empty board as news */
+        [[stats kindPopUp] selectItemWithTag:HRStatKindAll];
+        [[stats heatPopUp] selectItemWithTag:1];
+        [stats heatChanged:self];
+        if (!stats.keyboardView.heatShowsSpeed) [failures addObject:@"Keys by speed did not switch the heatmap"];
+        [[[stats window] contentView] display];
+        [[stats heatPopUp] selectItemWithTag:0];
+        [stats heatChanged:self];
+
+        if (_store) {
+            /* History: every result listed, the chart follows the selection,
+             * out to a file and back without doubling, and one can be deleted */
+            stats.pane = HRStatsPaneHistory;
+            NSUInteger saved = [[_store recentResultsWithLimit:0 error:NULL] count];
+            if ([stats.historyTable numberOfRows] != (NSInteger)saved) [failures addObject:@"the History pane does not list every result"];
+            if ([stats.historyTable selectedRow] != 0 || [[stats.resultField stringValue] length] == 0) {
+                [failures addObject:@"the History pane does not show the newest result"];
+            }
+            if ([stats.tilesView window] != nil || [stats.historyScroll window] == nil) [failures addObject:@"switching panes did not switch the views"];
+            if (!NSContainsRect([[stats.historyScroll superview] bounds], [stats.historyScroll frame])
+                || NSMinY([stats.historyScroll frame]) < NSMaxY([stats.resultChart frame])) {
+                [failures addObject:@"the History pane's views overlap or leave the window"];
+            }
+            [[[stats window] contentView] display];
+            NSString *directory = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                                   [NSString stringWithFormat:@"homerow-smoke-%d", (int)[[NSProcessInfo processInfo] processIdentifier]]];
+            [[NSFileManager defaultManager] createDirectoryAtPath:directory withIntermediateDirectories:YES attributes:nil error:NULL];
+            NSError *error = nil;
+            for (NSString *name in @[@"results.json", @"results.csv"]) {
+                NSURL *url = [NSURL fileURLWithPath:[directory stringByAppendingPathComponent:name]];
+                if (![stats exportToURL:url error:&error]) {
+                    [failures addObject:[NSString stringWithFormat:@"%@ was not exported: %@", name, error]];
+                    continue;
+                }
+                NSString *said = [stats importFromURL:url error:&error];
+                if (!said) [failures addObject:[NSString stringWithFormat:@"%@ was not read back: %@", name, error]];
+                if ([[_store recentResultsWithLimit:0 error:NULL] count] != saved) {
+                    [failures addObject:[NSString stringWithFormat:@"importing our own %@ doubled the history", name]];
+                }
+            }
+            [[NSFileManager defaultManager] removeItemAtPath:directory error:NULL];
+            if ([stats respondsToSelector:@selector(deleteSelectedResultWithoutAsking)]) {
+                [stats performSelector:@selector(deleteSelectedResultWithoutAsking)];
+                if ([[_store recentResultsWithLimit:0 error:NULL] count] != saved - 1 || [stats.historyTable numberOfRows] != (NSInteger)saved - 1) {
+                    [failures addObject:@"deleting a result did not remove it"];
+                }
+            }
+
+            /* Progress: the course and the code file typed above are both there */
+            stats.pane = HRStatsPaneProgress;
+            if ([stats.subjectPopUp numberOfItems] < 1) [failures addObject:@"the Progress pane lists no course"];
+            if ([stats.lessonSpeedPlot.values count] < 2) [failures addObject:@"the Progress pane shows no lessons"];
+            /* (no speeds to check: the drills above were typed in no time at all) */
+            if ([[stats.progressField stringValue] length] == 0) [failures addObject:@"the Progress pane says nothing about the course"];
+            if ([stats.lessonSpeedPlot window] == nil || [stats.historyScroll window] != nil) [failures addObject:@"the Progress pane did not take the window over"];
+            [[[stats window] contentView] display];
+            stats.pane = HRStatsPaneOverview;
+        }
         [[stats window] orderOut:self];
     }
 
@@ -502,7 +591,9 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
             if ([w.text rangeOfString:@"q"].location != NSNotFound || [w.text rangeOfString:@"#"].location != NSNotFound) withWeak++;
         }
         if (_testView.pageText != nil || [_session.words count] == 0) [failures addObject:@"a practice round did not start"];
-        else if (withWeak * 4 < [_session.words count]) [failures addObject:@"the practice round hardly contains the weak keys"];
+        /* the draw is random and q is rare in any word list: a handful, not a share
+         * (the unit tests pin the shares down with a seed) */
+        else if (withWeak < 2) [failures addObject:@"the practice round hardly contains the weak keys"];
         if ([_testView.caption rangeOfString:@"#"].location == NSNotFound) [failures addObject:@"the practice round does not say which keys it is for"];
         if ([_modePopUp isHidden]) [failures addObject:@"the mode pop-up is hidden in practice"];
         [[_window contentView] display];
@@ -1230,9 +1321,10 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     if (_run.stepIndex == 0) {
         [_store noteLessonStarted:lessonIndex title:lesson.title inCourse:file error:NULL];
     }
-    NSDictionary *course = [self courseEntryForFile:file];
     _configuration.mode = HRTestModeLesson;
-    if (course[@"language"]) _configuration.languageID = course[@"language"];
+    /* (the course's language goes on its results -- see -startLessonStep --
+     * and no further: following a German course must not turn the tests and
+     * the weak-key rounds German) */
     [self syncControls];
     [self saveConfiguration];
     [_window makeKeyAndOrderFront:self];
@@ -1289,7 +1381,10 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         }
         _testView.pageText = nil;
         _testView.caption = caption;
-        _session = [[HRTestSession alloc] initWithConfiguration:_configuration
+        HRTestConfiguration *configuration = [_configuration copy];
+        NSString *language = [self courseEntryForFile:_courseFile][@"language"];
+        if (language) configuration.languageID = language;
+        _session = [[HRTestSession alloc] initWithConfiguration:configuration
                                                          source:[[HRFixedTextSource alloc] initWithText:step.text]];
         _testView.session = _session;
     }
@@ -1544,12 +1639,38 @@ static const NSUInteger HRPracticeWords = 40;
 
 /* From the last thirty days if that is enough to go by, otherwise from
  * everything there is: what was a weak key a year ago need not be one now. */
+/* What can be practised here: the characters on the keyboard layout in use
+ * and those in the word list the round is drawn from (with their capitals).
+ * Everything else on record -- the umlauts of a German course, while the
+ * round is English on a US keyboard -- is somebody else's weak spot. */
+- (NSSet *)practisableCharacters
+{
+    NSMutableSet *characters = [NSMutableSet set];
+    HRKeyboardLayout *layout = [self layoutNamed:_configuration.layoutID] ?: [self layoutNamed:@"qwerty"];
+    for (NSUInteger row = 0; row < [layout numberOfRows]; row++) {
+        for (NSUInteger col = 0; col < [layout numberOfKeysInRow:row]; col++) {
+            for (NSString *ch in [layout charactersForKeyAtRow:row column:col]) if ([ch length] > 0) [characters addObject:ch];
+        }
+    }
+    NSString *list = [self currentWordListName];
+    for (NSString *word in (list ? [[self currentLanguage] wordsNamed:list error:NULL] : nil)) {
+        for (NSString *ch in [HRWord charactersOfString:word]) {
+            [characters addObject:ch];
+            [characters addObject:[ch uppercaseString]];
+        }
+    }
+    return characters;
+}
+
 - (HRWeakSpots *)currentWeakSpots
 {
     if (!_store) return nil;
+    NSSet *practisable = [self practisableCharacters];
     NSDate *month = [NSDate dateWithTimeIntervalSinceNow:-30.0 * 86400.0];
     for (NSDate *since in @[month, [NSDate distantPast]]) {
-        HRWeakSpots *spots = [HRWeakSpots weakSpotsFromCounts:[_store keyCountsForKind:HRStatKindAll since:since]
+        NSDictionary *counts = [HRWeakSpots counts:[_store keyCountsForKind:HRStatKindAll since:since]
+                                 keepingCharacters:practisable];
+        HRWeakSpots *spots = [HRWeakSpots weakSpotsFromCounts:counts
                                             minimumKeyPresses:10 minimumTotalPresses:300 maximum:6];
         if (spots) return spots;
     }
@@ -1677,10 +1798,44 @@ static const NSUInteger HRPracticeWords = 40;
     if (!_statsWindow) {
         _statsWindow = [[HRStatsWindowController alloc] initWithStore:_store theme:_theme];
         _statsWindow.keyboardLayout = [self layoutNamed:_configuration.layoutID] ?: [self layoutNamed:@"qwerty"];
+        _statsWindow.subjectSource = self;
         _statsWindow.practiceTarget = self;
         _statsWindow.practiceAction = @selector(practiseWeakKeys:);
     }
     return _statsWindow;
+}
+
+/* What a result's courseFile is called: a course by its language and title,
+ * a code file by its own. */
+- (NSString *)statistics:(HRStatsWindowController *)controller titleForCourseFile:(NSString *)courseFile
+{
+    if ([courseFile hasPrefix:@"code:"]) return [[self codeLibrary] fileWithIdentifier:courseFile].title;
+    NSDictionary *course = [self courseEntryForFile:courseFile];
+    if (!course) return nil;
+    NSString *language = course[@"language"];
+    for (HRLanguage *l in _languages) if ([l.identifier isEqual:course[@"language"]]) language = l.displayName;
+    return language ? [NSString stringWithFormat:@"%@ \u2014 %@", language, course[@"title"]] : course[@"title"];
+}
+
+- (NSArray *)subjectsForStatistics:(HRStatsWindowController *)controller
+{
+    NSMutableArray *subjects = [NSMutableArray array];
+    for (HRCourseProgress *progress in [_store startedCourses]) {
+        NSString *identifier = progress.courseFile;
+        NSString *title = [self statistics:controller titleForCourseFile:identifier];
+        if (!title) continue;   /* a course or file that is no longer there */
+        NSUInteger count = 0;
+        BOOL code = [identifier hasPrefix:@"code:"];
+        if (code) {
+            HRCodeFile *file = [[self codeLibrary] fileWithIdentifier:identifier];
+            count = [[self codeLibrary] documentForFile:file error:NULL].numberOfSections;
+        } else {
+            count = [[self scriptForCourseFile:identifier].lessons count];
+        }
+        if (count == 0) continue;
+        [subjects addObject:@{@"identifier": identifier, @"title": title, @"count": @(count), @"unit": code ? @"part" : @"lesson"}];
+    }
+    return subjects;
 }
 
 - (IBAction)showStatistics:(id)sender
@@ -1876,10 +2031,16 @@ static const NSUInteger HRPracticeWords = 40;
     _testView.caption = nil;
     _testView.pageText = nil;
     if (_configuration.mode == HRTestModePractice) {
-        NSMutableArray *names = [NSMutableArray array];
-        for (NSString *ch in _weakSpots.characters) [names addObject:ch];
-        _testView.caption = [NSString stringWithFormat:HRLoc(@"Practising the keys you miss most:   %@"),
-                             [names componentsJoinedByString:@"   "]];
+        NSMutableArray *parts = [NSMutableArray array];
+        if ([_weakSpots.missedCharacters count] > 0) {
+            [parts addObject:[NSString stringWithFormat:HRLoc(@"missed most:   %@"), [_weakSpots.missedCharacters componentsJoinedByString:@"   "]]];
+        }
+        if ([_weakSpots.slowCharacters count] > 0) {
+            [parts addObject:[NSString stringWithFormat:HRLoc(@"slowest:   %@"), [_weakSpots.slowCharacters componentsJoinedByString:@"   "]]];
+        }
+        /* the words come from the language chosen in the Language menu: say which */
+        _testView.caption = [NSString stringWithFormat:HRLoc(@"Practising the keys, in %@ \u2014 %@"),
+                             [self currentLanguage].displayName ?: @"?", [parts componentsJoinedByString:@"      "]];
     }
     _session = [[HRTestSession alloc] initWithConfiguration:_configuration source:[self makeSource]];
     _testView.session = _session;
@@ -1981,12 +2142,12 @@ static const NSUInteger HRPracticeWords = 40;
                  && best != nil && s.wpm > [best.wpm doubleValue];
         NSError *error = nil;
         BOOL saved = _codeFile
-            ? [_store recordSummary:s configuration:_configuration courseFile:_codeFile.identifier
+            ? [_store recordSummary:s configuration:(_session.configuration ?: _configuration) courseFile:_codeFile.identifier
                         lessonIndex:_codeSection stepIndex:0 date:[NSDate date] error:&error] != nil
             : _run
-            ? [_store recordSummary:s configuration:_configuration courseFile:_courseFile lessonIndex:_lessonIndex
+            ? [_store recordSummary:s configuration:(_session.configuration ?: _configuration) courseFile:_courseFile lessonIndex:_lessonIndex
                           stepIndex:_run.stepIndex date:[NSDate date] error:&error] != nil
-            : [_store recordSummary:s configuration:_configuration date:[NSDate date] error:&error] != nil;
+            : [_store recordSummary:s configuration:(_session.configuration ?: _configuration) date:[NSDate date] error:&error] != nil;
         if (!saved) {
             NSLog(@"HomeRow: the result was not saved: %@", error);
         }

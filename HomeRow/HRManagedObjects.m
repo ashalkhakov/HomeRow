@@ -15,7 +15,7 @@
 @dynamic wpm, rawWpm, accuracy, consistency, duration;
 @dynamic correctCharacters, incorrectCharacters, extraCharacters, missedCharacters;
 @dynamic series, keyStats;
-@dynamic courseFile, lessonIndex, stepIndex;
+@dynamic courseFile, lessonIndex, stepIndex, uuid;
 
 - (NSDictionary *)seriesDictionary
 {
@@ -32,7 +32,7 @@
 
 @implementation HRKeyStat
 
-@dynamic character, hits, misses, result;
+@dynamic character, hits, misses, timedHits, totalTime, result;
 
 @end
 

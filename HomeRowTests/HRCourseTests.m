@@ -261,4 +261,61 @@
     }
 }
 
+/* The same from version 2 -- the stores people actually have -- with key
+ * stats in it: they must come through, untimed, and new results must be
+ * able to carry a time and a uuid beside them. */
+- (void)testAVersionTwoStoreIsMigratedWithItsKeyStats
+{
+    NSBundle *bundle = [NSBundle bundleForClass:[self class]];
+    NSURL *momd = [bundle URLForResource:@"HomeRow" withExtension:@"momd"];
+    NSManagedObjectModel *v2 = [[NSManagedObjectModel alloc] initWithContentsOfURL:[momd URLByAppendingPathComponent:@"HomeRow2.mom"]];
+    XCTAssertNotNil(v2, @"the version-2 model must stay in the bundle");
+    XCTAssertNil([[[v2 entitiesByName][@"KeyStat"] attributesByName] objectForKey:@"totalTime"]);
+
+    NSURL *url = [NSURL fileURLWithPath:[_dir stringByAppendingPathComponent:@"v2.sqlite"]];
+    NSError *e = nil;
+    @autoreleasepool {
+        NSPersistentStoreCoordinator *psc = [[NSPersistentStoreCoordinator alloc] initWithManagedObjectModel:v2];
+        XCTAssertNotNil([psc addPersistentStoreWithType:NSSQLiteStoreType configuration:nil URL:url options:nil error:&e], @"%@", e);
+#if defined(__APPLE__)
+        NSManagedObjectContext *ctx = [[NSManagedObjectContext alloc] initWithConcurrencyType:NSMainQueueConcurrencyType];
+#else
+        NSManagedObjectContext *ctx = [[NSManagedObjectContext alloc] init];
+#endif
+        [ctx setPersistentStoreCoordinator:psc];
+        NSManagedObject *old = [NSEntityDescription insertNewObjectForEntityForName:@"TestResult" inManagedObjectContext:ctx];
+        [old setValue:[NSDate dateWithTimeIntervalSinceNow:-3600.0] forKey:@"date"];
+        [old setValue:@"words" forKey:@"mode"];
+        [old setValue:@"words:25:english/words-200" forKey:@"settingsKey"];
+        [old setValue:@48.0 forKey:@"wpm"];
+        NSManagedObject *key = [NSEntityDescription insertNewObjectForEntityForName:@"KeyStat" inManagedObjectContext:ctx];
+        [key setValue:@"a" forKey:@"character"];
+        [key setValue:@12 forKey:@"hits"];
+        [key setValue:@3 forKey:@"misses"];
+        [key setValue:old forKey:@"result"];
+        XCTAssertTrue([ctx save:&e], @"%@", e);
+    }
+
+    HRResultStore *store = [self storeAtURL:url];
+    if (store.didSetAsideUnreadableStore) {
+        NSLog(@"HRCourseTests: this Core Data could not migrate the version-2 store; it was set aside");
+        return;
+    }
+    XCTAssertEqual([[store recentResultsWithLimit:0 error:&e] count], (NSUInteger)1, @"migration keeps the history");
+    NSDictionary *a = [store keyCountsForKind:HRStatKindAll since:nil][@"a"];
+    XCTAssertEqualObjects(a[@"hits"], @12);
+    XCTAssertEqualObjects(a[@"misses"], @3);
+    XCTAssertEqual([a[@"timed"] unsignedIntegerValue], (NSUInteger)0, @"an old result has no times");
+
+    HRTestSummary *s = [self summaryWithWpm:50 correct:40 wrong:0 seconds:10];
+    s.keyStats = @{@"a": @{@"hits": @8, @"misses": @0, @"timed": @6, @"time": @1.5}};
+    HRTestResult *r = [store recordSummary:s configuration:[HRTestConfiguration defaultConfiguration] date:nil error:&e];
+    XCTAssertNotNil(r, @"%@", e);
+    XCTAssertEqual([r.uuid length], (NSUInteger)36);
+    a = [store keyCountsForKind:HRStatKindAll since:nil][@"a"];
+    XCTAssertEqualObjects(a[@"hits"], @20);
+    XCTAssertEqual([a[@"timed"] unsignedIntegerValue], (NSUInteger)6);
+    XCTAssertEqualWithAccuracy([a[@"time"] doubleValue], 1.5, 1e-9);
+}
+
 @end

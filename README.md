@@ -57,8 +57,12 @@ Details: [docs/building.md](docs/building.md).
   themselves in, and a wrong key does not go in. Syntax colours come from the
   **TextMate grammars** VS Code uses, run by a tokenizer written for HomeRow.
 - **Statistics** — headline numbers, speed and accuracy test after test with a
-  moving average, practice day by day, and the keyboard tinted by how often
-  each key is missed; for everything or for tests, courses or code alone.
+  moving average, practice day by day, and the keyboard as a heatmap of
+  mistakes or of speed; a history of every result with its per-second chart
+  and personal bests; progress through each course and code file.
+- **Your history is portable** — export to JSON (everything) or to CSV with
+  [MonkeyType's columns](docs/results-format.md); import either, or a MonkeyType
+  export. That is also how it moves between machines.
 - **Weak-spot practice** — rounds of words weighted towards the keys you miss
   clearly more often than your own average; weak capitals and symbols are
   worked into the words.
@@ -75,9 +79,10 @@ How to use all of it, with every shortcut: [docs/using.md](docs/using.md).
 - **Input methods** that convert text after it is typed (Chinese, Japanese,
   Korean) are not supported; dead keys and Option accents are. On macOS a held
   key repeats and does not open the accent pop-up.
-- **Weak-spot practice goes by missed keys only**, not yet by slow ones or
-  by letter pairs.
-- **Statistics are charts only** — no list of single results, no export.
+- **Weak-spot practice goes by single keys**, missed or slow, not yet by
+  letter pairs.
+- **No sync.** Moving a history between machines is export and import by hand;
+  the place in a course does not travel yet.
 - **Code mode** has no code-specific metrics yet, never asks for Tab, and
   TextMate grammar *injections* are ignored (none of the bundled languages
   needs them).
@@ -113,7 +118,7 @@ block-beta
 Everything under `Engine/` is free of AppKit and takes its timestamps as
 arguments, so the rules — what counts as an error, when a drill repeats, how a
 file is cut into parts, what a grammar makes of a line — are tested without a
-display: 68 XCTest cases, including vscode-textmate's own tokenizer suite, run
+display: 77 XCTest cases, including vscode-textmate's own tokenizer suite, run
 on both platforms in CI. What cannot be unit-tested is covered by a smoke test
 built into the app (`HR_SMOKE_TEST=1`): CI starts the packaged AppImage and the
 macOS app, which check their own outlets, type a test, a lesson and a section
@@ -136,7 +141,7 @@ of code, open every window, and exit 0.
 - [Using HomeRow](docs/using.md) — keys, courses, code, statistics
 - [Building and packaging](docs/building.md)
 - Adding [a language](docs/adding-a-language.md), [a keyboard layout](docs/adding-a-layout.md), [a programming language](docs/adding-a-code-language.md)
-- [How the numbers are worked out](docs/metrics.md) · [Feature set and phases](docs/feature-set.md) · [Roadmap](docs/roadmap.md)
+- [How the numbers are worked out](docs/metrics.md) · [The results file](docs/results-format.md) · [Feature set and phases](docs/feature-set.md) · [Roadmap](docs/roadmap.md)
 - [GNUstep patches](patches/gnustep/README.md)
 
 ## Where the content comes from

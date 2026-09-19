@@ -118,6 +118,12 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
     for (NSString *ch in characters) {
         if ([ch length] == 0) continue;
         NSDictionary *c = _heatCounts[ch];
+        if (_heatShowsSpeed) {
+            NSUInteger timed = [c[@"timed"] unsignedIntegerValue];
+            if (timed == 0 || timed < _heatMinimumPresses) continue;
+            worst = MAX(worst, [c[@"time"] doubleValue] / (double)timed);
+            continue;
+        }
         NSUInteger hits = [c[@"hits"] unsignedIntegerValue], misses = [c[@"misses"] unsignedIntegerValue];
         NSUInteger total = hits + misses;
         if (total == 0 || total < _heatMinimumPresses) continue;
@@ -141,8 +147,36 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
         }
     }
     most = MAX(most, [self rateForCharacters:@[@" "]]);
+    if (_heatShowsSpeed) return most;
     /* a board with next to no errors must not shout about its one 0.5% key */
     return MAX(most, 0.02);
+}
+
+/* Speed is tinted from the fastest key up, not from zero: every key takes
+ * SOME time, and a board that is all mid-tint says nothing. */
+- (double)heatMinimumRate
+{
+    if (!_heatShowsSpeed) return 0.0;
+    double least = -1.0;
+    for (NSUInteger row = 0; row < [_keyboardLayout numberOfRows]; row++) {
+        for (NSUInteger col = 0; col < [_keyboardLayout numberOfKeysInRow:row]; col++) {
+            double v = [self heatRateForKeyAtRow:row column:col];
+            if (v >= 0.0 && (least < 0.0 || v < least)) least = v;
+        }
+    }
+    return MAX(0.0, least);
+}
+
+- (double)heatFractionForValue:(double)value least:(double)least most:(double)most
+{
+    if (most <= least) return 0.0;
+    return MAX(0.0, MIN(1.0, (value - least) / (most - least)));
+}
+
+- (void)setHeatShowsSpeed:(BOOL)speed
+{
+    _heatShowsSpeed = speed;
+    [self setNeedsDisplay:YES];
 }
 
 #pragma mark - What is lit
@@ -250,6 +284,8 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
     CGFloat labelSize = MAX(9.0, floor(unit * 0.36));
 
     double heatMost = _heatCounts ? [self heatMaximumRate] : 0.0;
+    double heatLeast = _heatCounts ? [self heatMinimumRate] : 0.0;
+    NSColor *heatColor = _heatShowsSpeed ? _theme.accent : _theme.incorrect;
 
     for (NSUInteger row = 0; row < [_keyboardLayout numberOfRows]; row++) {
         for (NSUInteger col = 0; col < [_keyboardLayout numberOfKeysInRow:row]; col++) {
@@ -264,7 +300,8 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
             if (_heatCounts) {
                 heat = [self heatRateForKeyAtRow:row column:col];
                 /* from a tenth, so that "pressed, never missed" still differs from "no data" */
-                fill = heat < 0.0 ? plain : [self blend:plain with:_theme.incorrect fraction:0.10 + 0.90 * (heat / heatMost)];
+                fill = heat < 0.0 ? plain : [self blend:plain with:heatColor
+                                                  fraction:0.10 + 0.90 * [self heatFractionForValue:heat least:heatLeast most:heatMost]];
             }
             [self fillKey:r color:fill];
 
@@ -272,7 +309,7 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
             NSString *base = [chars count] > 0 ? chars[0] : @"";
             NSString *shifted = [chars count] > 1 ? chars[1] : @"";
             if (isWrong) isLit = YES;   /* same ink as a lit key */
-            if (heat >= 0.0 && heat / heatMost > 0.55) isLit = YES;   /* deep tint: light ink */
+            if (heat >= 0.0 && [self heatFractionForValue:heat least:heatLeast most:heatMost] > 0.55) isLit = YES;   /* deep tint: light ink */
             NSColor *ink = isLit ? _theme.background : _theme.correct;
             if ([shifted length] > 0 && [shifted isEqualToString:[base uppercaseString]]
                 && ![shifted isEqualToString:base]) {
@@ -309,7 +346,8 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
         else if (isShift) fill = [self blend:plain with:_theme.accent fraction:0.6];
         else if (key == HRSpecialSpace && _heatCounts) {
             double heat = [self rateForCharacters:@[@" "]];
-            if (heat >= 0.0) fill = [self blend:plain with:_theme.incorrect fraction:0.10 + 0.90 * (heat / heatMost)];
+            if (heat >= 0.0) fill = [self blend:plain with:heatColor
+                                         fraction:0.10 + 0.90 * [self heatFractionForValue:heat least:heatLeast most:heatMost]];
         }
         else if (key == HRSpecialSpace) fill = [self blend:plain with:[self tintForFinger:HRFingerThumb] fraction:0.30];
         [self fillKey:r color:fill];

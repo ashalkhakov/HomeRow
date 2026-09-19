@@ -63,3 +63,16 @@ least one keystroke. The personal best is the highest WPM among results
 with the same *settings key* — mode, amount, language and word list,
 punctuation, numbers (e.g. `time:30:en/words-200:p`). Custom and zen tests
 have no personal best.
+
+## Time per key
+
+A key's time is the interval since the keystroke before it, counted only when
+both were right and no more than two seconds apart. The key after a mistake,
+after Backspace or after a pause is not timed — the hand, or the mind, was
+somewhere else — and neither is the first key of a test. A key's speed is
+the total of its timed hits over their number; a key's times are attributed to
+the character that was wanted, as hits and misses are.
+
+This is recorded from data model 3 on. Earlier results have hits and misses
+only, so *Keys by speed* and the slow keys of weak-spot practice fill in as
+new results come.

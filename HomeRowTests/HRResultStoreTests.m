@@ -9,6 +9,7 @@
  */
 #import <XCTest/XCTest.h>
 #import "HRResultStore.h"
+#import "HRResultExchange.h"
 #import "HRTestSummary.h"
 #import "HRTestConfiguration.h"
 
@@ -90,11 +91,11 @@
     XCTAssertEqualWithAccuracy(sample.duration, 30.0, 1e-9);
     XCTAssertEqual([sample kind], HRStatKindTests);
     NSDictionary *all = [store keyCountsForKind:HRStatKindAll since:nil];
-    NSDictionary *a3 = @{@"hits": @30, @"misses": @3};
-    XCTAssertEqualObjects(all[@"a"], a3);
+    XCTAssertEqualObjects(all[@"a"][@"hits"], @30);
+    XCTAssertEqualObjects(all[@"a"][@"misses"], @3);
     NSDictionary *late = [store keyCountsForKind:HRStatKindTests since:[NSDate dateWithTimeIntervalSince1970:2500]];
-    NSDictionary *b1 = @{@"hits": @4, @"misses": @0};
-    XCTAssertEqualObjects(late[@"b"], b1);
+    XCTAssertEqualObjects(late[@"b"][@"hits"], @4);
+    XCTAssertEqualObjects(late[@"b"][@"misses"], @0);
     XCTAssertEqual([[store keyCountsForKind:HRStatKindCode since:nil] count], (NSUInteger)0);
 }
 
@@ -126,6 +127,67 @@
     NSUInteger misses = 0;
     for (HRKeyStat *k in r.keyStats) misses += [k.misses unsignedIntegerValue];
     XCTAssertEqual(misses, (NSUInteger)1);
+}
+
+/* Out through the exchange format and back into another store: everything
+ * arrives once, however often it is sent. */
+- (void)testExportImportRoundTripAndBests
+{
+    HRResultStore *a = [self storeAtURL:nil];
+    HRTestConfiguration *c = [HRTestConfiguration defaultConfiguration];
+    NSError *e = nil;
+    [a recordSummary:[self summaryWithWpm:50] configuration:c date:[NSDate dateWithTimeIntervalSince1970:1700000000] error:&e];
+    [a recordSummary:[self summaryWithWpm:70] configuration:c date:[NSDate dateWithTimeIntervalSince1970:1700000100] error:&e];
+    HRTestConfiguration *words = [c copy];
+    words.mode = HRTestModeWords;
+    words.amount = 25;
+    [a recordSummary:[self summaryWithWpm:64] configuration:words date:[NSDate dateWithTimeIntervalSince1970:1700000200] error:&e];
+    HRTestConfiguration *zen = [c copy];
+    zen.mode = HRTestModeZen;
+    [a recordSummary:[self summaryWithWpm:99] configuration:zen date:[NSDate dateWithTimeIntervalSince1970:1700000300] error:&e];
+
+    NSArray *bests = [a personalBests];
+    XCTAssertEqual([bests count], (NSUInteger)2, @"one per setting of the time and words tests; zen has no best");
+    XCTAssertEqualWithAccuracy([((HRTestResult *)bests[0]).wpm doubleValue], 70.0, 1e-9);
+    XCTAssertEqualWithAccuracy([((HRTestResult *)bests[1]).wpm doubleValue], 64.0, 1e-9);
+
+    NSArray *records = [a exportRecords];
+    XCTAssertEqual([records count], (NSUInteger)4);
+    XCTAssertEqualWithAccuracy([records[0][@"wpm"] doubleValue], 50.0, 1e-9, @"oldest first");
+    XCTAssertEqualObjects(records[1][@"isBest"], @YES);
+    XCTAssertEqualObjects(records[0][@"isBest"], @NO);
+    XCTAssertEqualObjects(records[0][@"keys"][@"a"][@"hits"], @10);
+
+    NSData *json = [HRResultExchange JSONDataFromRecords:records error:&e];
+    XCTAssertNotNil(json, @"%@", e);
+    NSArray *read = [HRResultExchange recordsFromData:json skipped:NULL error:&e];
+    HRResultStore *b = [self storeAtURL:nil];
+    NSUInteger duplicates = 0;
+    XCTAssertEqual([b importRecords:read duplicates:&duplicates error:&e], (NSUInteger)4, @"%@", e);
+    XCTAssertEqual(duplicates, (NSUInteger)0);
+    XCTAssertEqual([b importRecords:read duplicates:&duplicates error:&e], (NSUInteger)0);
+    XCTAssertEqual(duplicates, (NSUInteger)4, @"the same file again adds nothing");
+    XCTAssertEqualObjects([b keyCountsForKind:HRStatKindAll since:nil][@"a"][@"hits"], @40);
+    XCTAssertEqual([[b personalBests] count], (NSUInteger)2);
+    HRTestResult *newest = [[b recentResultsWithLimit:1 error:&e] firstObject];
+    XCTAssertEqualObjects(newest.mode, @"zen");
+    XCTAssertEqual([[newest seriesDictionary][@"raw"] count], (NSUInteger)3, @"the per-second series came along");
+
+    /* a CSV has no uuids of its own worth the name: the moment, mode and speed decide */
+    NSArray *fromCSV = [HRResultExchange recordsFromData:[HRResultExchange CSVDataFromRecords:records] skipped:NULL error:&e];
+    NSMutableArray *anonymous = [NSMutableArray array];
+    for (NSDictionary *r in fromCSV) {
+        NSMutableDictionary *m = [r mutableCopy];
+        [m removeObjectForKey:@"uuid"];
+        [anonymous addObject:m];
+    }
+    XCTAssertEqual([b importRecords:anonymous duplicates:&duplicates error:&e], (NSUInteger)0);
+    XCTAssertEqual(duplicates, (NSUInteger)4);
+
+    /* and one can go */
+    XCTAssertTrue([b deleteResult:newest error:&e], @"%@", e);
+    XCTAssertEqual([[b recentResultsWithLimit:0 error:&e] count], (NSUInteger)3);
+    XCTAssertEqualObjects([b keyCountsForKind:HRStatKindAll since:nil][@"a"][@"hits"], @30, @"its key stats went with it");
 }
 
 @end

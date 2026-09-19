@@ -21,6 +21,12 @@
  * been pressed often enough for that to mean something. */
 @interface HRWeakSpots : NSObject
 
+/* The counts of the characters that can come up at all: what was typed
+ * in a German course has no say in an English round on a US keyboard -- ü
+ * is on no key there and in no word, and practising it would mean typing
+ * "üthe".  `characters`: what the keyboard layout has and the word list uses. */
++ (NSDictionary *)counts:(NSDictionary *)counts keepingCharacters:(NSSet *)characters;
+
 /* nil when there is too little on record to say (fewer than
  * `minimumTotalPresses` keystrokes, or no key stands out). */
 + (instancetype)weakSpotsFromCounts:(NSDictionary *)counts
@@ -29,8 +35,14 @@
                           maximum:(NSUInteger)maximum;
 
 /* Worst first.  Space and Return are never among them: every word already
- * has one. */
+ * has one.  The missed ones lead, the slow ones follow. */
 @property (nonatomic, readonly, copy) NSArray *characters;
+/* The two kinds apart, for saying which is which.  A key is SLOW when it
+ * takes clearly longer than this typist's keys do on the whole (a third
+ * longer, over at least `minimumKeyPresses` timed hits); a key that is both
+ * is listed as missed. */
+@property (nonatomic, readonly, copy) NSArray *missedCharacters;
+@property (nonatomic, readonly, copy) NSArray *slowCharacters;
 /* 0...1 per character: its error rate relative to the worst one's. */
 - (double)weaknessOfCharacter:(NSString *)character;
 @property (nonatomic, readonly) double overallErrorRate;

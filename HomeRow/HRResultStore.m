@@ -189,6 +189,7 @@
     HRTestResult *r = [NSEntityDescription insertNewObjectForEntityForName:@"TestResult"
                                                    inManagedObjectContext:_context];
     r.date = date ?: [NSDate date];
+    r.uuid = [[NSUUID UUID] UUIDString];
     r.mode = [c modeName];
     r.amount = @(c.amount);
     r.settingsKey = [c settingsKey];
@@ -222,6 +223,8 @@
         k.character = ch;
         k.hits = counts[@"hits"] ?: @0;
         k.misses = counts[@"misses"] ?: @0;
+        k.timedHits = counts[@"timed"] ?: @0;
+        k.totalTime = counts[@"time"] ?: @0.0;
         k.result = r;
     }
 
@@ -254,6 +257,7 @@
 - (NSDictionary *)keyCountsForKind:(HRStatKind)kind since:(NSDate *)since
 {
     NSMutableDictionary *hits = [NSMutableDictionary dictionary], *misses = [NSMutableDictionary dictionary];
+    NSMutableDictionary *timed = [NSMutableDictionary dictionary], *time = [NSMutableDictionary dictionary];
     for (HRTestResult *r in [self recentResultsWithLimit:0 error:NULL]) {
         if (since && r.date && [r.date compare:since] == NSOrderedAscending) continue;
         if (kind != HRStatKindAll && [[self sampleForResult:r] kind] != kind) continue;
@@ -261,10 +265,14 @@
             if ([k.character length] == 0) continue;
             hits[k.character] = @([hits[k.character] unsignedIntegerValue] + [k.hits unsignedIntegerValue]);
             misses[k.character] = @([misses[k.character] unsignedIntegerValue] + [k.misses unsignedIntegerValue]);
+            timed[k.character] = @([timed[k.character] unsignedIntegerValue] + [k.timedHits unsignedIntegerValue]);
+            time[k.character] = @([time[k.character] doubleValue] + [k.totalTime doubleValue]);
         }
     }
     NSMutableDictionary *out = [NSMutableDictionary dictionary];
-    for (NSString *ch in hits) out[ch] = @{@"hits": hits[ch], @"misses": misses[ch] ?: @0};
+    for (NSString *ch in hits) {
+        out[ch] = @{@"hits": hits[ch], @"misses": misses[ch] ?: @0, @"timed": timed[ch] ?: @0, @"time": time[ch] ?: @0.0};
+    }
     return out;
 }
 
@@ -285,6 +293,156 @@
     [req setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"wpm" ascending:NO]]];
     [req setFetchLimit:1];
     return [[_context executeFetchRequest:req error:error] firstObject];
+}
+
+#pragma mark - History
+
+- (NSArray *)personalBests
+{
+    NSMutableDictionary *best = [NSMutableDictionary dictionary];
+    for (HRTestResult *r in [self recentResultsWithLimit:0 error:NULL]) {
+        if (![r.mode isEqualToString:@"time"] && ![r.mode isEqualToString:@"words"]) continue;
+        if ([r.settingsKey length] == 0) continue;
+        HRTestResult *have = best[r.settingsKey];
+        if (!have || [r.wpm doubleValue] > [have.wpm doubleValue]) best[r.settingsKey] = r;
+    }
+    return [[best allValues] sortedArrayUsingComparator:^NSComparisonResult(HRTestResult *a, HRTestResult *b) {
+        return [b.wpm compare:a.wpm];
+    }];
+}
+
+- (BOOL)deleteResult:(HRTestResult *)result error:(NSError **)error
+{
+    if (!result) return NO;
+    /* the key stats first, by hand: not every Core Data cascades a delete the same way */
+    for (HRKeyStat *k in [result.keyStats allObjects]) [_context deleteObject:k];
+    [_context deleteObject:result];
+    return [self save:error];
+}
+
+- (NSArray *)exportRecords
+{
+    NSMutableSet *bestIDs = [NSMutableSet set];
+    for (HRTestResult *b in [self personalBests]) [bestIDs addObject:[b objectID]];
+    NSMutableArray *out = [NSMutableArray array];
+    BOOL named = NO;
+    for (HRTestResult *r in [[self recentResultsWithLimit:0 error:NULL] reverseObjectEnumerator]) {
+        if (!r.date || [r.mode length] == 0) continue;
+        if ([r.uuid length] == 0) { r.uuid = [[NSUUID UUID] UUIDString]; named = YES; }
+        NSMutableDictionary *d = [NSMutableDictionary dictionary];
+        d[@"uuid"] = r.uuid;
+        d[@"date"] = r.date;
+        d[@"mode"] = r.mode;
+        NSDictionary *plain = @{@"amount": r.amount ?: [NSNull null], @"settingsKey": r.settingsKey ?: [NSNull null],
+            @"languageID": r.languageID ?: [NSNull null], @"layoutID": r.layoutID ?: [NSNull null],
+            @"wpm": r.wpm ?: @0, @"rawWpm": r.rawWpm ?: [NSNull null], @"accuracy": r.accuracy ?: [NSNull null],
+            @"consistency": r.consistency ?: [NSNull null], @"duration": r.duration ?: [NSNull null],
+            @"correctCharacters": r.correctCharacters ?: [NSNull null], @"incorrectCharacters": r.incorrectCharacters ?: [NSNull null],
+            @"extraCharacters": r.extraCharacters ?: [NSNull null], @"missedCharacters": r.missedCharacters ?: [NSNull null],
+            @"courseFile": r.courseFile ?: [NSNull null]};
+        for (NSString *key in plain) if (plain[key] != [NSNull null]) d[key] = plain[key];
+        if (r.courseFile) {
+            d[@"lessonIndex"] = r.lessonIndex ?: @0;
+            d[@"stepIndex"] = r.stepIndex ?: @0;
+        }
+        NSArray *flags = [r.settingsKey componentsSeparatedByString:@":"];
+        d[@"punctuation"] = @([flags containsObject:@"p"]);
+        d[@"numbers"] = @([flags containsObject:@"n"]);
+        d[@"isBest"] = @([bestIDs containsObject:[r objectID]]);
+        NSMutableDictionary *keys = [NSMutableDictionary dictionary];
+        for (HRKeyStat *k in r.keyStats) {
+            if ([k.character length] == 0) continue;
+            keys[k.character] = @{@"hits": k.hits ?: @0, @"misses": k.misses ?: @0,
+                                  @"timed": k.timedHits ?: @0, @"time": k.totalTime ?: @0.0};
+        }
+        if ([keys count] > 0) d[@"keys"] = keys;
+        NSDictionary *series = [r seriesDictionary];
+        if ([series count] > 0) d[@"series"] = series;
+        [out addObject:d];
+    }
+    if (named) [self save:NULL];
+    return out;
+}
+
+- (NSString *)fingerprintOfDate:(NSDate *)date mode:(NSString *)mode wpm:(NSNumber *)wpm
+{
+    return [NSString stringWithFormat:@"%lld|%@|%.2f", (long long)llround([date timeIntervalSince1970]), mode, [wpm doubleValue]];
+}
+
+- (NSUInteger)importRecords:(NSArray *)records duplicates:(NSUInteger *)duplicates error:(NSError **)error
+{
+    NSMutableSet *uuids = [NSMutableSet set], *prints = [NSMutableSet set];
+    for (HRTestResult *r in [self recentResultsWithLimit:0 error:NULL]) {
+        if ([r.uuid length] > 0) [uuids addObject:r.uuid];
+        if (r.date) [prints addObject:[self fingerprintOfDate:r.date mode:r.mode wpm:r.wpm]];
+    }
+    NSUInteger added = 0, twice = 0;
+    for (NSDictionary *d in records) {
+        NSDate *date = d[@"date"];
+        NSString *mode = d[@"mode"];
+        if (![date isKindOfClass:[NSDate class]] || [mode length] == 0 || !d[@"wpm"]) continue;
+        NSString *print = [self fingerprintOfDate:date mode:mode wpm:d[@"wpm"]];
+        NSString *uuid = d[@"uuid"];
+        if (([uuid length] > 0 && [uuids containsObject:uuid]) || [prints containsObject:print]) { twice++; continue; }
+
+        HRTestResult *r = [NSEntityDescription insertNewObjectForEntityForName:@"TestResult" inManagedObjectContext:_context];
+        r.uuid = [uuid length] > 0 ? uuid : [[NSUUID UUID] UUIDString];
+        r.date = date;
+        r.mode = mode;
+        r.amount = d[@"amount"] ?: @0;
+        r.languageID = d[@"languageID"];
+        r.layoutID = d[@"layoutID"];
+        NSString *key = d[@"settingsKey"];
+        if ([key length] == 0) {
+            /* a file from elsewhere: make the key HomeRow would have made, as far
+             * as it can be known, so that bests compare like with like */
+            NSMutableString *made = [NSMutableString stringWithString:mode];
+            if ([mode isEqualToString:@"time"] || [mode isEqualToString:@"words"]) {
+                [made appendFormat:@":%ld:%@/imported", (long)[d[@"amount"] integerValue], d[@"languageID"] ?: @"unknown"];
+                if ([d[@"punctuation"] boolValue]) [made appendString:@":p"];
+                if ([d[@"numbers"] boolValue]) [made appendString:@":n"];
+            }
+            key = made;
+        }
+        r.settingsKey = key;
+        r.wpm = d[@"wpm"];
+        r.rawWpm = d[@"rawWpm"] ?: d[@"wpm"];
+        r.accuracy = d[@"accuracy"] ?: @0;
+        r.consistency = d[@"consistency"] ?: @0;
+        r.duration = d[@"duration"] ?: @0;
+        r.correctCharacters = d[@"correctCharacters"] ?: @0;
+        r.incorrectCharacters = d[@"incorrectCharacters"] ?: @0;
+        r.extraCharacters = d[@"extraCharacters"] ?: @0;
+        r.missedCharacters = d[@"missedCharacters"] ?: @0;
+        if ([d[@"courseFile"] length] > 0) {
+            r.courseFile = d[@"courseFile"];
+            r.lessonIndex = d[@"lessonIndex"] ?: @0;
+            r.stepIndex = d[@"stepIndex"] ?: @0;
+        }
+        if ([d[@"series"] isKindOfClass:[NSDictionary class]]) {
+            r.series = [NSPropertyListSerialization dataWithPropertyList:d[@"series"] format:NSPropertyListBinaryFormat_v1_0
+                                                                 options:0 error:NULL];
+        }
+        NSDictionary *keys = d[@"keys"];
+        for (NSString *ch in keys) {
+            HRKeyStat *k = [NSEntityDescription insertNewObjectForEntityForName:@"KeyStat" inManagedObjectContext:_context];
+            k.character = ch;
+            k.hits = keys[ch][@"hits"] ?: @0;
+            k.misses = keys[ch][@"misses"] ?: @0;
+            k.timedHits = keys[ch][@"timed"] ?: @0;
+            k.totalTime = keys[ch][@"time"] ?: @0.0;
+            k.result = r;
+        }
+        [uuids addObject:r.uuid];
+        [prints addObject:print];
+        added++;
+    }
+    if (duplicates) *duplicates = twice;
+    if (added > 0 && ![self save:error]) {
+        [_context rollback];
+        return 0;
+    }
+    return added;
 }
 
 #pragma mark - Courses
