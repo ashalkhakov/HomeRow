@@ -468,6 +468,19 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
         [[stats window] orderOut:self];
     }
 
+    /* every character gets a cell of its own, so the font had better be
+     * fixed-pitch: measured here, because gnustep-gui hands out a proportional
+     * font without a word when it cannot find "Courier".  (A backend that
+     * measures nothing at all -- headless -- has no say.) */
+    {
+        NSFont *fixed = [HRTheme fixedPitchFontOfSize:15.0];
+        CGFloat m = [@"m" sizeWithAttributes:@{NSFontAttributeName: fixed}].width;
+        printf("HomeRow smoke test: typing font %s, m is %.2f wide\n", [[fixed fontName] UTF8String] ?: "-", (double)m);
+        if (m > 0.0 && ![HRTheme fontIsFixedPitch:fixed]) {
+            [failures addObject:[NSString stringWithFormat:@"the typing font %@ is not fixed-pitch", [fixed fontName]]];
+        }
+    }
+
     /* draw everything once, so that a drawing method that raises, or that
      * the text system complains about, does so here and not on a user */
     [self toggleKeyboard:self];

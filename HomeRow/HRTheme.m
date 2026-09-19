@@ -81,4 +81,59 @@
     return [self themeNamed:name];
 }
 
+#pragma mark - The fixed-pitch font
+
++ (BOOL)fontIsFixedPitch:(NSFont *)font
+{
+    if (!font) return NO;
+    NSDictionary *attrs = @{NSFontAttributeName: font};
+    CGFloat narrow = [@"i" sizeWithAttributes:attrs].width;
+    CGFloat wide = [@"m" sizeWithAttributes:attrs].width;
+    CGFloat other = [@"W" sizeWithAttributes:attrs].width;
+    if (wide <= 0.0) return NO;
+    return fabs(narrow - wide) < 0.01 * wide && fabs(other - wide) < 0.01 * wide;
+}
+
++ (NSFont *)fixedPitchFontOfSize:(CGFloat)size
+{
+    static NSString *chosen = nil;     /* a font name; @"" = the search came up empty */
+    if ([chosen length] > 0) {
+        NSFont *font = [NSFont fontWithName:chosen size:size];
+        if (font) return font;
+    }
+    NSFont *user = [NSFont userFixedPitchFontOfSize:size];
+    if (chosen != nil && [chosen length] == 0) return user ?: [NSFont systemFontOfSize:size];
+    if ([self fontIsFixedPitch:user]) {
+        chosen = [[user fontName] copy];
+        return user;
+    }
+
+    NSMutableArray *names = [NSMutableArray arrayWithArray:@[
+        @"DejaVu Sans Mono", @"DejaVuSansMono", @"DejaVuSansMono-Book",
+        @"Liberation Mono", @"LiberationMono", @"LiberationMono-Regular",
+        @"Noto Sans Mono", @"NotoSansMono-Regular", @"Ubuntu Mono", @"UbuntuMono-Regular",
+        @"Hack", @"Hack-Regular", @"FreeMono", @"Nimbus Mono PS", @"NimbusMonoPS-Regular",
+        @"Menlo", @"Menlo-Regular", @"Monaco", @"Courier New", @"CourierNewPSMT", @"Courier"]];
+    /* and whatever else calls itself mono, plain weights first */
+    NSMutableArray *others = [NSMutableArray array];
+    for (NSString *name in [[NSFontManager sharedFontManager] availableFonts]) {
+        NSString *lower = [name lowercaseString];
+        if ([lower rangeOfString:@"mono"].location == NSNotFound && [lower rangeOfString:@"courier"].location == NSNotFound) continue;
+        BOOL fancy = [lower rangeOfString:@"bold"].location != NSNotFound || [lower rangeOfString:@"italic"].location != NSNotFound
+                  || [lower rangeOfString:@"oblique"].location != NSNotFound;
+        if (fancy) [others addObject:name]; else [others insertObject:name atIndex:0];
+    }
+    [names addObjectsFromArray:others];
+    for (NSString *name in names) {
+        NSFont *font = [NSFont fontWithName:name size:size];
+        if ([self fontIsFixedPitch:font]) {
+            chosen = [name copy];
+            return font;
+        }
+    }
+    chosen = @"";
+    NSLog(@"HomeRow: no fixed-pitch font was found; the text will look uneven. Install DejaVu Sans Mono or Liberation Mono.");
+    return user ?: [NSFont systemFontOfSize:size];
+}
+
 @end

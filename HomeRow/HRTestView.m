@@ -26,7 +26,7 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 
 - (void)setUpDefaults
 {
-    if (!_font) _font = [NSFont userFixedPitchFontOfSize:24.0] ?: [NSFont systemFontOfSize:24.0];
+    if (!_font) _font = [HRTheme fixedPitchFontOfSize:24.0];
 }
 
 - (instancetype)initWithFrame:(NSRect)frame
@@ -140,6 +140,7 @@ static const NSTimeInterval HRFlashDuration = 0.35;
     }
 
     CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: _font}].width;
+    BOOL evenFont = [HRTheme fontIsFixedPitch:_font];
     CGFloat lineHeight = ceil(([_font ascender] - [_font descender]) * 1.5);
     if (advance <= 0.0) return;
     NSUInteger columns = (NSUInteger)MAX(10.0, floor((NSWidth(bounds) - 2 * HRInset) / advance));
@@ -156,7 +157,7 @@ static const NSTimeInterval HRFlashDuration = 0.35;
     CGFloat top = floor((NSHeight(bounds) - HRVisibleLines * lineHeight) / 2.0);
 
     if ([_caption length] > 0) {
-        NSFont *small = [NSFont userFixedPitchFontOfSize:13.0] ?: [NSFont systemFontOfSize:13.0];
+        NSFont *small = [HRTheme fixedPitchFontOfSize:13.0];
         NSDictionary *attrs = @{NSFontAttributeName: small, NSForegroundColorAttributeName: _theme.untyped};
         NSArray *captionLines = [_caption componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
         CGFloat h = ceil([small ascender] - [small descender]) + 3.0;
@@ -177,6 +178,9 @@ static const NSTimeInterval HRFlashDuration = 0.35;
                 HRCharacterState st = [_session stateOfCharacterAtIndex:ci inWordAtIndex:wi];
                 NSString *ch = [_session displayCharacterAtIndex:ci inWordAtIndex:wi];
                 NSPoint p = NSMakePoint(HRInset + (col + ci) * advance, y);
+                /* no fixed-pitch font on this machine: at least sit each glyph
+                 * in the middle of its cell, not against its left edge */
+                if (!evenFont) p.x += MAX(0.0, (advance - [ch sizeWithAttributes:@{NSFontAttributeName: _font}].width) / 2.0);
                 [ch drawAtPoint:p withAttributes:@{NSFontAttributeName: _font,
                                                    NSForegroundColorAttributeName: [self colorForState:st]}];
                 /* never colour alone: wrong and skipped characters are
@@ -296,7 +300,7 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 
 - (void)drawCodeInRect:(NSRect)bounds
 {
-    NSFont *font = [NSFont userFixedPitchFontOfSize:15.0] ?: [NSFont systemFontOfSize:15.0];
+    NSFont *font = [HRTheme fixedPitchFontOfSize:15.0];
     CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width;
     CGFloat lineHeight = ceil(([font ascender] - [font descender]) * 1.35);
     if (advance <= 0.0 || lineHeight <= 0.0) return;
@@ -354,7 +358,7 @@ static NSString *HRExpandTabs(NSString *line)
     NSFont *font = nil;
     CGFloat advance = 0.0, lineHeight = 0.0;
     for (; size >= 8.0; size -= 1.0) {
-        font = [NSFont userFixedPitchFontOfSize:size] ?: [NSFont systemFontOfSize:size];
+        font = [HRTheme fixedPitchFontOfSize:size];
         advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width;
         lineHeight = ceil(([font ascender] - [font descender]) * 1.25);
         if (advance * columns <= NSWidth(bounds) - 2 * HRInset
