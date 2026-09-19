@@ -69,9 +69,9 @@ How to use all of it, with every shortcut: [docs/using.md](docs/using.md).
 
 ## Limitations
 
-- **macOS: no dead keys yet.** Accents composed with Option or a dead key do
-  not reach the typing view, which is fine for English and blocks most other
-  courses there. GNUstep is not affected.
+- **Input methods** that convert text after it is typed (Chinese, Japanese,
+  Korean) are not supported; dead keys and Option accents are. On macOS a held
+  key repeats and does not open the accent pop-up.
 - **No weak-spot practice yet.** The statistics show which keys you miss;
   lessons generated from that come next.
 - **Statistics are charts only** — no list of single results, no export.

@@ -19,6 +19,11 @@
 The **Language** menu picks the language, the word list and the keyboard
 layout the on-screen keyboard draws.
 
+Accents: dead keys and, on macOS, Option combinations (Option+E then E for é)
+work as they do everywhere; the accent shows underlined at the caret until the
+letter arrives, and only the finished character counts as a keystroke. On
+macOS a held key repeats; the press-and-hold accent pop-up is off in HomeRow.
+
 ## Following a course
 
 **Course ▸ Courses…** (Cmd/Ctrl+L) lists the courses by language. Pick one and

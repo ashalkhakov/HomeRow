@@ -34,7 +34,15 @@
  *
  * Input arrives through -keyDown: -> -interpretKeyEvents: -> -insertText:,
  * so dead keys and whatever layout the system is set to simply work. */
+/* On macOS the view is a text input client: that is what makes dead keys
+ * and Option-composed accents arrive (the input context holds the accent as
+ * "marked text" until the letter completes it).  gnustep-back composes
+ * before the event is delivered, so GNUstep needs none of it. */
+#if defined(GNUSTEP)
 @interface HRTestView : NSView
+#else
+@interface HRTestView : NSView <NSTextInputClient>
+#endif
 
 @property (nonatomic, strong) HRTestSession *session;
 @property (nonatomic, strong) HRTheme *theme;
@@ -62,5 +70,11 @@
  * smoke test and future replay; the keyboard path does not come through
  * here. */
 - (void)typeText:(NSString *)text atTime:(NSTimeInterval)time;
+
+/* The accent waiting for its letter, shown at the caret; nil when there is
+ * none.  Set by the input context on macOS; readable for tests. */
+@property (nonatomic, readonly, copy) NSString *markedText;
+/* What a dead key does, for tests: hold `text` as marked text / complete it. */
+- (void)setMarkedTextForTesting:(NSString *)text;
 
 @end

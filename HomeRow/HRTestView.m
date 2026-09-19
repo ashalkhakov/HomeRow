@@ -17,11 +17,24 @@ static const NSUInteger HRVisibleLines = 3;
 static const CGFloat HRInset = 24.0;
 static const NSTimeInterval HRFlashDuration = 0.35;
 
+/* `defaults write org.homerow.HomeRow HRLogInput -bool YES`, or -HRLogInput YES
+ * on the command line: every step of the conversation with the input
+ * system goes to the log.  For when an accent does not arrive. */
+static BOOL HRInputLogging(void)
+{
+    static int on = -1;
+    if (on < 0) on = [[NSUserDefaults standardUserDefaults] boolForKey:@"HRLogInput"] ? 1 : 0;
+    return on == 1;
+}
+#define HRInputLog(...) do { if (HRInputLogging()) NSLog(@"HomeRow input: %@", [NSString stringWithFormat:__VA_ARGS__]); } while (0)
+
 @implementation HRTestView
 {
     NSTimeInterval _eventTime;
     NSTimeInterval _flashUntil;   /* monotonic; 0 = no wrong key being shown */
     BOOL _flashRefused;           /* ...and it was refused: flash the caret's place */
+    NSRect _caretCell;            /* where the next character goes, as last drawn */
+    NSFont *_caretFont;
 }
 
 - (void)setUpDefaults
@@ -45,11 +58,12 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 - (BOOL)isOpaque { return YES; }
 - (BOOL)acceptsFirstResponder { return YES; }
 - (BOOL)becomeFirstResponder { [self setNeedsDisplay:YES]; return YES; }
-- (BOOL)resignFirstResponder { [self setNeedsDisplay:YES]; return YES; }
+- (BOOL)resignFirstResponder { [self discardMarkedText]; [self setNeedsDisplay:YES]; return YES; }
 
 - (void)setSession:(HRTestSession *)session
 {
     _session = session;
+    [self discardMarkedText];
     _flashUntil = 0.0;
     [self setNeedsDisplay:YES];
 }
@@ -125,6 +139,25 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 
 - (void)drawRect:(NSRect)dirtyRect
 {
+    _caretCell = NSZeroRect;
+    [self drawSurface];
+    /* a dead key has been pressed and waits for its letter: show the accent
+     * where the letter will go, underlined as marked text is everywhere */
+    if ([_markedText length] > 0 && !NSIsEmptyRect(_caretCell) && _caretFont) {
+        NSDictionary *attrs = @{NSFontAttributeName: _caretFont, NSForegroundColorAttributeName: _theme.accent};
+        NSSize size = [_markedText sizeWithAttributes:attrs];
+        NSRect cell = _caretCell;
+        cell.size.width = MAX(NSWidth(cell), size.width);
+        [(_theme.background ?: [NSColor whiteColor]) set];
+        NSRectFill(cell);
+        [_markedText drawAtPoint:NSMakePoint(NSMinX(cell) + (NSWidth(cell) - size.width) / 2.0, NSMinY(cell) - 1.0) withAttributes:attrs];
+        [_theme.accent set];
+        NSRectFill(NSMakeRect(NSMinX(cell), NSMaxY(cell) - 2.0, NSWidth(cell), 2.0));
+    }
+}
+
+- (void)drawSurface
+{
     NSRect bounds = [self bounds];
     [(_theme.background ?: [NSColor whiteColor]) set];
     NSRectFill(bounds);
@@ -192,6 +225,8 @@ static const NSTimeInterval HRFlashDuration = 0.35;
             }
             if (wi == current && _session.state != HRSessionFinished) {
                 CGFloat x = HRInset + (col + [_session caretIndexInCurrentWord]) * advance;
+                _caretCell = NSMakeRect(x, y + 2.0, advance, lineHeight - 10.0);
+                _caretFont = _font;
                 BOOL focused = [[self window] firstResponder] == self;
                 if ([self isFlashing]) {
                     /* the key was refused: nothing went in, so say so where the eyes are */
@@ -257,6 +292,8 @@ static const NSTimeInterval HRFlashDuration = 0.35;
                     if (wi == current && _session.state != HRSessionFinished) {
                         NSUInteger caret = [_session caretIndexInCurrentWord];
                         CGFloat x = origin.x + (col + caret) * advance;
+                        _caretCell = NSMakeRect(x, y + 1.0, advance, lineHeight - 4.0);
+                        _caretFont = font;
                         BOOL focused = [[self window] firstResponder] == self;
                         if ([self isFlashing]) {
                             [[_theme.incorrect colorWithAlphaComponent:0.35] set];
@@ -388,9 +425,20 @@ static NSString *HRExpandTabs(NSString *line)
     NSString *chars = [event charactersIgnoringModifiers];
     unichar c = [chars length] > 0 ? [chars characterAtIndex:0] : 0;
     NSUInteger mods = [event modifierFlags];
+#if !defined(GNUSTEP)
+    HRInputLog(@"keyDown keyCode %d characters '%@' ignoringModifiers '%@' flags %#lx; client %d, inputContext %@, marked %@",
+               (int)[event keyCode], [event characters], chars, (unsigned long)mods,
+               (int)[self conformsToProtocol:@protocol(NSTextInputClient)], [self inputContext], _markedText);
+#endif
 
     if ((mods & NSEventModifierFlagCommand) != 0) {
         [super keyDown:event];
+        return;
+    }
+    if ([self hasMarkedText]) {
+        /* an accent is waiting: the next key completes or cancels it, and
+         * that is the input context's call, Backspace and Escape included */
+        [self interpretKeyEvents:@[event]];
         return;
     }
     if (_pageText) {
@@ -455,6 +503,7 @@ static NSString *HRExpandTabs(NSString *line)
 
 - (void)insertText:(id)string
 {
+    HRInputLog(@"insertText:%@ (the plain NSResponder one)", string);
     NSString *s = [string isKindOfClass:[NSAttributedString class]] ? [string string] : string;
     if (_session.state == HRSessionFinished) return;
     NSUInteger wrongBefore = _session.wrongInputCount;
@@ -470,10 +519,103 @@ static NSString *HRExpandTabs(NSString *line)
     [self insertText:text];
 }
 
-/* NSTextInputClient spells it this way on macOS when it is asked. */
+#pragma mark - Marked text (dead keys, Option accents)
+
+/* What the view tells the input context about its text is deliberately next
+ * to nothing: there is no document here to select in or to read back, only
+ * a caret.  That is enough for dead keys and for input methods that compose
+ * in place; it is not enough for ones that reconvert existing text, which a
+ * typing test has no use for. */
+
+- (void)setMarkedTextForTesting:(NSString *)text
+{
+    _markedText = [text length] > 0 ? [text copy] : nil;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)discardMarkedText
+{
+    if (!_markedText) return;
+    _markedText = nil;
+#if !defined(GNUSTEP)
+    [[self inputContext] discardMarkedText];
+#endif
+    [self setNeedsDisplay:YES];
+}
+
 - (void)insertText:(id)string replacementRange:(NSRange)range
 {
+    HRInputLog(@"insertText:%@ replacementRange:%@ (marked was %@)", string, NSStringFromRange(range), _markedText);
+    /* the composed character replaces the accent that was waiting */
+    _markedText = nil;
+    /* press-and-hold is switched off (see main.m), but should an input
+     * method ask to replace what was just typed, take that back first */
+    if (range.location != NSNotFound && range.length > 0 && range.length <= 4) {
+        for (NSUInteger i = 0; i < range.length; i++) [_session deleteBackwardAtTime:_eventTime];
+    }
     [self insertText:string];
+}
+
+- (void)setMarkedText:(id)string selectedRange:(NSRange)selectedRange replacementRange:(NSRange)replacementRange
+{
+    NSString *s = [string isKindOfClass:[NSAttributedString class]] ? [string string] : string;
+    HRInputLog(@"setMarkedText:%@ selectedRange:%@ replacementRange:%@", s, NSStringFromRange(selectedRange), NSStringFromRange(replacementRange));
+    _markedText = [s length] > 0 ? [s copy] : nil;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)unmarkText
+{
+    /* Only forget it.  AppKit sends this at moments of its own choosing, and
+     * whatever is to be typed always arrives through -insertText:...; typing
+     * the pending accent here as well would put a bare ` in the text. */
+    HRInputLog(@"unmarkText (was %@)", _markedText);
+    _markedText = nil;
+    [self setNeedsDisplay:YES];
+}
+
+- (BOOL)hasMarkedText
+{
+    return [_markedText length] > 0;
+}
+
+- (NSRange)markedRange
+{
+    return [_markedText length] > 0 ? NSMakeRange(0, [_markedText length]) : NSMakeRange(NSNotFound, 0);
+}
+
+- (NSRange)selectedRange
+{
+    /* no document, no selection */
+    return NSMakeRange(NSNotFound, 0);
+}
+
+- (NSArray *)validAttributesForMarkedText
+{
+    return @[];
+}
+
+- (NSAttributedString *)attributedSubstringForProposedRange:(NSRange)range actualRange:(NSRangePointer)actualRange
+{
+    return nil;
+}
+
+- (NSUInteger)characterIndexForPoint:(NSPoint)point
+{
+    return 0;
+}
+
+/* Where an input method may put its candidate window: by the caret. */
+- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange
+{
+    NSRect cell = NSIsEmptyRect(_caretCell) ? NSMakeRect(HRInset, HRInset, 1.0, 20.0) : _caretCell;
+    NSRect inWindow = [self convertRect:cell toView:nil];
+#if defined(GNUSTEP)
+    NSPoint origin = [[self window] convertBaseToScreen:inWindow.origin];
+    return NSMakeRect(origin.x, origin.y, NSWidth(inWindow), NSHeight(inWindow));
+#else
+    return [[self window] convertRectToScreen:inWindow];
+#endif
 }
 
 - (void)insertNewline:(id)sender

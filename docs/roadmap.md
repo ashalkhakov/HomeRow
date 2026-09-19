@@ -28,9 +28,11 @@ plans.
 
 ## Planned and outstanding
 
-- [ ] **Dead keys on macOS** — make `HRTestView` an `NSTextInputClient` so
-      Option accents and dead keys arrive. Blocks most non-English courses on
-      the Mac.
+- [x] **Dead keys on macOS** — `HRTestView` is an `NSTextInputClient`: the
+      accent waits as marked text, shown at the caret, until its letter
+      arrives. Press-and-hold accents are switched off for HomeRow (a held key
+      repeats). Confirmed on macOS with Option+E, E (`-HRLogInput YES` traces
+      the exchange); still to try: a layout with real dead keys.
 - [ ] **Preferences window** — font and size for prose and for code, stop on
       error (off / letter / word), backspace policy, sounds, theme, where the
       data lives. Today the few settings there are sit in menus.

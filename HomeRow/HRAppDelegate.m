@@ -212,6 +212,21 @@ static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
     if ([_session caretIndexInCurrentWord] != 0) {
         [failures addObject:@"Backspace did not delete the typed character"];
     }
+    /* A dead key: the accent waits as marked text, is drawn, and the letter
+     * that completes it arrives through -insertText:replacementRange: (the
+     * path macOS takes; here it is walked by hand on both platforms). */
+    [_testView setMarkedTextForTesting:@"\u00B4"];
+    [[_window contentView] display];
+    if (![_testView.markedText isEqualToString:@"\u00B4"]) [failures addObject:@"the typing view does not hold marked text"];
+    if ([_session caretIndexInCurrentWord] != 0) [failures addObject:@"a pending accent counted as a typed character"];
+    [(id)_testView insertText:firstCharacter replacementRange:NSMakeRange(NSNotFound, 0)];
+    if (_testView.markedText != nil || [_session caretIndexInCurrentWord] != 1) {
+        [failures addObject:@"completing a dead key did not type the character"];
+    }
+    [_testView setMarkedTextForTesting:@"\u00A8"];
+    [_window sendEvent:[self keyEventWithCharacters:[NSString stringWithFormat:@"%C", (unichar)NSDeleteCharacter] keyCode:51]];
+    /* whoever took that Backspace, the view must not be left waiting */
+    [_testView setMarkedTextForTesting:nil];
     HRTestSession *beforeTab = _session;
     [_window sendEvent:[self keyEventWithCharacters:@"\t" keyCode:48]];
     if (_session == beforeTab) [failures addObject:@"Tab did not start a new test"];
