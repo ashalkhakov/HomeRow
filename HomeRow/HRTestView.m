@@ -62,6 +62,12 @@ static const CGFloat HRInset = 24.0;
     [self setNeedsDisplay:YES];
 }
 
+- (void)setCodeLayout:(BOOL)codeLayout
+{
+    _codeLayout = codeLayout;
+    [self setNeedsDisplay:YES];
+}
+
 - (void)setTheme:(HRTheme *)theme
 {
     _theme = theme;
@@ -124,6 +130,10 @@ static const CGFloat HRInset = 24.0;
         return;
     }
     if (!_session) return;
+    if (_codeLayout) {
+        [self drawCodeInRect:bounds];
+        return;
+    }
 
     CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: _font}].width;
     CGFloat lineHeight = ceil(([_font ascender] - [_font descender]) * 1.5);
@@ -188,6 +198,116 @@ static const CGFloat HRInset = 24.0;
             col += len + 1;
         }
     }
+}
+
+#pragma mark - Code layout
+
+/* One walk serves two purposes: with `draw` NO it only finds where the
+ * caret is; with `draw` YES it paints the rows from `firstRow` on. */
+- (void)walkCodeWithFont:(NSFont *)font advance:(CGFloat)advance lineHeight:(CGFloat)lineHeight
+                  origin:(NSPoint)origin firstRow:(NSUInteger)firstRow rows:(NSUInteger)visibleRows
+                    draw:(BOOL)draw caretRow:(NSUInteger *)outCaretRow caretColumn:(NSUInteger *)outCaretColumn
+{
+    NSArray *words = _session.words;
+    NSUInteger current = _session.currentWordIndex;
+    NSUInteger row = 0, col = 0;
+    NSColor *dim = [[_theme colorForTextStyle:HRTextStyleComment] colorWithAlphaComponent:0.85];
+    NSDictionary *dimAttrs = @{NSFontAttributeName: font, NSForegroundColorAttributeName: dim};
+
+    for (NSUInteger wi = 0; wi < [words count]; wi++) {
+        HRWord *word = words[wi];
+        /* untyped text before and after the word: drawn line by line */
+        for (int part = 0; part < 2; part++) {
+            if (part == 1) {
+                NSUInteger len = [_session displayLengthOfWordAtIndex:wi];
+                BOOL visible = row >= firstRow && row < firstRow + visibleRows;
+                if (wi == current) {
+                    if (outCaretRow) *outCaretRow = row;
+                    if (outCaretColumn) *outCaretColumn = col + [_session caretIndexInCurrentWord];
+                }
+                if (draw && visible) {
+                    CGFloat y = origin.y + (row - firstRow) * lineHeight;
+                    for (NSUInteger ci = 0; ci < len; ci++) {
+                        HRCharacterState st = [_session stateOfCharacterAtIndex:ci inWordAtIndex:wi];
+                        NSColor *color = (st == HRCharacterUntyped)
+                            ? [_theme colorForTextStyle:[word styleOfCharacterAtIndex:ci]] : [self colorForState:st];
+                        NSPoint p = NSMakePoint(origin.x + (col + ci) * advance, y);
+                        [[_session displayCharacterAtIndex:ci inWordAtIndex:wi] drawAtPoint:p
+                            withAttributes:@{NSFontAttributeName: font, NSForegroundColorAttributeName: color}];
+                        if (st == HRCharacterIncorrect || st == HRCharacterExtra || st == HRCharacterMissed) {
+                            [_theme.incorrect set];
+                            NSRectFill(NSMakeRect(p.x, y + lineHeight - 4.0, advance - 1.0, 1.5));
+                        }
+                    }
+                    if (wi == current && _session.state != HRSessionFinished) {
+                        NSUInteger caret = [_session caretIndexInCurrentWord];
+                        CGFloat x = origin.x + (col + caret) * advance;
+                        BOOL focused = [[self window] firstResponder] == self;
+                        [[_theme.caret colorWithAlphaComponent:(focused ? 1.0 : 0.35)] set];
+                        NSRectFill(NSMakeRect(x - 1.0, y + 1.0, 2.0, lineHeight - 4.0));
+                        /* the word is done and the line is over: say so, since a
+                         * comment may follow and hide the fact */
+                        if (word.separator == HRSeparatorNewline && caret >= [word.characters count]
+                            && wi + 1 < [words count]) {
+                            [@"\u21B5" drawAtPoint:NSMakePoint(x + 3.0, y)
+                                    withAttributes:@{NSFontAttributeName: font, NSForegroundColorAttributeName: _theme.accent}];
+                        }
+                    }
+                }
+                col += len;
+            }
+            NSString *untyped = part == 0 ? word.prefix : word.suffix;
+            if ([untyped length] == 0) continue;
+            NSArray *pieces = [untyped componentsSeparatedByCharactersInSet:[NSCharacterSet newlineCharacterSet]];
+            for (NSUInteger k = 0; k < [pieces count]; k++) {
+                if (k > 0) { row++; col = 0; }
+                NSString *piece = pieces[k];
+                if ([piece length] == 0) continue;
+                if (draw && row >= firstRow && row < firstRow + visibleRows) {
+                    /* the return marker sits where a suffix would start */
+                    CGFloat shift = (part == 1 && wi == current) ? advance * 1.2 : 0.0;
+                    [piece drawAtPoint:NSMakePoint(origin.x + col * advance + shift, origin.y + (row - firstRow) * lineHeight)
+                        withAttributes:dimAttrs];
+                }
+                col += [piece length];
+            }
+        }
+        if (word.separator == HRSeparatorNewline) { row++; col = 0; }
+        else col++;
+    }
+}
+
+- (void)drawCodeInRect:(NSRect)bounds
+{
+    NSFont *font = [NSFont userFixedPitchFontOfSize:15.0] ?: [NSFont systemFontOfSize:15.0];
+    CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width;
+    CGFloat lineHeight = ceil(([font ascender] - [font descender]) * 1.35);
+    if (advance <= 0.0 || lineHeight <= 0.0) return;
+
+    CGFloat top = 14.0;
+    if ([_caption length] > 0) {
+        NSFont *small = [NSFont systemFontOfSize:12.0];
+        [_caption drawAtPoint:NSMakePoint(HRInset, 8.0)
+               withAttributes:@{NSFontAttributeName: small, NSForegroundColorAttributeName: _theme.untyped}];
+        top = 32.0;
+    }
+    NSUInteger visibleRows = (NSUInteger)MAX(3.0, floor((NSHeight(bounds) - top - 10.0) / lineHeight));
+
+    NSUInteger caretRow = 0, caretColumn = 0;
+    [self walkCodeWithFont:font advance:advance lineHeight:lineHeight origin:NSZeroPoint firstRow:0 rows:0
+                      draw:NO caretRow:&caretRow caretColumn:&caretColumn];
+    /* the caret's line a third of the way down: what was typed above it,
+     * more of what is coming below */
+    NSUInteger lead = visibleRows / 3;
+    NSUInteger firstRow = caretRow > lead ? caretRow - lead : 0;
+    /* a line longer than the view: slide left far enough to keep the caret in */
+    CGFloat room = NSWidth(bounds) - 2 * HRInset;
+    CGFloat caretX = caretColumn * advance;
+    CGFloat slide = caretX > room * 0.85 ? caretX - room * 0.85 : 0.0;
+
+    [self walkCodeWithFont:font advance:advance lineHeight:lineHeight
+                    origin:NSMakePoint(HRInset - slide, top) firstRow:firstRow rows:visibleRows
+                      draw:YES caretRow:NULL caretColumn:NULL];
 }
 
 /* Tabs to the next multiple of eight, as a terminal would. */

@@ -21,17 +21,23 @@
 #import "HRKeyboardLayout.h"
 #import "HRKeyboardView.h"
 #import "HRCourseWindowController.h"
+#import "HRCodeLibrary.h"
+#import "HRCodeDocument.h"
+#import "HRCodeWindowController.h"
 #import <objc/runtime.h>
 
 static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 static NSString * const HRCurrentCourseDefaultsKey = @"HRCurrentCourse";
 /* the keyboard shows by default while following a course, and not otherwise */
+/* the file being typed in code mode, and the files opened from disk */
+static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
+static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
 static NSString * const HRKeyboardInCourseDefaultsKey = @"HRShowKeyboardInCourse";
 static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
-@interface HRAppDelegate () <HRCourseWindowDelegate>
+@interface HRAppDelegate () <HRCourseWindowDelegate, HRCodeWindowDelegate>
 @end
 
 @implementation HRAppDelegate
@@ -64,6 +70,16 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     NSUInteger _unsavedNextLesson;
     NSUInteger _lessonIndex;
     HRCourseRun *_run;
+
+    /* code mode: a section of a source file; nil when not typing one */
+    HRCodeLibrary *_codeLibrary;
+    HRCodeWindowController *_codeWindow;
+    HRCodeFile *_codeFile;
+    NSUInteger _codeSection;
+    NSUInteger _codeSectionCount;
+    BOOL _codeSectionDone;           /* typed to the end: Return moves on */
+    NSString *_unsavedCodeFile;      /* the place in the file when there is no store */
+    NSUInteger _unsavedNextSection;
 }
 
 #pragma mark - Launch
@@ -289,8 +305,78 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         printf("HomeRow smoke test: lesson with %lu pages and %lu exercises, first key %s\n",
                (unsigned long)pages, (unsigned long)exercises, [lit UTF8String] ?: "-");
     }
+    /* Code: every bundled file must load and cut into sections (a grammar
+     * that fails to compile shows up here), and one section must type
+     * through, be recorded, and hand over to the next. */
+    {
+        HRCodeLibrary *library = [self codeLibrary];
+        NSUInteger files = 0;
+        HRCodeFile *first = nil;
+        if ([library.languages count] == 0) [failures addObject:@"no code languages were found"];
+        for (HRCodeLanguage *language in library.languages) {
+            if (![library grammarForLanguage:language]) {
+                [failures addObject:[NSString stringWithFormat:@"the %@ grammar did not load", language.identifier]];
+            }
+            for (HRCodeFile *file in [library filesForLanguage:language]) {
+                if (!file.isBundled) continue;
+                HRCodeDocument *document = [library documentForFile:file error:NULL];
+                if (document.numberOfSections == 0) {
+                    [failures addObject:[NSString stringWithFormat:@"%@ has no sections", file.identifier]];
+                }
+                files++;
+                if (!first && [language.identifier isEqualToString:@"c"]) first = file;
+            }
+        }
+        if (first) {
+            [_store resetCourse:first.identifier error:NULL];
+            [self codeWindow:nil didRequestFile:first section:0];
+            if (!_codeFile || !_testView.codeLayout || _configuration.mode != HRTestModeCode) {
+                [failures addObject:@"a section of code did not start"];
+            }
+            if (![_modePopUp isHidden]) [failures addObject:@"the test controls are still showing in code mode"];
+            NSMutableString *text = [NSMutableString string];
+            BOOL styled = NO;
+            NSUInteger count = [_session.words count];
+            for (NSUInteger i = 0; i < count; i++) {
+                HRWord *w = _session.words[i];
+                [text appendString:w.text];
+                if (i + 1 < count) [text appendString:(w.separator == HRSeparatorNewline ? @"\n" : @" ")];
+                for (NSUInteger c = 0; c < [w.characters count]; c++) {
+                    if ([w styleOfCharacterAtIndex:c] != HRTextStylePlain) styled = YES;
+                }
+            }
+            if (!styled) [failures addObject:@"the code has no syntax colouring"];
+            [[_window contentView] display];
+            /* a wrong key must not go in */
+            [_testView typeText:@"§" atTime:HRMonotonicNow() - 20.0];
+            if ([_session caretIndexInCurrentWord] != 0) [failures addObject:@"code mode let a wrong key in"];
+            [_testView typeText:text atTime:HRMonotonicNow()];
+            if (_session.state != HRSessionFinished || [_resultsView isHidden]) {
+                [failures addObject:@"typing a section of code did not finish it"];
+            }
+            if (_store) {
+                HRLessonRecord *record = [_store lessonRecordsForCourse:first.identifier][@0];
+                if ([record.completions integerValue] != 1) [failures addObject:@"the section of code was not recorded"];
+                if ([[_store progressForCourse:first.identifier].lessonIndex integerValue] != 1) {
+                    [failures addObject:@"the file did not move on to its second part"];
+                }
+            }
+            [self restartTest:self];
+            if (!_codeFile || _codeSection != 1) [failures addObject:@"Return after a section did not start the next one"];
+            [[_window contentView] display];
+            [[self codeWindow] showWindow:self];
+            if ([[self codeWindow].sectionTable numberOfRows] < 2) [failures addObject:@"the Code window lists no sections"];
+            [[[self codeWindow] window] orderOut:self];
+            [_store resetCourse:first.identifier error:NULL];
+        } else {
+            [failures addObject:@"there is no C file to type"];
+        }
+        printf("HomeRow smoke test: %lu code files in %lu languages\n",
+               (unsigned long)files, (unsigned long)[library.languages count]);
+    }
     [self selectLanguage:[_languageMenu itemWithTitle:@"Russian"]];
     if (_keyboardShown) [failures addObject:@"the keyboard stayed up outside the course"];
+    if (_codeFile || _testView.codeLayout) [failures addObject:@"the code layout stayed on outside code mode"];
     if ([_amountPopUp isHidden] || [_modePopUp isHidden] || NSMaxY([_modePopUp frame]) < NSMaxY([[_window contentView] bounds]) - 30.0
         || fabs(NSMinY([_testView frame])) > 0.5 || NSMaxY([_testView frame]) > NSMinY([_modePopUp frame])) {
         [failures addObject:@"after the course, the window did not go back to its test layout"];
@@ -373,6 +459,8 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     [[_modePopUp itemAtIndex:2] setTag:HRTestModeZen];
     [_modePopUp addItemWithTitle:HRLoc(@"course")];
     [[_modePopUp lastItem] setTag:HRTestModeLesson];
+    [_modePopUp addItemWithTitle:HRLoc(@"code")];
+    [[_modePopUp lastItem] setTag:HRTestModeCode];
     if (_configuration.mode == HRTestModeCustom) {
         [_modePopUp addItemWithTitle:HRLoc(@"custom")];
         [[_modePopUp lastItem] setTag:HRTestModeCustom];
@@ -396,7 +484,8 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     [_numbersCheck setEnabled:generated];
     /* following a course, none of the three means anything: the lesson
      * decides the text.  Greyed-out is for "not now"; this is "not here". */
-    BOOL inCourse = (_configuration.mode == HRTestModeLesson);
+    /* the same goes for code: the file decides */
+    BOOL inCourse = (_configuration.mode == HRTestModeLesson || _configuration.mode == HRTestModeCode);
     /* ...and so is the mode pop-up: a course is left through the Test menu
      * (Cmd-1/2/3), not by a control sitting over the lesson */
     [_modePopUp setHidden:inCourse];
@@ -426,10 +515,17 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 {
     HRTestMode chosen = (HRTestMode)[[_modePopUp selectedItem] tag];
     if (chosen == HRTestModeLesson) {
+        [self leaveCode];
         if (!_run) [self continueCourse:sender];
         return;
     }
+    if (chosen == HRTestModeCode) {
+        [self leaveLesson];
+        if (!_codeFile) [self continueCode:sender];
+        return;
+    }
     [self leaveLesson];
+    [self leaveCode];
     _configuration.mode = chosen;
     [self syncControls];
     [self saveConfiguration];
@@ -473,6 +569,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         return;
     }
     [self leaveLesson];
+    [self leaveCode];
     _customText = text;
     _configuration.mode = HRTestModeCustom;
     [self syncControls];
@@ -533,12 +630,16 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         NSArray *modes = @[@[HRLoc(@"Time Test"), @(HRTestModeTime), @"1"],
                            @[HRLoc(@"Words Test"), @(HRTestModeWords), @"2"],
                            @[HRLoc(@"Zen"), @(HRTestModeZen), @"3"]];
+        /* Code is not among them: choosing it opens a window, see below */
         for (NSArray *mode in modes) {
             NSMenuItem *modeItem = (NSMenuItem *)[testMenu addItemWithTitle:mode[0] action:@selector(selectMode:)
                                                               keyEquivalent:mode[2]];
             [modeItem setTarget:self];
             [modeItem setTag:[mode[1] integerValue]];
         }
+        NSMenuItem *codeItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Code\u2026") action:@selector(showCode:)
+                                                          keyEquivalent:@"4"];
+        [codeItem setTarget:self];
     }
 
     NSMenu *courseMenu = [[NSMenu alloc] initWithTitle:HRLoc(@"Course")];
@@ -609,6 +710,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     }
     /* the lesson that was running keeps its place: it is saved at every step */
     [self leaveLesson];
+    [self leaveCode];
     [[NSUserDefaults standardUserDefaults] setObject:file forKey:HRCurrentCourseDefaultsKey];
     _courseWindow.selectedCourseFile = file;
     [self continueCourse:sender];
@@ -660,6 +762,9 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         if (sel_isEqual([item action], @selector(selectMode:))) {
             [item setState:([item tag] == _configuration.mode ? NSControlStateValueOn : NSControlStateValueOff)];
         }
+        if (sel_isEqual([item action], @selector(showCode:))) {
+            [item setState:(_configuration.mode == HRTestModeCode ? NSControlStateValueOn : NSControlStateValueOff)];
+        }
     }
     for (NSMenuItem *item in [_languageMenu itemArray]) {
         if (![item representedObject]) continue;
@@ -698,6 +803,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         _configuration.mode = HRTestModeTime;
     }
     [self leaveLesson];
+    [self leaveCode];
     [self syncControls];
     [self saveConfiguration];
     [self startNewTest];
@@ -718,6 +824,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         _configuration.mode = HRTestModeTime;   /* a word list means word tests */
     }
     [self leaveLesson];
+    [self leaveCode];
     [self syncControls];
     [self saveConfiguration];
     [self startNewTest];
@@ -790,8 +897,14 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 /* Course mode with nothing to type: say why, and what to do about it. */
 - (void)showCoursePlaceholder:(NSString *)text
 {
+    [self showPlaceholder:text inMode:HRTestModeLesson];
+}
+
+- (void)showPlaceholder:(NSString *)text inMode:(HRTestMode)mode
+{
     [self leaveLesson];
-    _configuration.mode = HRTestModeLesson;
+    [self leaveCode];
+    _configuration.mode = mode;
     [self syncControls];
     _session = nil;
     _testView.session = nil;
@@ -814,6 +927,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     HRTypLesson *lesson = lessons[lessonIndex];
     _courseFile = [file copy];
     _lessonIndex = lessonIndex;
+    [self leaveCode];
     _run = [[HRCourseRun alloc] initWithLesson:lesson startingAtStep:step];
     if (_run.stepIndex == 0) {
         [_store noteLessonStarted:lessonIndex title:lesson.title inCourse:file error:NULL];
@@ -968,6 +1082,164 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     [self startLesson:lessonIndex ofCourse:[self currentCourseFile] atStep:0];
 }
 
+#pragma mark - Code
+
+/* Code mode is a course whose lessons are the sections of a source file:
+ * the same two tables keep its place (CourseProgress, under the file's
+ * "code:..." identifier) and what each section came to (LessonRecord).
+ * What differs is the text -- laid out as code, coloured by a TextMate
+ * grammar, indentation and comments filled in rather than typed -- and
+ * that a wrong key does not go in. */
+
+- (HRCodeLibrary *)codeLibrary
+{
+    if (!_codeLibrary) {
+        NSString *directory = [[[NSBundle mainBundle] resourcePath] stringByAppendingPathComponent:@"Code"];
+        _codeLibrary = [[HRCodeLibrary alloc] initWithDirectory:directory];
+        NSArray *paths = [[NSUserDefaults standardUserDefaults] arrayForKey:HRCodeUserFilesDefaultsKey];
+        if (paths) _codeLibrary.userFilePaths = paths;
+    }
+    return _codeLibrary;
+}
+
+- (HRCodeWindowController *)codeWindow
+{
+    if (!_codeWindow) {
+        _codeWindow = [[HRCodeWindowController alloc] initWithLibrary:[self codeLibrary] store:_store delegate:self];
+        HRCodeFile *file = [[self codeLibrary] fileWithIdentifier:
+                            [[NSUserDefaults standardUserDefaults] stringForKey:HRCurrentCodeFileDefaultsKey]];
+        if ([file.languageID length] > 0) _codeWindow.selectedLanguageID = file.languageID;
+    }
+    return _codeWindow;
+}
+
+- (IBAction)showCode:(id)sender
+{
+    [[self codeWindow] showWindow:self];
+    [[self codeWindow] reloadProgress];
+}
+
+- (void)leaveCode
+{
+    _codeFile = nil;
+    _codeSectionDone = NO;
+    _testView.codeLayout = NO;
+}
+
+/* Where the current file was left; the Code window when there is nothing
+ * to go on with. */
+- (IBAction)continueCode:(id)sender
+{
+    HRCodeFile *file = [[self codeLibrary] fileWithIdentifier:
+                        [[NSUserDefaults standardUserDefaults] stringForKey:HRCurrentCodeFileDefaultsKey]];
+    HRCodeDocument *document = file ? [[self codeLibrary] documentForFile:file error:NULL] : nil;
+    if (!document) {
+        [self showPlaceholder:HRLoc(@"No code chosen yet.\n\nPick a language and a file in the Code window —\nor open one of your own.")
+                       inMode:HRTestModeCode];
+        [self showCode:sender];
+        return;
+    }
+    HRCourseProgress *progress = [_store progressForCourse:file.identifier];
+    NSUInteger section = progress ? (NSUInteger)MAX(0, [progress.lessonIndex integerValue]) : 0;
+    if (!_store && [_unsavedCodeFile isEqual:file.identifier]) section = _unsavedNextSection;
+    if (section >= document.numberOfSections) {
+        [self showPlaceholder:HRLoc(@"You have typed this file to the end.\n\nPick another one, or a part to type again,\nin the Code window.")
+                       inMode:HRTestModeCode];
+        [self showCode:sender];
+        return;
+    }
+    [self startSection:section ofCodeFile:file];
+}
+
+- (void)startSection:(NSUInteger)section ofCodeFile:(HRCodeFile *)file
+{
+    HRCodeDocument *document = [[self codeLibrary] documentForFile:file error:NULL];
+    if (!document || section >= document.numberOfSections) return;
+    [self leaveLesson];
+    _codeFile = file;
+    _codeSection = section;
+    _codeSectionCount = document.numberOfSections;
+    [[NSUserDefaults standardUserDefaults] setObject:file.identifier forKey:HRCurrentCodeFileDefaultsKey];
+    _configuration.mode = HRTestModeCode;
+    [self syncControls];
+    [self saveConfiguration];
+    [_window makeKeyAndOrderFront:self];
+    [self startCodeSection];
+}
+
+- (void)startCodeSection
+{
+    HRCodeDocument *document = [[self codeLibrary] documentForFile:_codeFile error:NULL];
+    if (!document) {
+        /* one of the user's own files, gone or changed since it was opened */
+        [self showPlaceholder:HRLoc(@"This file could not be read.") inMode:HRTestModeCode];
+        return;
+    }
+    _codeSectionDone = NO;
+    NSRange lines = [document lineRangeOfSection:_codeSection];
+    [_store noteLessonStarted:_codeSection
+                        title:[NSString stringWithFormat:@"%@:%lu-%lu", _codeFile.title,
+                               (unsigned long)(lines.location + 1), (unsigned long)NSMaxRange(lines)]
+                     inCourse:_codeFile.identifier error:NULL];
+    BOOL comments = [[NSUserDefaults standardUserDefaults] boolForKey:HRCodeTypeCommentsDefaultsKey];
+    /* a compiler takes no near misses, and neither does this: the wrong
+     * key does not go in.  Only for the session -- the saved configuration
+     * keeps whatever the other modes use. */
+    HRTestConfiguration *configuration = [_configuration copy];
+    configuration.stopOnError = YES;
+    _testView.caption = nil;
+    _testView.pageText = nil;
+    _testView.codeLayout = YES;
+    _session = [[HRTestSession alloc] initWithConfiguration:configuration
+                                                     source:[document sourceForSection:_codeSection typeComments:comments]];
+    _testView.session = _session;
+    [_resultsView setHidden:YES];
+    [_testView setHidden:NO];
+    [_window makeFirstResponder:_testView];
+    [self updateLiveField];
+    [self syncKeyboard];
+}
+
+- (void)finishCodeSection:(HRTestSummary *)s worthKeeping:(BOOL)worthKeeping
+{
+    NSString *identifier = _codeFile.identifier;
+    NSUInteger next = _codeSection + 1;
+    if (_store && worthKeeping) {
+        HRLessonSummary *l = [[HRLessonSummary alloc] init];
+        l.wpm = s.wpm;
+        l.accuracy = s.accuracy;
+        l.duration = s.duration;
+        l.exercises = 1;
+        NSError *error = nil;
+        /* like a course's, the bookmark only moves forwards */
+        HRCourseProgress *progress = [_store progressForCourse:identifier];
+        BOOL advances = !progress || (NSInteger)_codeSection >= [progress.lessonIndex integerValue];
+        if (![_store noteLessonCompleted:_codeSection summary:l countsForBest:YES inCourse:identifier error:&error]
+            || (advances && ![_store setLessonIndex:next stepIndex:0 forCourse:identifier error:&error])) {
+            NSLog(@"HomeRow: the section was not recorded: %@", error);
+        }
+    }
+    _unsavedCodeFile = [identifier copy];
+    _unsavedNextSection = next;
+    HRCourseProgress *bookmark = [_store progressForCourse:identifier];
+    if (bookmark) next = (NSUInteger)MAX(0, [bookmark.lessonIndex integerValue]);
+    _codeSectionDone = YES;
+
+    [self showSummary:s isBest:NO];
+    [_hintField setStringValue:(next < _codeSectionCount
+        ? [NSString stringWithFormat:HRLoc(@"return — part %lu of %lu"), (unsigned long)(next + 1), (unsigned long)_codeSectionCount]
+        : HRLoc(@"That was the last part of this file.  return — code"))];
+    [self syncKeyboard];
+    [_codeWindow reloadProgress];
+}
+
+#pragma mark - HRCodeWindowDelegate
+
+- (void)codeWindow:(HRCodeWindowController *)controller didRequestFile:(HRCodeFile *)file section:(NSUInteger)section
+{
+    [self startSection:section ofCodeFile:file];
+}
+
 #pragma mark - The on-screen keyboard
 
 - (BOOL)isInCourse
@@ -1079,6 +1351,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         case HRTestModeZen:
             return nil;
         case HRTestModeLesson:   /* a lesson builds its own sources */
+        case HRTestModeCode:     /* and so does a section of code */
             return nil;
         case HRTestModeCustom:
             return [[HRFixedTextSource alloc] initWithText:_customText ?: @""];
@@ -1112,6 +1385,13 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         [self continueCourse:self];
         return;
     }
+    if (_configuration.mode == HRTestModeCode) {
+        /* Tab while typing: this section again.  After it, or with no file
+         * yet: on to wherever the file was left. */
+        if (_codeFile && !_codeSectionDone) [self startCodeSection];
+        else [self continueCode:self];
+        return;
+    }
     if (_configuration.mode == HRTestModeCustom && _customText == nil) {
         /* a custom mode with no text behind it */
         _configuration.mode = HRTestModeTime;
@@ -1134,6 +1414,16 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         NSString *progress = [NSString stringWithFormat:@"%@   %lu/%lu", _run.lesson.title,
                               (unsigned long)MIN(_run.stepIndex + 1, [_run.lesson.steps count]),
                               (unsigned long)[_run.lesson.steps count]];
+        if (_session && _session.state != HRSessionIdle) {
+            progress = [progress stringByAppendingFormat:@"   %.0f wpm   %.0f%%",
+                        [_session liveWpmAtTime:HRMonotonicNow()], [_session liveAccuracy]];
+        }
+        [_liveField setStringValue:progress];
+        return;
+    }
+    if (_codeFile) {
+        NSString *progress = [NSString stringWithFormat:HRLoc(@"%@   part %lu/%lu"), _codeFile.title,
+                              (unsigned long)(_codeSection + 1), (unsigned long)_codeSectionCount];
         if (_session && _session.state != HRSessionIdle) {
             progress = [progress stringByAppendingFormat:@"   %.0f wpm   %.0f%%",
                         [_session liveWpmAtTime:HRMonotonicNow()], [_session liveAccuracy]];
@@ -1169,8 +1459,9 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 - (void)testViewDidDismissPage:(HRTestView *)view
 {
     if (!_run) {
-        /* the "choose a course" page */
-        [self showCourses:self];
+        /* the "choose a course" page, or code mode's "choose a file" */
+        if (_configuration.mode == HRTestModeCode) [self showCode:self];
+        else [self showCourses:self];
         return;
     }
     [_run advancePastPage];
@@ -1196,7 +1487,10 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         isBest = (_configuration.mode == HRTestModeTime || _configuration.mode == HRTestModeWords)
                  && best != nil && s.wpm > [best.wpm doubleValue];
         NSError *error = nil;
-        BOOL saved = _run
+        BOOL saved = _codeFile
+            ? [_store recordSummary:s configuration:_configuration courseFile:_codeFile.identifier
+                        lessonIndex:_codeSection stepIndex:0 date:[NSDate date] error:&error] != nil
+            : _run
             ? [_store recordSummary:s configuration:_configuration courseFile:_courseFile lessonIndex:_lessonIndex
                           stepIndex:_run.stepIndex date:[NSDate date] error:&error] != nil
             : [_store recordSummary:s configuration:_configuration date:[NSDate date] error:&error] != nil;
@@ -1207,6 +1501,10 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 
     if (_run) {
         [self lessonExerciseDidFinish:s];
+        return;
+    }
+    if (_codeFile) {
+        [self finishCodeSection:s worthKeeping:worthKeeping];
         return;
     }
     [self showSummary:s isBest:isBest];

@@ -26,7 +26,27 @@ HomeRowTests_OBJC_FILES += \
     ../HomeRow/HRResultStore.m \
     ../HomeRow/HRManagedObjects.m
 
-HomeRowTests_INCLUDE_DIRS = -I../HomeRow -I../HomeRow/Engine
+HomeRowTests_C_FILES = \
+    ../HomeRow/ThirdParty/oniguruma/src/regerror.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regparse.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regext.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regcomp.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regexec.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regenc.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regsyntax.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regtrav.c \
+    ../HomeRow/ThirdParty/oniguruma/src/regversion.c \
+    ../HomeRow/ThirdParty/oniguruma/src/st.c \
+    ../HomeRow/ThirdParty/oniguruma/src/unicode.c \
+    ../HomeRow/ThirdParty/oniguruma/src/ascii.c \
+    ../HomeRow/ThirdParty/oniguruma/src/utf8.c \
+    ../HomeRow/ThirdParty/oniguruma/src/utf16_le.c \
+    ../HomeRow/ThirdParty/oniguruma/src/unicode_unfold_key.c \
+    ../HomeRow/ThirdParty/oniguruma/src/unicode_fold1_key.c \
+    ../HomeRow/ThirdParty/oniguruma/src/unicode_fold2_key.c \
+    ../HomeRow/ThirdParty/oniguruma/src/unicode_fold3_key.c
+
+HomeRowTests_INCLUDE_DIRS = -I../HomeRow -I../HomeRow/Engine -I../HomeRow/ThirdParty/oniguruma/src
 
 HomeRowTests_LIBRARIES = objc gnustep-base XCTest
 HomeRowTests_BUNDLE_LIBS += -lCoreData
@@ -50,4 +70,6 @@ run-tests: all
 	HR_LANGUAGES_DIR="$(CURDIR)/../HomeRow/Resources/Languages" \
 	HR_LESSONS_DIR="$(CURDIR)/../HomeRow/Resources/Lessons" \
 	HR_LAYOUTS_DIR="$(CURDIR)/../HomeRow/Resources/Layouts" \
+	HR_TEXTMATE_FIXTURES_DIR="$(CURDIR)/Fixtures/textmate" \
+	HR_CODE_DIR="$(CURDIR)/../HomeRow/Resources/Code" \
 	$(XCTEST) "$(BUNDLE_NAME).bundle"

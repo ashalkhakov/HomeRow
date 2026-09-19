@@ -1,2 +1,3 @@
 # HomeRow is ARC throughout.
 ADDITIONAL_OBJCFLAGS += -fobjc-arc -Wall
+ADDITIONAL_CFLAGS += -w -DHAVE_CONFIG_H

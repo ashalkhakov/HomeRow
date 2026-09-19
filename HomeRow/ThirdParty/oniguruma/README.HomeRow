@@ -1,0 +1,24 @@
+Oniguruma in HomeRow
+====================
+
+Oniguruma (https://github.com/kkos/oniguruma) is the regular expression
+library TextMate grammars are written for; VS Code uses it for the same
+reason.  ICU's regular expressions (NSRegularExpression) are close but not
+the same -- \h means something else, \G and back-references behave
+differently at the edges -- and gnustep-base only has NSRegularExpression
+when it was built with ICU.  One engine, identical on both platforms, is
+worth two megabytes of source.
+
+Taken from commit f95747b462de672b6f8dbdeb478245ddf061ca53, unmodified:
+src/ holds the files HomeRow compiles plus the data files unicode.c
+#includes.  Left out: the other encodings (HomeRow hands it UTF-16LE, which
+is what an NSString is made of), the POSIX and GNU API shims, onig_init.c.
+config.h is HomeRow's own.  BSD 2-clause licence, see COPYING.
+
+Compiled files (the rest of src/*.c is #included by unicode.c, and must NOT
+be compiled on its own):
+
+  regerror.c regparse.c regext.c regcomp.c regexec.c regenc.c regsyntax.c
+  regtrav.c regversion.c st.c unicode.c ascii.c utf8.c utf16_le.c
+  unicode_unfold_key.c unicode_fold1_key.c unicode_fold2_key.c
+  unicode_fold3_key.c

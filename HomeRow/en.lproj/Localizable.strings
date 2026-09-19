@@ -44,3 +44,14 @@
 "Time Test" = "Time Test";
 "Words Test" = "Words Test";
 "Zen" = "Zen";
+
+/* code mode */
+"code" = "code";
+"Code\U2026" = "Code\U2026";
+"No code chosen yet.\n\nPick a language and a file in the Code window \U2014\nor open one of your own." = "No code chosen yet.\n\nPick a language and a file in the Code window \U2014\nor open one of your own.";
+"You have typed this file to the end.\n\nPick another one, or a part to type again,\nin the Code window." = "You have typed this file to the end.\n\nPick another one, or a part to type again,\nin the Code window.";
+"This file could not be read." = "This file could not be read.";
+"return \U2014 part %lu of %lu" = "return \U2014 part %lu of %lu";
+"That was the last part of this file.  return \U2014 code" = "That was the last part of this file.  return \U2014 code";
+"%@   part %lu/%lu" = "%@   part %lu/%lu";
+"%lu of %lu sections typed." = "%lu of %lu sections typed.";

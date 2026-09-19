@@ -23,6 +23,11 @@
 @property (nonatomic, readonly) NSColor *caret;
 @property (nonatomic, readonly) NSColor *accent;
 
+/* Syntax colours for code that is not typed yet, by HRTextStyle (HRWord.h).
+ * Muted on purpose: once typed, text takes the correct/incorrect colours,
+ * and those have to stay the loudest thing on the surface. */
+- (NSColor *)colorForTextStyle:(uint8_t)style;
+
 + (instancetype)themeNamed:(NSString *)name;
 /* The "HRTheme" default; "auto" (the default) follows the system's
  * light/dark setting where there is one. */

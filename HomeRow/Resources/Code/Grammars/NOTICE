@@ -1,0 +1,17 @@
+TextMate grammars, copied unmodified from VS Code's bundled extensions
+(https://github.com/microsoft/vscode, commit d3c24c3c4d7efab36b37acb1e91d9502c0c35b28).  VS Code takes each
+from the upstream project named below; all are under the MIT licence.
+
+c            https://github.com/jeff-hykin/better-cpp-syntax  @ 071dd6ecc9ed  (MIT)
+c            https://github.com/jeff-hykin/better-c-syntax  @ 34712a6106a4  (MIT)
+c            https://github.com/NVIDIA/cuda-cpp-grammar  @ 81e88eaec517  (MIT)
+objective-c  https://github.com/jeff-hykin/better-objcpp-syntax  @ 5a7eb15eee38  (MIT)
+objective-c  https://github.com/jeff-hykin/better-objc-syntax  @ 119b75fb1f4d  (MIT)
+csharp       https://github.com/dotnet/csharp-tmLanguage  @ c2719309e91d  (MIT)
+python       https://github.com/MagicStack/MagicPython  @ 7d0f2b22a5ad  (MIT)
+javascript   https://github.com/microsoft/TypeScript-TmLanguage  @ 3133e3d914db  (MIT)
+typescript   https://github.com/microsoft/TypeScript-TmLanguage  @ 48f608692aa6  (MIT)
+go           https://github.com/worlpaker/go-syntax  @ c74e22eb9ef3  (MIT)
+rust         https://github.com/dustypomerleau/rust-syntax  @ ca34cf382a7b  (MIT)
+sql          https://github.com/microsoft/vscode-mssql  @ 684648ee5414  (MIT)
+shell        https://github.com/jeff-hykin/better-shell-syntax  @ 35020b0bd79a  (MIT)

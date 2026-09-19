@@ -42,6 +42,13 @@ jobs:
             grep -q "/\* $name in Sources \*/" HomeRow.xcodeproj/project.pbxproj \
               || { echo "::error file=$f::$name is not compiled by any target in HomeRow.xcodeproj"; missing=1; }
           done
+          # Oniguruma: the C files the GNUmakefile names (the others are
+          # #included by unicode.c and must stay out of both builds)
+          for f in $(grep -o 'ThirdParty/oniguruma/src/[a-z0-9_]*\.c' HomeRow/GNUmakefile | sort -u); do
+            name=$(basename "$f")
+            grep -q "/\* $name in Sources \*/" HomeRow.xcodeproj/project.pbxproj \
+              || { echo "::error file=HomeRow/$f::$name is not compiled by any target in HomeRow.xcodeproj"; missing=1; }
+          done
           [ "$missing" -eq 0 ] || exit 1
           echo "all listed"
 
@@ -152,6 +159,7 @@ jobs:
         run: |
           bad=$(grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*<[A-Za-z]+/' \
                   HomeRow HomeRowTests --include='*.h' --include='*.m' \
+                  --exclude-dir=ThirdParty --exclude-dir=Code --exclude-dir=Fixtures \
                 | grep -vE '<(Foundation|AppKit|CoreData|XCTest|objc)/' || true)
           if [ -n "$bad" ]; then
             echo "$bad" | while IFS=: read -r file line rest; do

@@ -1,0 +1,4 @@
+HomeRow/ThirdParty/** linguist-vendored
+HomeRow/Resources/Code/** linguist-vendored
+HomeRow/Resources/Lessons/** linguist-vendored
+HomeRowTests/Fixtures/** linguist-vendored

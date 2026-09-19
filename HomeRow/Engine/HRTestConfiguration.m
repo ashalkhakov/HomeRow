@@ -38,6 +38,7 @@
     c.punctuation = _punctuation;
     c.numbers = _numbers;
     c.backspacePolicy = _backspacePolicy;
+    c.stopOnError = _stopOnError;
     c.languageID = _languageID;
     c.wordListName = _wordListName;
     c.layoutID = _layoutID;
@@ -52,6 +53,7 @@
         case HRTestModeCustom: return @"custom";
         case HRTestModeZen:    return @"zen";
         case HRTestModeLesson: return @"lesson";
+        case HRTestModeCode:   return @"code";
     }
     return @"time";
 }
@@ -62,6 +64,7 @@
     if ([name isEqualToString:@"custom"]) return HRTestModeCustom;
     if ([name isEqualToString:@"zen"])    return HRTestModeZen;
     if ([name isEqualToString:@"lesson"]) return HRTestModeLesson;
+    if ([name isEqualToString:@"code"])   return HRTestModeCode;
     return HRTestModeTime;
 }
 
@@ -85,6 +88,7 @@
         @"punctuation": @(_punctuation),
         @"numbers": @(_numbers),
         @"backspacePolicy": @(_backspacePolicy),
+        @"stopOnError": @(_stopOnError),
         @"languageID": _languageID ?: @"english",
         @"wordListName": _wordListName ?: @"words-200",
         @"layoutID": _layoutID ?: @"qwerty",
@@ -99,6 +103,7 @@
         if (d[@"punctuation"])     _punctuation = [d[@"punctuation"] boolValue];
         if (d[@"numbers"])         _numbers = [d[@"numbers"] boolValue];
         if (d[@"backspacePolicy"]) _backspacePolicy = [d[@"backspacePolicy"] integerValue];
+        if (d[@"stopOnError"])     _stopOnError = [d[@"stopOnError"] boolValue];
         if (d[@"languageID"])      _languageID = [d[@"languageID"] copy];
         if (d[@"wordListName"])    _wordListName = [d[@"wordListName"] copy];
         if (d[@"layoutID"])        _layoutID = [d[@"layoutID"] copy];

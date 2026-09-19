@@ -12,7 +12,9 @@ Objective-C 2.0 with ARC, XIB-based UI, one source tree for both platforms.
 > accuracy, a results screen with a per-second chart, results saved through
 > Core Data, and GNU Typist's 46 courses as courses you *follow*: HomeRow
 > keeps your place, records every lesson, and shows a keyboard with the next
-> key lit. Statistics and code mode are next — see
+> key lit. And code: real source files in ten programming languages,
+syntax-coloured by the same TextMate grammars VS Code uses. Statistics are
+next — see
 > [docs/feature-set.md](docs/feature-set.md) for the plan.
 
 Known limitation: on macOS, dead keys and Option-composed accents do not
@@ -30,6 +32,7 @@ ship).
 | Return, Tab or Esc on the results | next test |
 | Cmd/Ctrl+O | open a text file as a custom test |
 | Cmd/Ctrl+1, 2, 3 | time test, words test, zen — also the way out of a course |
+| Cmd/Ctrl+4 | the Code window |
 | Cmd/Ctrl+L | the Courses window |
 | Return or Space | next page, while a lesson is explaining something |
 
@@ -60,6 +63,26 @@ The on-screen keyboard (Course ▸ Show Keyboard, Cmd/Ctrl+Shift+K) is on by
 default in a course and off otherwise. It shows the course's layout with the
 finger zones tinted, and lights the next key — plus the Shift of the other
 hand, or Backspace when there is a mistake to take back first.
+
+### Typing code
+
+**Test ▸ Code…** (Cmd/Ctrl+4) lists source files by programming language —
+C, Objective-C, C#, Python, JavaScript, TypeScript, Go, Rust, SQL and shell —
+each cut into parts of about fifty lines at blank lines. Pick a part and
+press *Type Section*, or *Open File…* to type one of your own files (its
+language goes by the extension). As with a course, HomeRow keeps your place
+in every file, shows each part's best speed and accuracy, and Return after a
+part goes on to the next.
+
+Code is typed the way an editor with auto-indent has you type it:
+indentation is filled in, Return ends a line, blank lines are skipped, and
+comments are shown but not typed (unless *Type the comments too* is on). A
+wrong key does not go in — the caret waits for the right one, and the miss
+counts against accuracy.
+
+The colours come from [TextMate grammars](docs/adding-a-code-language.md) —
+the format VS Code uses too — so adding a language means adding a grammar
+file and some source, not writing a lexer.
 
 ## Download
 
@@ -110,14 +133,16 @@ app that way.
 ```
 HomeRow/                 the application
   Engine/                Foundation-only: sessions, scoring, text sources, packs
-  Resources/             MainMenu.xib, CourseWindow.xib, Languages/, Layouts/, Lessons/, Themes/
+  Resources/             MainMenu.xib, CourseWindow.xib, CodeWindow.xib, Languages/, Layouts/,
+                         Lessons/, Code/ (grammars and source files), Themes/
+  ThirdParty/oniguruma/  the regex engine TextMate grammars need (BSD), compiled in
   HomeRow.xcdatamodeld   the Core Data model (Xcode compiles it; momc on GNUstep)
 HomeRowTests/            XCTest sources, run on both platforms
 HomeRow.xcodeproj        macOS build
 GNUmakefile              GNUstep build
 Scripts/                 AppImage packaging, version stamping
 patches/gnustep/         gnustep-gui fixes applied by dependencies.sh
-docs/                    feature set, metrics, how to add a language or a layout
+docs/                    feature set, metrics, how to add a language, a layout or a code language
 ```
 
 Everything under `Engine/` must stay free of AppKit: the test bundle
@@ -137,6 +162,11 @@ HomeRow is GPL-3.0-or-later so that it can stand on two GPL projects:
 the courses are [GNU Typist](https://www.gnu.org/software/gtypist/)'s lesson
 files, unmodified (several of them converted by that project from KTouch),
 and the word lists and keyboard layouts are [MonkeyType](https://github.com/monkeytypegame/monkeytype)'s.
+The source files of code mode come from well-known projects under
+permissive licences (MIT, BSD, Apache-2.0, PSF), each unmodified and listed
+with its commit in [THIRD-PARTY](THIRD-PARTY); the grammars are the ones VS
+Code bundles (MIT), run by a tokenizer written for HomeRow on top of
+[Oniguruma](https://github.com/kkos/oniguruma) (BSD).
 MonkeyType's quote collection is *not* used: its licence covers the
 collection, not the books and films the quotes are from.
 

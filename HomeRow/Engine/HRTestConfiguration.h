@@ -15,7 +15,8 @@ typedef NS_ENUM(NSInteger, HRTestMode) {
     HRTestModeWords,      /* amount = number of words */
     HRTestModeCustom,     /* the text decides */
     HRTestModeZen,        /* no target text; ended by the user */
-    HRTestModeLesson      /* an exercise of a course; the lesson decides the text */
+    HRTestModeLesson,     /* an exercise of a course; the lesson decides the text */
+    HRTestModeCode        /* a section of a source file */
 };
 
 typedef NS_ENUM(NSInteger, HRBackspacePolicy) {
@@ -33,6 +34,9 @@ typedef NS_ENUM(NSInteger, HRBackspacePolicy) {
 @property (nonatomic) BOOL punctuation;
 @property (nonatomic) BOOL numbers;
 @property (nonatomic) HRBackspacePolicy backspacePolicy;
+/* A wrong key is counted but not entered, so there is never anything to
+ * take back: the way Typing.io works, and the default for code. */
+@property (nonatomic) BOOL stopOnError;
 @property (nonatomic, copy) NSString *languageID;   /* language pack, e.g. "english" */
 @property (nonatomic, copy) NSString *wordListName; /* e.g. "words-200" */
 @property (nonatomic, copy) NSString *layoutID;     /* layout pack, e.g. "qwerty" */

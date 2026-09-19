@@ -1,4 +1,4 @@
-# HomeRow — Feature Set (draft 5)
+# HomeRow — Feature Set (draft 6)
 
 A native typing tutor for GNUstep and Cocoa, in the spirit of MonkeyType (prose, quick tests, rich stats) and Typing.io (typing real source code), plus a guided touch-typing course for people starting from zero. Objective-C 2.0 with ARC, XIB-based UI, GPL-3.0-or-later, fully offline, no accounts, no telemetry.
 
@@ -13,7 +13,7 @@ A native typing tutor for GNUstep and Cocoa, in the spirit of MonkeyType (prose,
 | GNUstep target | From-source stack only (clang, libobjc2, `ng-gnu-gnu`, `gnustep-2.0`, ARC), as in XFormsKit; Linux distribution is an **AppImage**. Distro GNUstep packages are not supported. |
 | Persistence | Core Data API — Apple's CoreData on macOS, **FreeCoreData** on GNUstep (dogfooding), SQLite store |
 | Lessons/course | In scope — not for the author, but for everyone else who needs a free tutor |
-| Code mode | In scope, but after the core, lessons and statistics |
+| Code mode | In scope; first version done (section 4). Syntax comes from **TextMate grammars** — the format VS Code still uses — rather than tokenizers of our own |
 | Languages / layouts | v0.2 ships English + QWERTY-US only, but languages and keyboard layouts are **data packs** from the start, so more can be added without code (section 7a) |
 | FreeCoreData in CI | Checked out at a pinned tag/commit by `dependencies.sh`; bumping the pin is a deliberate commit |
 | Hosting / CI | GitHub and GitHub Actions only; no Forgejo pipeline |
@@ -53,16 +53,18 @@ Modifiers for Time and Words: **punctuation** on/off, **numbers** on/off, word l
 - Pace caret (later): a ghost caret running at your personal best, your average, or a fixed WPM.
 - Test is invalidated on long idle (AFK detection) and marked as such instead of polluting the stats.
 
-## 4. Code mode (the Typing.io half) — later phase
+## 4. Code mode (the Typing.io half) — first version done
 
 - Monospaced rendering, original indentation and line structure preserved.
 - **Auto-indent**: after Enter, leading whitespace is filled in for you; you type only the meaningful characters. Tab key can be required or skipped — a setting.
 - Comments and blank lines can be skipped automatically (setting), since they train prose, not code.
-- Lightweight syntax colouring of the *untyped* text only (keywords, strings, comments, numbers) via a small table-driven tokenizer per language — no external dependencies. Typed text uses the correct/incorrect colours so feedback stays unambiguous.
-- Long files are split into sections of roughly 40–80 lines; progress through a file is remembered.
-- Bundled starter library: short snippets in C, Objective-C, C#, Python, JavaScript, Go, Rust, SQL, shell. **Licensing constraint:** everything bundled must be GPL-3.0-compatible, with attribution kept in `THIRD-PARTY`.
-- "Open file…" and drag-and-drop to practise on your own code; a folder can be added as a personal library.
-- Code-specific metrics: **unproductive keystroke overhead** (keystrokes spent on errors and fixes ÷ total), and a **symbol breakdown** showing speed and error rate per character class (letters, digits, brackets, operators, punctuation).
+- Syntax colouring of the *untyped* text only (comments, strings, keywords, numbers, types, functions). Typed text uses the correct/incorrect colours so feedback stays unambiguous.
+- **Syntax is described by TextMate grammars**, not by tokenizers written for HomeRow: the format is shared by TextMate, Sublime Text, Atom and VS Code, and a grammar exists for practically every language. `HRTextMateGrammar` is an Objective-C implementation of the `vscode-textmate` algorithm (begin/end/while rules, captures, includes across grammars, back-references; not injections), checked against that project's own test suite; the grammars are the ones VS Code bundles (MIT), unmodified. The regular expressions need **Oniguruma** (BSD), which is compiled in — NSRegularExpression differs in the details and is missing from a gnustep-base built without ICU. Scopes are reduced to the six styles above, which the themes colour.
+- Long files are split into sections of roughly 50 lines, cut at blank lines; progress through a file is remembered the way a course's is (`CourseProgress` / `LessonRecord` under a `code:` identifier), with best speed and accuracy per section in the **Code window**.
+- Wrong keys do not go in (stop on error, per letter).
+- Bundled starter library: 23 real source files in C, Objective-C, C#, Python, JavaScript, TypeScript, Go, Rust, SQL, shell, from well-known projects, imported reproducibly by `Scripts/import-code.py` (see `docs/adding-a-code-language.md`). **Licensing constraint:** everything bundled must be GPL-3.0-compatible, with attribution kept in `THIRD-PARTY`.
+- "Open File…" to practise on your own code (done; language by extension, the last 30 files remembered). Still to do: drag-and-drop, a folder as a personal library.
+- Still to do — code-specific metrics: **unproductive keystroke overhead** (keystrokes spent on errors and fixes ÷ total), and a **symbol breakdown** showing speed and error rate per character class (letters, digits, brackets, operators, punctuation).
 
 The engine is designed for this from v0.1 (newlines and tabs as typeable characters, a text source that can mark spans as "auto-filled" or "skipped"), so Code mode is an addition later rather than a rewrite.
 
@@ -221,7 +223,7 @@ HomeRow/
 - **Done ahead of plan**: GNU Typist courses; 140 language packs; **course mode** — a Courses window to pick the course being followed, position kept per course down to the step (`CourseProgress`), a record per lesson (`LessonRecord`: attempts, completions, best/last WPM and accuracy, time), every exercise in the history with its course/lesson/step, lesson-level results, relaunch resumes the course; **on-screen keyboard** — 239 layout packs from MonkeyType, finger zones, next key + opposite Shift + Backspace-on-error lit; data model version 2 with migration (explicit lightweight migration, old store kept).
 - **v0.2 — tutor**: `NSTextInputClient` on macOS (dead keys — needed by every non-English course), layout/language pack loading and validation, lesson generator, English + QWERTY-US course, keyboard view with finger hints, course window, lesson progress, first-launch choice.
 - **v0.3 — insight**: History window, charts, heatmap on the keyboard view, weak-spot practice and adaptive review, personal bests, export/import; Quote mode.
-- **v0.4 — code**: Code mode with auto-indent, tokenizer colouring, file/folder import, overhead and symbol metrics.
+- **v0.4 — code**: first version done ahead of plan (section 4). Remaining: folder import and drag-and-drop, overhead and symbol metrics, font choice for code, MonkeyType's `code_*` word lists.
 - **v1.0 — polish**: pace caret, replay, command palette, sounds, more themes; additional layout and language packs as they are contributed; signed/notarized macOS build.
 
 ## 15. Open questions

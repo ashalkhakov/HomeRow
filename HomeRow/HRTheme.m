@@ -8,8 +8,12 @@
  * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRTheme.h"
+#import "HRWord.h"
 
 @implementation HRTheme
+{
+    NSColor *_styleColors[HRTextStyleCount];
+}
 
 + (NSColor *)colorFromHex:(NSString *)hex
 {
@@ -33,8 +37,18 @@
         _extra      = [HRTheme colorFromHex:d[@"extra"]]      ?: _incorrect;
         _caret      = [HRTheme colorFromHex:d[@"caret"]]      ?: [NSColor orangeColor];
         _accent     = [HRTheme colorFromHex:d[@"accent"]]     ?: _caret;
+        NSArray *keys = @[@"", @"codeComment", @"codeString", @"codeKeyword", @"codeNumber", @"codeType", @"codeFunction"];
+        for (NSUInteger i = 0; i < HRTextStyleCount; i++) {
+            NSColor *c = i < [keys count] && [keys[i] length] > 0 ? [HRTheme colorFromHex:d[keys[i]]] : nil;
+            _styleColors[i] = c ?: _untyped;
+        }
     }
     return self;
+}
+
+- (NSColor *)colorForTextStyle:(uint8_t)style
+{
+    return style < HRTextStyleCount ? _styleColors[style] : _untyped;
 }
 
 + (instancetype)themeNamed:(NSString *)name

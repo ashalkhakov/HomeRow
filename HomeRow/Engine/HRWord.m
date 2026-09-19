@@ -75,6 +75,22 @@ static NSString *HRPrecomposed(NSString *string)
 }
 
 + (instancetype)wordWithText:(NSString *)text separator:(HRSeparator)separator
+                      prefix:(NSString *)prefix suffix:(NSString *)suffix styles:(NSData *)styles
+{
+    HRWord *w = [[self alloc] initWithText:text separator:separator];
+    w->_prefix = [prefix length] > 0 ? [prefix copy] : nil;
+    w->_suffix = [suffix length] > 0 ? [suffix copy] : nil;
+    /* styles are per composed character; a mismatch means "do not trust" */
+    w->_styles = [styles length] == [w->_characters count] ? [styles copy] : nil;
+    return w;
+}
+
+- (uint8_t)styleOfCharacterAtIndex:(NSUInteger)index
+{
+    return index < [_styles length] ? ((const uint8_t *)[_styles bytes])[index] : HRTextStylePlain;
+}
+
++ (instancetype)wordWithText:(NSString *)text separator:(HRSeparator)separator
 {
     return [[self alloc] initWithText:text separator:separator];
 }
@@ -85,4 +101,11 @@ static NSString *HRPrecomposed(NSString *string)
             _separator == HRSeparatorNewline ? @"\\n" : @""];
 }
 
+@end
+
+@implementation NSString (HRNormalization)
+- (NSString *)precomposedStringWithCanonicalMappingIfAvailable
+{
+    return HRPrecomposed(self);
+}
 @end

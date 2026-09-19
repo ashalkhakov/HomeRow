@@ -41,6 +41,10 @@
  * tutorial page, laid out for an 80-column terminal as GNU Typist's are --
  * and waits for Return or Space. */
 @property (nonatomic, copy) NSString *pageText;
+/* Code: the text keeps its own lines and indentation (HRWord's prefix and
+ * suffix are drawn, untyped), scrolls to keep the caret's line in view,
+ * and what is not typed yet is syntax-coloured. */
+@property (nonatomic) BOOL codeLayout;
 /* IBOutlet-compatible; not retained. */
 @property (nonatomic, assign) IBOutlet id delegate;
 

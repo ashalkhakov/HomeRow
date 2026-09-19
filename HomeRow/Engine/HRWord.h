@@ -9,6 +9,20 @@
  */
 #import <Foundation/Foundation.h>
 
+/* What a character is, as far as colouring goes.  Deliberately few: a
+ * typing surface is not an editor, and every colour competes with the
+ * correct/wrong feedback. */
+enum {
+    HRTextStylePlain = 0,
+    HRTextStyleComment,
+    HRTextStyleString,
+    HRTextStyleKeyword,
+    HRTextStyleNumber,
+    HRTextStyleType,
+    HRTextStyleFunction,
+    HRTextStyleCount
+};
+
 /* What has to be pressed after a word to move on to the next one. */
 typedef NS_ENUM(NSInteger, HRSeparator) {
     HRSeparatorSpace = 0,
@@ -27,8 +41,21 @@ typedef NS_ENUM(NSInteger, HRSeparator) {
 @property (nonatomic, readonly, copy) NSArray *characters; /* of NSString */
 @property (nonatomic, readonly) HRSeparator separator;
 
+/* Text that is shown but not typed: `prefix` before the word (indentation,
+ * blank lines, whole-line comments, the extra blanks of aligned code) and
+ * `suffix` after it, before the separator (a trailing comment).  Both may
+ * hold line breaks.  nil for ordinary prose. */
+@property (nonatomic, readonly, copy) NSString *prefix;
+@property (nonatomic, readonly, copy) NSString *suffix;
+/* One HRTextStyle byte per entry of `characters` -- syntax colouring for
+ * the text not typed yet.  nil: all plain. */
+@property (nonatomic, readonly, copy) NSData *styles;
+- (uint8_t)styleOfCharacterAtIndex:(NSUInteger)index;
+
 + (instancetype)wordWithText:(NSString *)text;
 + (instancetype)wordWithText:(NSString *)text separator:(HRSeparator)separator;
++ (instancetype)wordWithText:(NSString *)text separator:(HRSeparator)separator
+                      prefix:(NSString *)prefix suffix:(NSString *)suffix styles:(NSData *)styles;
 
 /* Splits a string into lines at \n, \r\n or \r, code unit by code unit.
  *
@@ -41,4 +68,10 @@ typedef NS_ENUM(NSInteger, HRSeparator) {
 /* Splits a string into its composed character sequences. */
 + (NSArray *)charactersOfString:(NSString *)string;
 
+@end
+
+@interface NSString (HRNormalization)
+/* NFC where Foundation can do it (gnustep-base needs ICU for that), the
+ * string itself where it cannot. */
+- (NSString *)precomposedStringWithCanonicalMappingIfAvailable;
 @end

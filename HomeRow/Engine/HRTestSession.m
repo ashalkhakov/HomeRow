@@ -183,7 +183,8 @@ static const NSUInteger HRMaxExtra = 20;
 
     NSString *expected = pos < [target count] ? target[pos] : nil;
     BOOL correct = expected != nil && [expected isEqualToString:ch];
-    [typed addObject:ch];
+    /* stop on error: the wrong key counts, and that is all it does */
+    if (correct || !_configuration.stopOnError) [typed addObject:ch];
     /* an extra character is charged to the separator that should have
      * been pressed instead */
     [self recordKeystrokeCorrect:correct expected:(expected ?: @" ") atTime:time];
@@ -225,6 +226,11 @@ static const NSUInteger HRMaxExtra = 20;
         return;
     }
     BOOL wordCorrect = [typed isEqualToArray:word.characters];
+    if (!wordCorrect && _configuration.stopOnError) {
+        /* the word is not finished: a separator here is a wrong key too */
+        [self recordKeystrokeCorrect:NO expected:([typed count] < [word.characters count] ? word.characters[[typed count]] : expected) atTime:time];
+        return;
+    }
     /* leaving a wrong or unfinished word is itself the error */
     [self recordKeystrokeCorrect:wordCorrect expected:expected atTime:time];
     [_committed addObject:@YES];
@@ -366,6 +372,7 @@ static const NSUInteger HRMaxExtra = 20;
         case HRTestModeWords:
         case HRTestModeCustom:
         case HRTestModeLesson:
+        case HRTestModeCode:
             return (NSInteger)[_words count] - (NSInteger)[_committed count];
         case HRTestModeZen:
             return -1;
