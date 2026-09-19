@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=HomeRow
+GenericName=Typing Tutor
+Comment=Practise and learn touch typing
+Exec=AppRun
+Icon=homerow
+Terminal=false
+Categories=Education;

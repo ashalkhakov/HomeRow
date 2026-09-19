@@ -1,0 +1,251 @@
+name: CI
+
+# pull_request fires for a PR against any branch and uses the workflow file
+# from the PR's own head. workflow_dispatch only offers its button once this
+# file is on the default branch.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+# A run that lands while an earlier one is still going supersedes it. The key
+# is the branch NAME rather than the ref, so that a push and the pull request
+# for the same branch share one group instead of running twice.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ########################### macOS / Cocoa ###########################
+  macos:
+    name: macOS
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcodebuild -version
+
+      # Seconds, and before anything compiles. The GNUstep build picks
+      # Engine/*.m up with a wildcard, but the Xcode project lists files one
+      # by one: a source added on Linux is otherwise invisible here until
+      # something fails to link.
+      - name: Every source file is in the Xcode project
+        run: |
+          missing=0
+          for f in HomeRow/*.m HomeRow/Engine/*.m HomeRowTests/*.m; do
+            name=$(basename "$f")
+            grep -q "/\* $name in Sources \*/" HomeRow.xcodeproj/project.pbxproj \
+              || { echo "::error file=$f::$name is not compiled by any target in HomeRow.xcodeproj"; missing=1; }
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          echo "all listed"
+
+      # Built first and on its own, so a compile error is reported as that
+      # rather than as a test failure.
+      - name: Build
+        run: |
+          xcodebuild -project HomeRow.xcodeproj -scheme HomeRow \
+            -destination 'platform=macOS' -configuration Debug build
+
+      # The same XCTest sources the GNUstep job runs, here against Apple's
+      # CoreData; there against FreeCoreData.
+      - name: Unit tests
+        run: |
+          xcodebuild -project HomeRow.xcodeproj -scheme HomeRow \
+            -destination 'platform=macOS' -configuration Debug \
+            -resultBundlePath "$RUNNER_TEMP/HomeRowTests.xcresult" test
+
+      # What is handed to people: Release, both architectures.
+      - name: Build the universal Release app
+        run: |
+          xcodebuild -project HomeRow.xcodeproj -scheme HomeRow \
+            -destination 'generic/platform=macOS' -configuration Release \
+            -derivedDataPath "$RUNNER_TEMP/release" ONLY_ACTIVE_ARCH=NO build
+          echo "APP=$RUNNER_TEMP/release/Build/Products/Release/HomeRow.app" >> "$GITHUB_ENV"
+
+      # Big Sur is the floor, and it is a promise that erodes silently: one
+      # target setting or one Xcode upgrade moves it. Assert what the binary
+      # itself says rather than what the project file says.
+      - name: The app is universal and runs on macOS 11
+        run: |
+          bin="$APP/Contents/MacOS/HomeRow"
+          lipo -archs "$bin"
+          for arch in arm64 x86_64; do
+            lipo "$bin" -verify_arch "$arch" \
+              || { echo "::error::the app has no $arch slice"; exit 1; }
+            minos=$(vtool -arch "$arch" -show-build "$bin" | awk '/minos/{print $2; exit}')
+            echo "$arch: minos $minos"
+            [ "$minos" = "11.0" ] \
+              || { echo "::error::$arch slice needs macOS $minos, not 11.0"; exit 1; }
+          done
+
+      # The same check the AppImage gets: every outlet connected, a language
+      # pack found, real key events delivered, a test typed, scored and saved. HOME is redirected so the
+      # run leaves nothing in the runner's Application Support.
+      - name: Smoke-test the app
+        timeout-minutes: 2
+        run: |
+          export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
+          # Foundation on macOS takes the home directory from this, not $HOME
+          export CFFIXED_USER_HOME="$HOME"
+          HR_SMOKE_TEST=1 "$APP/Contents/MacOS/HomeRow"
+
+      # An unsigned build on every commit, so there is always something to
+      # hand someone. release.yml makes the signed, notarized one.
+      - name: Package the app
+        run: ditto -c -k --keepParent "$APP" HomeRow-macOS-unsigned.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HomeRow-macOS-${{ github.sha }}
+          path: HomeRow-macOS-unsigned.zip
+          retention-days: 14
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: macos-test-results
+          path: ${{ runner.temp }}/*.xcresult
+          retention-days: 7
+
+  ########################### GNUstep / Linux ###########################
+  # The only GNUstep HomeRow supports is the one built here: clang, libobjc2,
+  # the gnustep-2.0 ABI and ARC, from source. Distribution packages are a
+  # different runtime and are not a target; Linux users get the AppImage.
+  gnustep:
+    name: Ubuntu (GNUstep, clang, gnustep-2.0)
+    runs-on: ubuntu-latest
+    # The dependency build is the long pole; everything after it is minutes.
+    timeout-minutes: 90
+    env:
+      SRC_PATH: ${{ github.workspace }}/source
+      DEPS_PATH: ${{ github.workspace }}/dependencies
+      INSTALL_PATH: ${{ github.workspace }}/build
+      CC: clang
+      CXX: clang++
+      LIBRARY_COMBO: ng-gnu-gnu
+      RUNTIME_VERSION: gnustep-2.0
+      # libobjc2 and libdispatch land in the prefix's plain lib/, which the
+      # gnustep layout does not treat as a library root.
+      LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}/source
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: source
+
+      # Seconds, and before the half-hour dependency build. Importing a
+      # framework GNUstep does not have compiles on a Mac and breaks this job,
+      # which is a slow way to find out. What GNUstep has: Foundation, AppKit,
+      # the objc runtime headers and (through FreeCoreData) CoreData. Anything else -- Cocoa.h,
+      # QuartzCore, Carbon -- has to sit behind __has_include with a branch
+      # beside it. Matches import lines only, not prose in comments.
+      - name: No imports GNUstep cannot satisfy
+        run: |
+          bad=$(grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*<[A-Za-z]+/' \
+                  HomeRow HomeRowTests --include='*.h' --include='*.m' \
+                | grep -vE '<(Foundation|AppKit|CoreData|XCTest|objc)/' || true)
+          if [ -n "$bad" ]; then
+            echo "$bad" | while IFS=: read -r file line rest; do
+              prev=$(sed -n "$((line-1))p" "$file")
+              case "$prev" in
+                *__has_include*) ;;
+                *) echo "::error file=$file,line=$line::import GNUstep cannot satisfy, and no __has_include guard above it"; echo x > "$RUNNER_TEMP/bad-import" ;;
+              esac
+            done
+          fi
+          [ ! -e "$RUNNER_TEMP/bad-import" ]
+          echo "imports are portable"
+
+      - name: Install packages
+        run: |
+          ./.github/scripts/apt-update.sh
+          sudo apt-get -q -y install \
+            pkg-config libgnutls28-dev libffi-dev libicu-dev libxml2-dev libxslt1-dev \
+            libssl-dev libavahi-client-dev zlib1g-dev gnutls-bin libcurl4-gnutls-dev \
+            libgmp-dev libcairo2-dev libjpeg-dev libtiff-dev libpng-dev libicns-dev \
+            libpthread-workqueue-dev libsqlite3-dev \
+            libfreetype-dev libfontconfig1-dev libxrender-dev liblcms2-dev \
+            libxt-dev libxmu-dev libxft-dev libxrandr-dev libxfixes-dev libxcursor-dev \
+            xvfb
+          if [ -x /usr/bin/ld.gold ]; then
+            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.gold 10
+          else
+            sudo apt-get -q -y install lld
+            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.lld 10
+          fi
+          ld --version | head -1
+
+      # The key is the recipe: dependencies.sh (which holds the FreeCoreData
+      # pin) and the gnustep patches. Change either and the stack rebuilds.
+      - name: Restore GNUstep
+        id: gnustep-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ env.INSTALL_PATH }}
+          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+
+      - name: Build GNUstep
+        if: steps.gnustep-cache.outputs.cache-hit != 'true'
+        run: ./.github/scripts/dependencies.sh
+
+      # Saved as soon as it exists, not at the end of the job: a red test
+      # below must not cost the next run another half hour.
+      - name: Save GNUstep
+        if: steps.gnustep-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.INSTALL_PATH }}
+          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+
+      - name: Build HomeRow
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          make messages=yes
+
+      # Foundation and FreeCoreData only -- no display needed.
+      - name: Unit tests
+        run: |
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          make check
+
+      - name: Fetch linuxdeploy and the AppImage runtime
+        run: ./Scripts/install-linuxdeploy.sh
+
+      - name: Package the AppImage
+        env:
+          LDAI_RUNTIME_FILE: /tmp/appimage-runtime/runtime-x86_64
+          APP_VERSION: 0.0.0-${{ github.run_number }}-${{ github.sha }}
+        run: |
+          sudo apt-get -q -y install desktop-file-utils fonts-dejavu fonts-liberation
+          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/prepare-appdir.sh
+          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/package-appimage.sh
+
+      # Run the image the way a user would, minus the prefix it was built
+      # from: if it only works because $INSTALL_PATH is still on this machine,
+      # it does not work. HR_SMOKE_TEST makes the app check its own outlets,
+      # type a test, save the result through FreeCoreData, and exit 0.
+      - name: Smoke-test the AppImage
+        run: |
+          image=$(ls HomeRow-Linux-*.AppImage)
+          chmod +x "$image"
+          mv "$INSTALL_PATH" "$INSTALL_PATH.away"
+          trap 'mv "$INSTALL_PATH.away" "$INSTALL_PATH"' EXIT
+          export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
+          env -u LD_LIBRARY_PATH APPIMAGE_EXTRACT_AND_RUN=1 HR_SMOKE_TEST=1 \
+            timeout 120 xvfb-run -a ./"$image"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HomeRow-Linux-${{ github.sha }}
+          path: ${{ env.SRC_PATH }}/HomeRow-Linux-*.AppImage
+          retention-days: 14

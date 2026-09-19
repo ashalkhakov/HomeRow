@@ -1,0 +1,18 @@
+{
+    ApplicationDescription = "A typing tutor for GNUstep and Cocoa";
+    ApplicationIcon = "HomeRow.png";
+    ApplicationName = HomeRow;
+    ApplicationRelease = "0.1";
+    Authors = (
+	"Artyom Shalkhakov"
+    );
+    Copyright = "Copyright (C) 2026 Artyom Shalkhakov";
+    CopyrightDescription = "Released under the GNU LGPL, version 2.1 or later";
+    FullVersionID = "0.1";
+    NSExecutable = HomeRow;
+    NSIcon = "HomeRow.png";
+    NSMainNibFile = "MainMenu.xib";
+    NSPrincipalClass = NSApplication;
+    NSRole = Application;
+    URL = "https://github.com/ashalkhakov/HomeRow";
+}

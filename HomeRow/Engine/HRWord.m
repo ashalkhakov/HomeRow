@@ -1,0 +1,73 @@
+/*
+ * This file is part of HomeRow, a typing tutor for GNUstep and Cocoa.
+ * Copyright (C) 2026 Artyom Shalkhakov
+ *
+ * This library is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or (at
+ * your option) any later version.  See COPYING.LIB.
+ */
+#import "HRWord.h"
+
+/* Precomposed (NFC) throughout: a word list saved decomposed and a keyboard
+ * that delivers precomposed characters must still compare equal.
+ *
+ * gnustep-base implements the normalization through ICU and raises "not
+ * implemented" when it was configured without it.  The CI stack has ICU;
+ * a stack without it still has to run, just without this nicety. */
+static NSString *HRPrecomposed(NSString *string)
+{
+    static int available = -1;
+    if (available == 0 || [string canBeConvertedToEncoding:NSASCIIStringEncoding]) return string;
+    @try {
+        NSString *normalized = [string precomposedStringWithCanonicalMapping];
+        available = 1;
+        return normalized ?: string;
+    } @catch (NSException *e) {
+        available = 0;
+        return string;
+    }
+}
+
+@implementation HRWord
+
++ (NSArray *)charactersOfString:(NSString *)string
+{
+    string = HRPrecomposed(string);
+    NSMutableArray *out = [NSMutableArray arrayWithCapacity:[string length]];
+    NSUInteger i = 0, n = [string length];
+    while (i < n) {
+        NSRange r = [string rangeOfComposedCharacterSequenceAtIndex:i];
+        [out addObject:[string substringWithRange:r]];
+        i = NSMaxRange(r);
+    }
+    return out;
+}
+
+- (instancetype)initWithText:(NSString *)text separator:(HRSeparator)separator
+{
+    if ((self = [super init])) {
+        _text = [HRPrecomposed(text) copy];
+        _characters = [[[self class] charactersOfString:_text] copy];
+        _separator = separator;
+    }
+    return self;
+}
+
++ (instancetype)wordWithText:(NSString *)text
+{
+    return [[self alloc] initWithText:text separator:HRSeparatorSpace];
+}
+
++ (instancetype)wordWithText:(NSString *)text separator:(HRSeparator)separator
+{
+    return [[self alloc] initWithText:text separator:separator];
+}
+
+- (NSString *)description
+{
+    return [NSString stringWithFormat:@"<HRWord %@%@>", _text,
+            _separator == HRSeparatorNewline ? @"\\n" : @""];
+}
+
+@end

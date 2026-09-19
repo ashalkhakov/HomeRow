@@ -1,0 +1,36 @@
+HomeRow -- third-party material
+===============================
+
+Everything bundled with HomeRow must be compatible with the LGPL-2.1-or-later.
+In particular, nothing here comes from MonkeyType (GPL-3.0, word lists and
+quotes included) or from Typing.io (proprietary).
+
+Linked at run time
+------------------
+
+FreeCoreData (GNUstep builds only)
+    https://github.com/ashalkhakov/FreeCoreData
+    MIT licence; a port of the Cocotron CoreData runtime (Copyright (c)
+    2006-2009 Christopher J. W. Lloyd, Johannes Fortmann and the other
+    Cocotron contributors named in FreeCoreData's LICENSE files), with
+    NSFetchedResultsController following
+    MRTFetchedResultsController by Matteo Rattotti (MIT).
+    The commit used is pinned in .github/scripts/dependencies.sh.
+
+GNUstep (libobjc2, libs-base, libs-gui, libs-back), libdispatch, the Eau
+theme and the DejaVu and Liberation fonts are shipped inside the AppImage
+under their own licences; none of their source is part of this repository.
+
+Build-time patches
+------------------
+
+patches/gnustep/*.patch
+    Fixes to gnustep-gui (LGPL-2.1-or-later, as gnustep-gui itself), copied
+    from XFormsKit. See patches/gnustep/README.md.
+
+Content
+-------
+
+HomeRow/Resources/Languages/en/words-200.txt
+    Compiled by hand for HomeRow; LGPL-2.1-or-later. See the LICENSE file
+    beside it. Every language pack carries such a file.

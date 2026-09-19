@@ -1,0 +1,14 @@
+/* HomeRow -- English.  Keys are the English text. */
+
+"time" = "time";
+"words" = "words";
+"zen" = "zen";
+"custom" = "custom";
+"wpm" = "wpm";
+"acc" = "acc";
+"start typing" = "start typing";
+"type anything \U2014 shift+return to finish" = "type anything \U2014 shift+return to finish";
+"tab, esc or return \U2014 next test" = "tab, esc or return \U2014 next test";
+"   \U2014 new personal best" = "   \U2014 new personal best";
+"raw %.0f   consistency %.0f%%   characters %lu/%lu/%lu/%lu   %.0fs%@" = "raw %.0f   consistency %.0f%%   characters %lu/%lu/%lu/%lu   %.0fs%@";
+"That file could not be read as UTF-8 text." = "That file could not be read as UTF-8 text.";

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22758" systemVersion="23G93" minimumToolsVersion="Automatic" sourceLanguage="Objective-C" userDefinedModelVersionIdentifier="1">
+    <entity name="KeyStat" representedClassName="HRKeyStat" syncable="YES">
+        <attribute name="character" attributeType="String"/>
+        <attribute name="hits" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="misses" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <relationship name="result" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TestResult" inverseName="keyStats" inverseEntity="TestResult"/>
+    </entity>
+    <entity name="TestResult" representedClassName="HRTestResult" syncable="YES">
+        <attribute name="accuracy" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="amount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="consistency" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="correctCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="duration" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="extraCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="incorrectCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="languageID" optional="YES" attributeType="String"/>
+        <attribute name="layoutID" optional="YES" attributeType="String"/>
+        <attribute name="missedCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="mode" attributeType="String"/>
+        <attribute name="rawWpm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="series" optional="YES" attributeType="Binary"/>
+        <attribute name="settingsKey" attributeType="String"/>
+        <attribute name="wpm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <relationship name="keyStats" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="KeyStat" inverseName="result" inverseEntity="KeyStat"/>
+    </entity>
+</model>

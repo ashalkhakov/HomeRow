@@ -1,0 +1,82 @@
+#!/bin/sh
+# Ported from XFormsKit's Scripts/appimage/AppRun (RDLKit, UDQuakeTools).
+set -eu
+
+HERE="$(dirname "$(readlink -f "$0")")"
+
+# Write runtime GNUstep config to a private temp file. The paths are not known
+# until the image is mounted, which is why they cannot be baked in.
+export GNUSTEP_CONFIG_FILE="/tmp/GNUstep-HomeRow-$$.conf"
+cat << IN_EOF > "$GNUSTEP_CONFIG_FILE"
+GNUSTEP_USER_CONFIG_FILE=.GNUstep.conf
+GNUSTEP_USER_DEFAULTS_DIR=GNUstep/Defaults
+GNUSTEP_SYSTEM_USERS_DIR=/home
+GNUSTEP_NETWORK_USERS_DIR=/home
+GNUSTEP_LOCAL_USERS_DIR=/home
+GNUSTEP_SYSTEM_ROOT=$HERE/usr/System
+GNUSTEP_SYSTEM_LIBRARIES=$HERE/usr/System/Library
+GNUSTEP_SYSTEM_LIBRARY=$HERE/usr/System/Library
+GNUSTEP_SYSTEM_TOOLS=$HERE/usr/System/Tools
+GNUSTEP_SYSTEM_APPS=$HERE/usr/System/Applications
+GNUSTEP_LOCAL_ROOT=$HERE/usr/Local
+GNUSTEP_LOCAL_LIBRARY=$HERE/usr/Local/Library
+GNUSTEP_LOCAL_TOOLS=$HERE/usr/Local/Tools
+GNUSTEP_LOCAL_APPS=$HERE/usr/Local/Applications
+IN_EOF
+chmod 600 "$GNUSTEP_CONFIG_FILE"
+
+export GNUSTEP_SYSTEM_ROOT="$HERE/usr/System"
+export GNUSTEP_SYSTEM_LIBRARY="$HERE/usr/System/Library"
+export GNUSTEP_SYSTEM_TOOLS="$HERE/usr/System/Tools"
+export GNUSTEP_SYSTEM_APPS="$HERE/usr/System/Applications"
+export GNUSTEP_LOCAL_ROOT="$HERE/usr/Local"
+export GNUSTEP_LOCAL_LIBRARY="$HERE/usr/Local/Library"
+export GNUSTEP_LOCAL_TOOLS="$HERE/usr/Local/Tools"
+export GNUSTEP_LOCAL_APPS="$HERE/usr/Local/Applications"
+
+export LD_LIBRARY_PATH="$HERE/usr/lib:$HERE/usr/System/Library/Libraries:$HERE/usr/Local/Library/Libraries:${LD_LIBRARY_PATH:-}"
+export PATH="$HERE/usr/local/bin:$HERE/usr/bin:$PATH"
+
+export FONTCONFIG_FILE="$HERE/usr/etc/fonts/fonts.conf"
+export XDG_CACHE_HOME="/tmp/fc-cache-homerow-$$"
+mkdir -p "$XDG_CACHE_HOME"
+
+trap 'rm -rf "$XDG_CACHE_HOME" "$GNUSTEP_CONFIG_FILE"' EXIT
+
+# Written under the application name and under the bundle identifier, because
+# which of the two NSUserDefaults answers to depends on the Info.plist.
+# Only what the user has not set: a theme or font chosen by hand stays.
+DEFAULTS_TOOL=$(find "$HERE" -name defaults -type f -perm -111 | head -n 1)
+if [ -n "$DEFAULTS_TOOL" ]; then
+    set_default() {
+        "$DEFAULTS_TOOL" read "$1" "$2" > /dev/null 2>&1 || "$DEFAULTS_TOOL" write "$1" "$2" "$3"
+    }
+    for domain in HomeRow org.homerow.HomeRow; do
+        set_default "$domain" GSTheme Eau
+        set_default "$domain" NSFont LiberationSans
+        set_default "$domain" NSBoldFont LiberationSans-Bold
+        set_default "$domain" NSUserFont LiberationSans
+        set_default "$domain" NSUserFixedPitchFont DejaVuSansMono
+
+        # Ctrl, not Alt. GNUstep's default modifier map is NeXT's -- Alt_L is
+        # COMMAND -- so on a Linux desktop the app would answer Alt+R where
+        # every other window answers Ctrl+R. The left Control becomes COMMAND
+        # and stops being CONTROL as well (one key acting as both fires a menu
+        # item and a key binding from the same press); the right Control stays
+        # a real CONTROL, and Alt goes back to being ALTERNATE -- which is
+        # what Alt+Backspace, "delete word", needs.
+        set_default "$domain" GSFirstCommandKey Control_L
+        set_default "$domain" GSFirstControlKey NoSymbol
+        set_default "$domain" GSSecondControlKey Control_R
+        set_default "$domain" GSFirstAlternateKey Alt_L
+        set_default "$domain" GSSecondAlternateKey Alt_R
+    done
+fi
+
+REAL_BIN=$(find "$HERE" -type f -name HomeRow -perm -111 -exec file {} \; 2>/dev/null \
+             | awk -F: '/ELF/{print $1; exit}')
+if [ -z "$REAL_BIN" ]; then
+    REAL_BIN="$HERE/usr/System/Applications/HomeRow.app/HomeRow"
+fi
+
+"$REAL_BIN" "$@"

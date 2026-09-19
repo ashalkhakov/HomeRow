@@ -1,0 +1,28 @@
+# GNUstep build products
+obj/
+*.app/
+*.bundle/
+*.o
+*.d
+stamp.make
+# compiled data model (built from HomeRow.xcdatamodeld by momc)
+*.momd/
+*.mom
+
+# AppImage packaging
+AppDir/
+*.AppImage
+squashfs-root/
+
+# Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcresult/
+
+# CI checkouts when the workflow's layout is reproduced locally
+/dependencies/
+
+.DS_Store
+*~

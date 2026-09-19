@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>background</key>
+	<string>#22242A</string>
+	<key>untyped</key>
+	<string>#6B7080</string>
+	<key>correct</key>
+	<string>#E4E6EB</string>
+	<key>incorrect</key>
+	<string>#F0605A</string>
+	<key>extra</key>
+	<string>#A8433F</string>
+	<key>caret</key>
+	<string>#E8B44C</string>
+	<key>accent</key>
+	<string>#E8B44C</string>
+</dict>
+</plist>

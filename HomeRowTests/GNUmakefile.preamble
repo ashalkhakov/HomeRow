@@ -1,0 +1,2 @@
+# HomeRow is ARC throughout.
+ADDITIONAL_OBJCFLAGS += -fobjc-arc -Wall
