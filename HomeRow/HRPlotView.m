@@ -189,7 +189,8 @@ static double HRNiceStep(double range, NSUInteger count)
         CGFloat y = floor(NSMinY(plot) + (CGFloat)(v - lo) * scale) + 0.5;
         [[muted colorWithAlphaComponent:(v == lo ? 0.45 : 0.18)] set];
         [NSBezierPath fillRect:NSMakeRect(NSMinX(plot), y - 0.5, NSWidth(plot), 1.0)];
-        NSString *label = [NSString stringWithFormat:@"%.0f", v];
+        /* a step under one needs its decimal, or the axis reads 2 2 1 1 0 */
+        NSString *label = [NSString stringWithFormat:(step < 1.0 ? @"%.1f" : @"%.0f"), v];
         NSSize size = [label sizeWithAttributes:small];
         [label drawAtPoint:NSMakePoint(NSMinX(plot) - size.width - 6.0, y - size.height / 2.0) withAttributes:small];
     }
