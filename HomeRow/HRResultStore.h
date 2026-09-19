@@ -10,6 +10,7 @@
 #import <Foundation/Foundation.h>
 #import <CoreData/CoreData.h>
 #import "HRManagedObjects.h"
+#import "HRStatistics.h"
 
 @class HRTestSummary;
 @class HRTestConfiguration;
@@ -75,6 +76,15 @@
 /* Forgets position and lesson records of a course; exercise results stay
  * in the history. */
 - (BOOL)resetCourse:(NSString *)courseFile error:(NSError **)error;
+
+/* --- statistics ------------------------------------------------------- */
+
+/* Every saved result as a plain value for HRStatistics. */
+- (NSArray *)statSamples;
+/* character -> @{@"hits", @"misses"}, summed over the results of `kind`
+ * (HRStatKindAll: every one) not older than `since` (nil: ever).  The
+ * character is the one that was WANTED when the key was pressed. */
+- (NSDictionary *)keyCountsForKind:(HRStatKind)kind since:(NSDate *)since;
 
 /* Newest first; limit 0 = all. */
 - (NSArray *)recentResultsWithLimit:(NSUInteger)limit error:(NSError **)error;

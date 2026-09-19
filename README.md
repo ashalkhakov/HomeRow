@@ -13,8 +13,8 @@ Objective-C 2.0 with ARC, XIB-based UI, one source tree for both platforms.
 > Core Data, and GNU Typist's 46 courses as courses you *follow*: HomeRow
 > keeps your place, records every lesson, and shows a keyboard with the next
 > key lit. And code: real source files in ten programming languages,
-syntax-coloured by the same TextMate grammars VS Code uses. Statistics are
-next — see
+syntax-coloured by the same TextMate grammars VS Code uses. A Statistics
+window charts what you have typed. What comes next is in
 > [docs/feature-set.md](docs/feature-set.md) for the plan.
 
 Known limitation: on macOS, dead keys and Option-composed accents do not
@@ -34,6 +34,7 @@ ship).
 | Cmd/Ctrl+1, 2, 3 | time test, words test, zen — also the way out of a course |
 | Cmd/Ctrl+4 | the Code window |
 | Cmd/Ctrl+L | the Courses window |
+| Cmd/Ctrl+Shift+S | the Statistics window |
 | Return or Space | next page, while a lesson is explaining something |
 
 The **Language** menu picks the language, the word list and the keyboard
@@ -78,11 +79,25 @@ Code is typed the way an editor with auto-indent has you type it:
 indentation is filled in, Return ends a line, blank lines are skipped, and
 comments are shown but not typed (unless *Type the comments too* is on). A
 wrong key does not go in — the caret waits for the right one, and the miss
-counts against accuracy.
+counts against accuracy. The place where it should have gone flashes red, the
+on-screen keyboard (when shown) marks the key you hit in red next to the one
+that was wanted, and **Test ▸ Beep on a Wrong Key** adds a sound — in every
+mode, not only this one.
 
 The colours come from [TextMate grammars](docs/adding-a-code-language.md) —
 the format VS Code uses too — so adding a language means adding a grammar
 file and some source, not writing a lexer.
+
+### Statistics
+
+**Test ▸ Statistics…** (Cmd/Ctrl+Shift+S) shows what the saved results add up
+to, for everything or for tests, courses or code alone, over the last 7, 30
+or 90 days or all time: headline numbers (tests, time typing, average, recent
+and best speed, accuracy); speed and accuracy test after test, each dot a
+test and the line the average of the last ten; minutes of practice day by
+day, gaps included; and the keyboard tinted by how often each key is missed
+per press, with the worst keys named underneath. Move the mouse over a chart
+to read a single test or day.
 
 ## Download
 
@@ -133,7 +148,7 @@ app that way.
 ```
 HomeRow/                 the application
   Engine/                Foundation-only: sessions, scoring, text sources, packs
-  Resources/             MainMenu.xib, CourseWindow.xib, CodeWindow.xib, Languages/, Layouts/,
+  Resources/             MainMenu.xib, CourseWindow.xib, CodeWindow.xib, StatsWindow.xib, Languages/, Layouts/,
                          Lessons/, Code/ (grammars and source files), Themes/
   ThirdParty/oniguruma/  the regex engine TextMate grammars need (BSD), compiled in
   HomeRow.xcdatamodeld   the Core Data model (Xcode compiles it; momc on GNUstep)

@@ -94,17 +94,84 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
                                   u.size.width * unit, u.size.height * unit), 2.0, 2.0);
 }
 
+- (void)setWrongInput:(NSString *)wrongInput
+{
+    if (_wrongInput == wrongInput || [_wrongInput isEqualToString:wrongInput]) return;
+    _wrongInput = [wrongInput copy];
+    [self setNeedsDisplay:YES];
+}
+
+#pragma mark - Heat
+
+- (void)setHeatCounts:(NSDictionary *)heatCounts
+{
+    _heatCounts = [heatCounts copy];
+    [self setNeedsDisplay:YES];
+}
+
+- (double)rateForCharacters:(NSArray *)characters
+{
+    NSUInteger hits = 0, misses = 0;
+    NSMutableSet *seen = [NSMutableSet set];
+    for (NSString *ch in characters) {
+        if ([ch length] == 0 || [seen containsObject:ch]) continue;
+        [seen addObject:ch];
+        NSDictionary *c = _heatCounts[ch];
+        hits += [c[@"hits"] unsignedIntegerValue];
+        misses += [c[@"misses"] unsignedIntegerValue];
+    }
+    NSUInteger total = hits + misses;
+    if (total == 0 || total < _heatMinimumPresses) return -1.0;
+    return (double)misses / (double)total;
+}
+
+- (double)heatRateForKeyAtRow:(NSUInteger)row column:(NSUInteger)column
+{
+    if (!_heatCounts) return -1.0;
+    return [self rateForCharacters:[_keyboardLayout charactersForKeyAtRow:row column:column]];
+}
+
+- (double)heatMaximumRate
+{
+    double most = 0.0;
+    for (NSUInteger row = 0; row < [_keyboardLayout numberOfRows]; row++) {
+        for (NSUInteger col = 0; col < [_keyboardLayout numberOfKeysInRow:row]; col++) {
+            most = MAX(most, [self heatRateForKeyAtRow:row column:col]);
+        }
+    }
+    most = MAX(most, [self rateForCharacters:@[@" "]]);
+    /* a board with next to no errors must not shout about its one 0.5% key */
+    return MAX(most, 0.02);
+}
+
 #pragma mark - What is lit
 
-- (void)resolveLitKey:(HRKeyPosition **)outPosition special:(HRSpecialKey *)outSpecial
+- (void)resolveInput:(NSString *)input position:(HRKeyPosition **)outPosition special:(HRSpecialKey *)outSpecial
 {
     *outPosition = nil;
     *outSpecial = HRSpecialNone;
-    if ([_expectedInput length] == 0) return;
-    if ([_expectedInput isEqualToString:@" "])       *outSpecial = HRSpecialSpace;
-    else if ([_expectedInput isEqualToString:@"\n"]) *outSpecial = HRSpecialReturn;
-    else if ([_expectedInput isEqualToString:@"\b"]) *outSpecial = HRSpecialBackspace;
-    else *outPosition = [_keyboardLayout positionOfCharacter:_expectedInput];
+    if ([input length] == 0) return;
+    if ([input isEqualToString:@" "])       *outSpecial = HRSpecialSpace;
+    else if ([input isEqualToString:@"\n"]) *outSpecial = HRSpecialReturn;
+    else if ([input isEqualToString:@"\b"]) *outSpecial = HRSpecialBackspace;
+    else *outPosition = [_keyboardLayout positionOfCharacter:input];
+}
+
+- (void)resolveLitKey:(HRKeyPosition **)outPosition special:(HRSpecialKey *)outSpecial
+{
+    [self resolveInput:_expectedInput position:outPosition special:outSpecial];
+}
+
+/* For tests: "key:row:column", "space", "return"; nil when none is shown. */
+- (NSString *)wrongKeyDescription
+{
+    HRKeyPosition *p = nil;
+    HRSpecialKey special = HRSpecialNone;
+    [self resolveInput:_wrongInput position:&p special:&special];
+    if (special == HRSpecialSpace) return @"space";
+    if (special == HRSpecialReturn) return @"return";
+    if (!p) return nil;
+    return [NSString stringWithFormat:@"key:%lu:%lu", (unsigned long)p.row, (unsigned long)p.column];
 }
 
 - (NSString *)litKeyDescription
@@ -171,6 +238,9 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
     HRKeyPosition *lit = nil;
     HRSpecialKey litSpecial = HRSpecialNone;
     [self resolveLitKey:&lit special:&litSpecial];
+    HRKeyPosition *wrong = nil;
+    HRSpecialKey wrongSpecial = HRSpecialNone;
+    [self resolveInput:_wrongInput position:&wrong special:&wrongSpecial];
     HRSpecialKey litShift = HRSpecialNone;
     if (lit && [lit needsShift]) litShift = [lit usesLeftShift] ? HRSpecialLeftShift : HRSpecialRightShift;
 
@@ -178,17 +248,30 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
     CGFloat unit = NSWidth([self viewRectForUnitRect:NSMakeRect(0, 0, 1, 1)]);
     CGFloat labelSize = MAX(9.0, floor(unit * 0.36));
 
+    double heatMost = _heatCounts ? [self heatMaximumRate] : 0.0;
+
     for (NSUInteger row = 0; row < [_keyboardLayout numberOfRows]; row++) {
         for (NSUInteger col = 0; col < [_keyboardLayout numberOfKeysInRow:row]; col++) {
             NSRect r = [self viewRectForUnitRect:[self unitRectForKeyAtRow:row column:col]];
             BOOL isLit = lit && lit.row == row && lit.column == col;
+            /* the right key pressed without (or with) Shift is wrong too, and
+             * is the same key: red wins, the Shift key stays lit */
+            BOOL isWrong = wrong && wrong.row == row && wrong.column == col;
             HRFinger finger = [_keyboardLayout fingerForKeyAtRow:row column:col];
-            NSColor *fill = isLit ? _theme.accent : [self blend:plain with:[self tintForFinger:finger] fraction:0.30];
+            NSColor *fill = isWrong ? _theme.incorrect : isLit ? _theme.accent : [self blend:plain with:[self tintForFinger:finger] fraction:0.30];
+            double heat = -1.0;
+            if (_heatCounts) {
+                heat = [self heatRateForKeyAtRow:row column:col];
+                /* from a tenth, so that "pressed, never missed" still differs from "no data" */
+                fill = heat < 0.0 ? plain : [self blend:plain with:_theme.incorrect fraction:0.10 + 0.90 * (heat / heatMost)];
+            }
             [self fillKey:r color:fill];
 
             NSArray *chars = [_keyboardLayout charactersForKeyAtRow:row column:col];
             NSString *base = [chars count] > 0 ? chars[0] : @"";
             NSString *shifted = [chars count] > 1 ? chars[1] : @"";
+            if (isWrong) isLit = YES;   /* same ink as a lit key */
+            if (heat >= 0.0 && heat / heatMost > 0.55) isLit = YES;   /* deep tint: light ink */
             NSColor *ink = isLit ? _theme.background : _theme.correct;
             if ([shifted length] > 0 && [shifted isEqualToString:[base uppercaseString]]
                 && ![shifted isEqualToString:base]) {
@@ -218,9 +301,15 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
         NSRect r = [self viewRectForUnitRect:[self unitRectForSpecial:key]];
         BOOL isLit = (key == litSpecial);
         BOOL isShift = (key == litShift);
+        BOOL isWrong = (wrongSpecial != HRSpecialNone && key == wrongSpecial);
         NSColor *fill = plain;
-        if (isLit) fill = (key == HRSpecialBackspace) ? _theme.incorrect : _theme.accent;
+        if (isWrong) { fill = _theme.incorrect; isLit = YES; }
+        else if (isLit) fill = (key == HRSpecialBackspace) ? _theme.incorrect : _theme.accent;
         else if (isShift) fill = [self blend:plain with:_theme.accent fraction:0.6];
+        else if (key == HRSpecialSpace && _heatCounts) {
+            double heat = [self rateForCharacters:@[@" "]];
+            if (heat >= 0.0) fill = [self blend:plain with:_theme.incorrect fraction:0.10 + 0.90 * (heat / heatMost)];
+        }
         else if (key == HRSpecialSpace) fill = [self blend:plain with:[self tintForFinger:HRFingerThumb] fraction:0.30];
         [self fillKey:r color:fill];
         [self drawLabel:specials[i].label inRect:r size:MAX(8.0, labelSize * 0.75)

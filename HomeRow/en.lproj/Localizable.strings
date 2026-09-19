@@ -55,3 +55,32 @@
 "That was the last part of this file.  return \U2014 code" = "That was the last part of this file.  return \U2014 code";
 "%@   part %lu/%lu" = "%@   part %lu/%lu";
 "%lu of %lu sections typed." = "%lu of %lu sections typed.";
+"Beep on a Wrong Key" = "Beep on a Wrong Key";
+
+/* statistics */
+"Statistics\U2026" = "Statistics\U2026";
+"Everything" = "Everything";
+"Tests" = "Tests";
+"Courses" = "Courses";
+"Code" = "Code";
+"Last 7 days" = "Last 7 days";
+"Last 30 days" = "Last 30 days";
+"Last 90 days" = "Last 90 days";
+"All time" = "All time";
+"Speed, test after test" = "Speed, test after test";
+"Accuracy, test after test" = "Accuracy, test after test";
+"Practice, day by day" = "Practice, day by day";
+"min" = "min";
+"average of %lu" = "average of %lu";
+"space" = "space";
+"return" = "return";
+"tests and exercises" = "tests and exercises";
+"time typing" = "time typing";
+"average wpm" = "average wpm";
+"wpm, last ten" = "wpm, last ten";
+"best wpm" = "best wpm";
+"accuracy" = "accuracy";
+"Nothing typed in this period yet." = "Nothing typed in this period yet.";
+"Results are not being saved, so there is nothing to show." = "Results are not being saved, so there is nothing to show.";
+"Missed most often:   %@      (the deepest tint is %.0f%% of presses)" = "Missed most often:   %@      (the deepest tint is %.0f%% of presses)";
+"No key stands out yet." = "No key stands out yet.";

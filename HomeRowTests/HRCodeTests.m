@@ -98,9 +98,15 @@
     [s insertText:@"ax" atTime:0.0];
     XCTAssertEqual([s caretIndexInCurrentWord], (NSUInteger)1, @"the x was refused");
     XCTAssertEqualObjects([s expectedInput], @"b", @"and there is nothing to take back");
+    XCTAssertEqual(s.wrongInputCount, (NSUInteger)1);
+    XCTAssertEqualObjects(s.lastWrongInput, @"x", @"the view is told which key, to show it");
+    XCTAssertTrue(s.lastWrongInputWasRefused);
     [s insertText:@" " atTime:0.1];
     XCTAssertEqual(s.currentWordIndex, (NSUInteger)0, @"nor can an unfinished word be left");
+    XCTAssertEqual(s.wrongInputCount, (NSUInteger)2);
+    XCTAssertEqualObjects(s.lastWrongInput, @" ");
     [s insertText:@"b cd" atTime:0.2];
+    XCTAssertEqual(s.wrongInputCount, (NSUInteger)2, @"right keys are not reported");
     XCTAssertEqual(s.state, HRSessionFinished);
     HRTestSummary *r = [s summary];
     XCTAssertEqual(r.incorrectKeystrokes, (NSUInteger)2);
@@ -165,6 +171,24 @@
         }
         XCTAssertEqualObjects(g.problems, @[], @"%@", language[@"identifier"]);
     }
+}
+
+/* Without stop on error the wrong key goes in -- it is reported all the same
+ * (for the beep and the keyboard), but as entered, not refused. */
+- (void)testAWrongKeyThatGoesInIsReportedAsEntered
+{
+    HRTestConfiguration *c = [HRTestConfiguration defaultConfiguration];
+    c.mode = HRTestModeCustom;
+    HRTestSession *s = [[HRTestSession alloc] initWithConfiguration:c
+                                                             source:[[HRFixedTextSource alloc] initWithText:@"ab cd"]];
+    [s insertText:@"ax" atTime:0.0];
+    XCTAssertEqual(s.wrongInputCount, (NSUInteger)1);
+    XCTAssertEqualObjects(s.lastWrongInput, @"x");
+    XCTAssertFalse(s.lastWrongInputWasRefused);
+    XCTAssertEqual([s caretIndexInCurrentWord], (NSUInteger)2);
+    [s insertText:@"\n" atTime:0.1];
+    XCTAssertEqual(s.wrongInputCount, (NSUInteger)2, @"Return where a space belongs");
+    XCTAssertTrue(s.lastWrongInputWasRefused);
 }
 
 @end

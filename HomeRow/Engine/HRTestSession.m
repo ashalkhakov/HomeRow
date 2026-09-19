@@ -164,6 +164,13 @@ static const NSUInteger HRMaxExtra = 20;
     }
 }
 
+- (void)noteWrongInput:(NSString *)input refused:(BOOL)refused
+{
+    _wrongInputCount++;
+    _lastWrongInput = [input copy];
+    _lastWrongInputWasRefused = refused;
+}
+
 - (void)typeCharacter:(NSString *)ch atTime:(NSTimeInterval)time
 {
     [self startIfNeededAtTime:time];
@@ -185,6 +192,7 @@ static const NSUInteger HRMaxExtra = 20;
     BOOL correct = expected != nil && [expected isEqualToString:ch];
     /* stop on error: the wrong key counts, and that is all it does */
     if (correct || !_configuration.stopOnError) [typed addObject:ch];
+    if (!correct) [self noteWrongInput:ch refused:_configuration.stopOnError];
     /* an extra character is charged to the separator that should have
      * been pressed instead */
     [self recordKeystrokeCorrect:correct expected:(expected ?: @" ") atTime:time];
@@ -222,16 +230,19 @@ static const NSUInteger HRMaxExtra = 20;
     NSString *expected = word.separator == HRSeparatorNewline ? @"\n" : @" ";
     if (separator != word.separator) {
         /* Return where a space belongs, or the reverse: wrong key, no move */
+        [self noteWrongInput:(separator == HRSeparatorNewline ? @"\n" : @" ") refused:YES];
         [self recordKeystrokeCorrect:NO expected:expected atTime:time];
         return;
     }
     BOOL wordCorrect = [typed isEqualToArray:word.characters];
     if (!wordCorrect && _configuration.stopOnError) {
         /* the word is not finished: a separator here is a wrong key too */
+        [self noteWrongInput:expected refused:YES];
         [self recordKeystrokeCorrect:NO expected:([typed count] < [word.characters count] ? word.characters[[typed count]] : expected) atTime:time];
         return;
     }
     /* leaving a wrong or unfinished word is itself the error */
+    if (!wordCorrect) [self noteWrongInput:expected refused:NO];
     [self recordKeystrokeCorrect:wordCorrect expected:expected atTime:time];
     [_committed addObject:@YES];
 

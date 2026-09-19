@@ -24,6 +24,8 @@
 #import "HRCodeLibrary.h"
 #import "HRCodeDocument.h"
 #import "HRCodeWindowController.h"
+#import "HRStatsWindowController.h"
+#import "HRPlotView.h"
 #import <objc/runtime.h>
 
 static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
@@ -32,6 +34,7 @@ static NSString * const HRCurrentCourseDefaultsKey = @"HRCurrentCourse";
 /* the file being typed in code mode, and the files opened from disk */
 static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
 static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
+static NSString * const HRBeepOnErrorDefaultsKey = @"HRBeepOnError";
 static NSString * const HRKeyboardInCourseDefaultsKey = @"HRShowKeyboardInCourse";
 static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 
@@ -74,6 +77,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     /* code mode: a section of a source file; nil when not typing one */
     HRCodeLibrary *_codeLibrary;
     HRCodeWindowController *_codeWindow;
+    HRStatsWindowController *_statsWindow;
     HRCodeFile *_codeFile;
     NSUInteger _codeSection;
     NSUInteger _codeSectionCount;
@@ -104,6 +108,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     _theme = [HRTheme currentTheme];
     _testView.theme = _theme;
     _testView.delegate = self;
+    _testView.beepsOnError = [[NSUserDefaults standardUserDefaults] boolForKey:HRBeepOnErrorDefaultsKey];
     _chartView.theme = _theme;
     _keyboardView.theme = _theme;
     [_keyboardView setHidden:YES];
@@ -350,6 +355,10 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
             /* a wrong key must not go in */
             [_testView typeText:@"§" atTime:HRMonotonicNow() - 20.0];
             if ([_session caretIndexInCurrentWord] != 0) [failures addObject:@"code mode let a wrong key in"];
+            if (_session.wrongInputCount != 1 || !_session.lastWrongInputWasRefused) {
+                [failures addObject:@"the refused key was not reported for feedback"];
+            }
+            [[_window contentView] display];   /* with the flash on */
             [_testView typeText:text atTime:HRMonotonicNow()];
             if (_session.state != HRSessionFinished || [_resultsView isHidden]) {
                 [failures addObject:@"typing a section of code did not finish it"];
@@ -386,6 +395,52 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         [failures addObject:@"switching to Russian did not start a Russian test"];
     }
     if ([_wordListMenu numberOfItems] < 2) [failures addObject:@"the word-list menu was not rebuilt"];
+
+    /* Statistics: by now there are results of all three kinds in the store */
+    {
+        HRStatsWindowController *stats = [self statsWindow];
+        [stats showWindow:self];
+        [[stats kindPopUp] selectItemWithTag:HRStatKindAll];
+        [[stats periodPopUp] selectItemWithTag:0];
+        [stats filterChanged:self];
+        NSDictionary *statsOutlets = @{@"kindPopUp": stats.kindPopUp ?: [NSNull null], @"periodPopUp": stats.periodPopUp ?: [NSNull null],
+            @"tilesView": (id)stats.tilesView ?: [NSNull null], @"speedPlot": (id)stats.speedPlot ?: [NSNull null],
+            @"accuracyPlot": (id)stats.accuracyPlot ?: [NSNull null], @"daysPlot": (id)stats.daysPlot ?: [NSNull null],
+            @"keyboardView": (id)stats.keyboardView ?: [NSNull null], @"keysField": stats.keysField ?: [NSNull null]};
+        for (NSString *name in statsOutlets) {
+            if (statsOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"StatsWindow.xib: outlet %@ is not connected", name]];
+        }
+        if (_store) {
+            if ([stats.speedPlot.values count] < 3) [failures addObject:@"the statistics show fewer tests than were typed"];
+            if ([stats.daysPlot.values count] < 1) [failures addObject:@"the statistics show no day of practice"];
+            if ([stats.speedPlot.trend count] != [stats.speedPlot.values count]) [failures addObject:@"the speed chart has no trend line"];
+            if ([stats.keyboardView.heatCounts count] == 0) [failures addObject:@"the statistics have no key counts for the heatmap"];
+            double lo = 0.0, hi = 0.0;
+            [stats.accuracyPlot getAxisMinimum:&lo maximum:&hi];
+            if (!(lo < hi) || hi > 100.0 || lo < 0.0) [failures addObject:@"the accuracy chart's axis is not within 0...100"];
+            [stats.daysPlot getAxisMinimum:&lo maximum:&hi];
+            if (lo != 0.0 || !(hi > 0.0)) [failures addObject:@"the bars of the practice chart do not start at zero"];
+            stats.speedPlot.highlightedIndex = 0;
+            if ([[stats.speedPlot readout] length] == 0) [failures addObject:@"the speed chart has no read-out"];
+            [[stats kindPopUp] selectItemWithTag:HRStatKindCode];
+            [stats filterChanged:self];
+            if ([stats.speedPlot.values count] < 1) [failures addObject:@"the statistics do not show the section of code that was typed"];
+        }
+        NSRect content = [[[stats window] contentView] bounds];
+        NSRect previous = NSZeroRect;
+        for (NSView *v in @[stats.keysField ?: (id)_window.contentView, stats.keyboardView ?: (id)_window.contentView, stats.daysPlot ?: (id)_window.contentView,
+                            stats.accuracyPlot ?: (id)_window.contentView, stats.speedPlot ?: (id)_window.contentView, stats.tilesView ?: (id)_window.contentView]) {
+            if (!NSContainsRect(content, [v frame]) || NSMinY([v frame]) < NSMaxY(previous) - 0.5) {
+                [failures addObject:@"the Statistics window's views overlap or leave the window"];
+                break;
+            }
+            previous = [v frame];
+        }
+        [[[stats window] contentView] display];
+        printf("HomeRow smoke test: statistics over %lu results, %lu days\n",
+               (unsigned long)[stats.speedPlot.values count], (unsigned long)[stats.daysPlot.values count]);
+        [[stats window] orderOut:self];
+    }
 
     /* draw everything once, so that a drawing method that raises, or that
      * the text system complains about, does so here and not on a user */
@@ -547,6 +602,13 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     [self startNewTest];
 }
 
+- (IBAction)toggleBeep:(id)sender
+{
+    _testView.beepsOnError = !_testView.beepsOnError;
+    [[NSUserDefaults standardUserDefaults] setBool:_testView.beepsOnError forKey:HRBeepOnErrorDefaultsKey];
+    [self syncMenus];
+}
+
 - (IBAction)restartTest:(id)sender
 {
     [self startNewTest];
@@ -640,6 +702,13 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         NSMenuItem *codeItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Code\u2026") action:@selector(showCode:)
                                                           keyEquivalent:@"4"];
         [codeItem setTarget:self];
+        [testMenu addItem:(NSMenuItem *)[NSMenuItem separatorItem]];
+        NSMenuItem *statsItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Statistics\u2026") action:@selector(showStatistics:)
+                                                           keyEquivalent:@"S"];
+        [statsItem setTarget:self];
+        NSMenuItem *beepItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Beep on a Wrong Key") action:@selector(toggleBeep:)
+                                                          keyEquivalent:@""];
+        [beepItem setTarget:self];
     }
 
     NSMenu *courseMenu = [[NSMenu alloc] initWithTitle:HRLoc(@"Course")];
@@ -762,6 +831,9 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         if (sel_isEqual([item action], @selector(selectMode:))) {
             [item setState:([item tag] == _configuration.mode ? NSControlStateValueOn : NSControlStateValueOff)];
         }
+        if (sel_isEqual([item action], @selector(toggleBeep:))) {
+            [item setState:(_testView.beepsOnError ? NSControlStateValueOn : NSControlStateValueOff)];
+        }
         if (sel_isEqual([item action], @selector(showCode:))) {
             [item setState:(_configuration.mode == HRTestModeCode ? NSControlStateValueOn : NSControlStateValueOff)];
         }
@@ -812,6 +884,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 - (IBAction)selectLayout:(id)sender
 {
     _configuration.layoutID = [sender representedObject];
+    _statsWindow.keyboardLayout = [self layoutNamed:_configuration.layoutID];
     [self saveConfiguration];
     [self syncMenus];
     [self syncKeyboard];
@@ -1240,6 +1313,23 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     [self startSection:section ofCodeFile:file];
 }
 
+#pragma mark - Statistics
+
+- (HRStatsWindowController *)statsWindow
+{
+    if (!_statsWindow) {
+        _statsWindow = [[HRStatsWindowController alloc] initWithStore:_store theme:_theme];
+        _statsWindow.keyboardLayout = [self layoutNamed:_configuration.layoutID] ?: [self layoutNamed:@"qwerty"];
+    }
+    return _statsWindow;
+}
+
+- (IBAction)showStatistics:(id)sender
+{
+    [[self statsWindow] showWindow:self];
+    [[self statsWindow] reload];
+}
+
 #pragma mark - The on-screen keyboard
 
 - (BOOL)isInCourse
@@ -1474,6 +1564,12 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     if (_keyboardShown) _keyboardView.expectedInput = [_session expectedInput];
 }
 
+/* the key pressed by mistake shows red on the keyboard for a moment */
+- (void)testView:(HRTestView *)view didTypeWrongInput:(NSString *)input
+{
+    _keyboardView.wrongInput = _keyboardShown ? input : nil;
+}
+
 - (void)testViewDidFinish:(HRTestView *)view
 {
     HRTestSummary *s = [_session summary];
@@ -1499,6 +1595,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
         }
     }
 
+    [_statsWindow reload];
     if (_run) {
         [self lessonExerciseDidFinish:s];
         return;

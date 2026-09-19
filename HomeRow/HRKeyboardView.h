@@ -25,11 +25,27 @@
 /* From -[HRTestSession expectedInput]: a character, @" ", @"\n", @"\b",
  * or nil for nothing. */
 @property (nonatomic, copy) NSString *expectedInput;
+/* The key that was just pressed by mistake, drawn in the error colour:
+ * same spelling as expectedInput.  nil for none. */
+@property (nonatomic, copy) NSString *wrongInput;
+
+/* Statistics: character -> @{@"hits", @"misses"} (as HRResultStore sums
+ * them).  When set, the finger tints give way to a heatmap: the more often
+ * a key was missed, per press, the deeper it is tinted in the error colour
+ * -- one hue, light to dark.  A key's characters (both levels) are taken
+ * together; keys pressed fewer than heatMinimumPresses times stay plain. */
+@property (nonatomic, copy) NSDictionary *heatCounts;
+@property (nonatomic) NSUInteger heatMinimumPresses;
+/* The error rate (0...1) the deepest tint stands for, for a legend. */
+- (double)heatMaximumRate;
+/* For tests: the rate of the key at row/column, or -1 when it stays plain. */
+- (double)heatRateForKeyAtRow:(NSUInteger)row column:(NSUInteger)column;
 
 /* What is lit for the current expectedInput, for tests: @"key:2:3",
  * @"space", @"return", @"backspace", plus @"+lshift" / @"+rshift"; nil when
  * nothing is. */
 - (NSString *)litKeyDescription;
+- (NSString *)wrongKeyDescription;
 
 /* The height that keeps the keys square at a given width. */
 + (CGFloat)heightForWidth:(CGFloat)width;

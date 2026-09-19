@@ -78,6 +78,15 @@ typedef NS_ENUM(NSInteger, HRCharacterState) {
  * when there is nothing to press (zen, finished). */
 - (NSString *)expectedInput;
 
+/* For feedback on a wrong key.  The count goes up with every wrong input --
+ * compare it before and after -insertText:atTime: -- and the other two
+ * describe the latest one: what was pressed (@" " and @"\n" for the
+ * separators), and whether it was refused (stop on error, or the wrong
+ * separator) rather than entered and shown as a mistake. */
+@property (nonatomic, readonly) NSUInteger wrongInputCount;
+@property (nonatomic, readonly, copy) NSString *lastWrongInput;
+@property (nonatomic, readonly) BOOL lastWrongInputWasRefused;
+
 /* Caret position within the current word, in characters. */
 - (NSUInteger)caretIndexInCurrentWord;
 

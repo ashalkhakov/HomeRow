@@ -232,6 +232,42 @@
     return r;
 }
 
+- (HRStatSample *)sampleForResult:(HRTestResult *)r
+{
+    HRStatSample *s = [[HRStatSample alloc] init];
+    s.date = r.date;
+    s.mode = r.mode;
+    s.wpm = [r.wpm doubleValue];
+    s.rawWpm = [r.rawWpm doubleValue];
+    s.accuracy = [r.accuracy doubleValue];
+    s.duration = [r.duration doubleValue];
+    return s;
+}
+
+- (NSArray *)statSamples
+{
+    NSMutableArray *out = [NSMutableArray array];
+    for (HRTestResult *r in [self recentResultsWithLimit:0 error:NULL]) [out addObject:[self sampleForResult:r]];
+    return out;
+}
+
+- (NSDictionary *)keyCountsForKind:(HRStatKind)kind since:(NSDate *)since
+{
+    NSMutableDictionary *hits = [NSMutableDictionary dictionary], *misses = [NSMutableDictionary dictionary];
+    for (HRTestResult *r in [self recentResultsWithLimit:0 error:NULL]) {
+        if (since && r.date && [r.date compare:since] == NSOrderedAscending) continue;
+        if (kind != HRStatKindAll && [[self sampleForResult:r] kind] != kind) continue;
+        for (HRKeyStat *k in r.keyStats) {
+            if ([k.character length] == 0) continue;
+            hits[k.character] = @([hits[k.character] unsignedIntegerValue] + [k.hits unsignedIntegerValue]);
+            misses[k.character] = @([misses[k.character] unsignedIntegerValue] + [k.misses unsignedIntegerValue]);
+        }
+    }
+    NSMutableDictionary *out = [NSMutableDictionary dictionary];
+    for (NSString *ch in hits) out[ch] = @{@"hits": hits[ch], @"misses": misses[ch] ?: @0};
+    return out;
+}
+
 - (NSArray *)recentResultsWithLimit:(NSUInteger)limit error:(NSError **)error
 {
     NSFetchRequest *req = [[NSFetchRequest alloc] init];

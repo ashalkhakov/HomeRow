@@ -22,6 +22,10 @@
 - (void)testViewDidFinish:(HRTestView *)view;
 /* Return or Space on a page of reading text (see pageText). */
 - (void)testViewDidDismissPage:(HRTestView *)view;
+@optional
+/* A wrong key, as HRTestSession's lastWrongInput spells it -- for the
+ * on-screen keyboard.  nil a moment later: stop showing it. */
+- (void)testView:(HRTestView *)view didTypeWrongInput:(NSString *)input;
 @end
 
 /* The typing surface.  Draws the text itself instead of being an
@@ -45,6 +49,8 @@
  * suffix are drawn, untyped), scrolls to keep the caret's line in view,
  * and what is not typed yet is syntax-coloured. */
 @property (nonatomic) BOOL codeLayout;
+/* NSBeep() on every wrong key.  Off unless set. */
+@property (nonatomic) BOOL beepsOnError;
 /* IBOutlet-compatible; not retained. */
 @property (nonatomic, assign) IBOutlet id delegate;
 

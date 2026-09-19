@@ -95,4 +95,5 @@ test -f "$found/Resources/Layouts/qwerty.plist" || { echo "  MISSING: the keyboa
 test -f "$found/Resources/Lessons/gtypist/index.plist" || { echo "  MISSING: the GNU Typist lessons" >&2; exit 1; }
 test -f "$found/Resources/Code/index.plist" || { echo "  MISSING: the code samples and grammars" >&2; exit 1; }
 test -f "$found/Resources/CodeWindow.xib" || { echo "  MISSING: CodeWindow.xib" >&2; exit 1; }
+test -f "$found/Resources/StatsWindow.xib" || { echo "  MISSING: StatsWindow.xib" >&2; exit 1; }
 test -d "$found/Resources/Languages/english"  || { echo "  MISSING: the English language pack" >&2; exit 1; }

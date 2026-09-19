@@ -15,10 +15,13 @@
 
 static const NSUInteger HRVisibleLines = 3;
 static const CGFloat HRInset = 24.0;
+static const NSTimeInterval HRFlashDuration = 0.35;
 
 @implementation HRTestView
 {
     NSTimeInterval _eventTime;
+    NSTimeInterval _flashUntil;   /* monotonic; 0 = no wrong key being shown */
+    BOOL _flashRefused;           /* ...and it was refused: flash the caret's place */
 }
 
 - (void)setUpDefaults
@@ -47,6 +50,7 @@ static const CGFloat HRInset = 24.0;
 - (void)setSession:(HRTestSession *)session
 {
     _session = session;
+    _flashUntil = 0.0;
     [self setNeedsDisplay:YES];
 }
 
@@ -185,7 +189,14 @@ static const CGFloat HRInset = 24.0;
             if (wi == current && _session.state != HRSessionFinished) {
                 CGFloat x = HRInset + (col + [_session caretIndexInCurrentWord]) * advance;
                 BOOL focused = [[self window] firstResponder] == self;
-                [[_theme.caret colorWithAlphaComponent:(focused ? 1.0 : 0.35)] set];
+                if ([self isFlashing]) {
+                    /* the key was refused: nothing went in, so say so where the eyes are */
+                    [[_theme.incorrect colorWithAlphaComponent:0.35] set];
+                    [NSBezierPath fillRect:NSMakeRect(x, y + 2.0, advance, lineHeight - 10.0)];   /* composites, where NSRectFill copies */
+                    [_theme.incorrect set];
+                } else {
+                    [[_theme.caret colorWithAlphaComponent:(focused ? 1.0 : 0.35)] set];
+                }
                 NSRectFill(NSMakeRect(x - 1.0, y + 2.0, 2.0, lineHeight - 10.0));
             }
             if (wi < [_session.words count]
@@ -243,7 +254,13 @@ static const CGFloat HRInset = 24.0;
                         NSUInteger caret = [_session caretIndexInCurrentWord];
                         CGFloat x = origin.x + (col + caret) * advance;
                         BOOL focused = [[self window] firstResponder] == self;
-                        [[_theme.caret colorWithAlphaComponent:(focused ? 1.0 : 0.35)] set];
+                        if ([self isFlashing]) {
+                            [[_theme.incorrect colorWithAlphaComponent:0.35] set];
+                            [NSBezierPath fillRect:NSMakeRect(x, y + 1.0, advance, lineHeight - 4.0)];   /* composites, where NSRectFill copies */
+                            [_theme.incorrect set];
+                        } else {
+                            [[_theme.caret colorWithAlphaComponent:(focused ? 1.0 : 0.35)] set];
+                        }
                         NSRectFill(NSMakeRect(x - 1.0, y + 1.0, 2.0, lineHeight - 4.0));
                         /* the word is done and the line is over: say so, since a
                          * comment may follow and hide the fact */
@@ -392,6 +409,39 @@ static NSString *HRExpandTabs(NSString *line)
     [self interpretKeyEvents:@[event]];
 }
 
+#pragma mark - Feedback on a wrong key
+
+/* A wrong character that goes in is its own feedback: it is there, red and
+ * underlined.  One that is REFUSED -- code mode's stop on error, Return
+ * where a space belongs -- changes nothing on screen, which feels like a
+ * dead keyboard.  So the place where it should have gone flashes red for a
+ * moment.  Either kind can beep, and either is passed on so that the
+ * on-screen keyboard can show which key it was. */
+- (BOOL)isFlashing
+{
+    return _flashRefused && _flashUntil > 0.0 && HRMonotonicNow() < _flashUntil;
+}
+
+- (void)wrongInput
+{
+    _flashUntil = HRMonotonicNow() + HRFlashDuration;
+    _flashRefused = _session.lastWrongInputWasRefused;
+    if (_beepsOnError) NSBeep();
+    if ([_delegate respondsToSelector:@selector(testView:didTypeWrongInput:)]) {
+        [_delegate testView:self didTypeWrongInput:_session.lastWrongInput];
+    }
+}
+
+- (void)endFlash
+{
+    if (_flashUntil == 0.0) return;
+    _flashUntil = 0.0;
+    [self setNeedsDisplay:YES];
+    if ([_delegate respondsToSelector:@selector(testView:didTypeWrongInput:)]) {
+        [_delegate testView:self didTypeWrongInput:nil];
+    }
+}
+
 - (void)afterInput
 {
     [self setNeedsDisplay:YES];
@@ -403,7 +453,10 @@ static NSString *HRExpandTabs(NSString *line)
 {
     NSString *s = [string isKindOfClass:[NSAttributedString class]] ? [string string] : string;
     if (_session.state == HRSessionFinished) return;
+    NSUInteger wrongBefore = _session.wrongInputCount;
     [_session insertText:s atTime:_eventTime];
+    if (_session.wrongInputCount != wrongBefore) [self wrongInput];
+    else [self endFlash];   /* the right key: the red goes at once */
     [self afterInput];
 }
 
@@ -471,6 +524,7 @@ static NSString *HRExpandTabs(NSString *line)
 
 - (void)tick
 {
+    if (_flashUntil > 0.0 && HRMonotonicNow() >= _flashUntil) [self endFlash];
     if (_session.state != HRSessionRunning) return;
     [_session tickAtTime:HRMonotonicNow()];
     [_delegate testViewDidChange:self];
