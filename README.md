@@ -60,8 +60,9 @@ In a lesson, an exercise with more than 3% wrong keystrokes (or whatever the
 course says) comes round again, as it does in GNU Typist. After a lesson,
 Return goes on to the next one.
 
-The on-screen keyboard (Course ▸ Show Keyboard, Cmd/Ctrl+Shift+K) is on by
-default in a course and off otherwise. It shows the course's layout with the
+The on-screen keyboard (Show Keyboard in the Course and Test menus,
+Cmd/Ctrl+Shift+K) is on by default in a course and in code mode, and off in
+the free tests; each of the three remembers its own setting. It shows the course's layout with the
 finger zones tinted, and lights the next key — plus the Shift of the other
 hand, or Backspace when there is a mistake to take back first.
 
@@ -80,7 +81,7 @@ indentation is filled in, Return ends a line, blank lines are skipped, and
 comments are shown but not typed (unless *Type the comments too* is on). A
 wrong key does not go in — the caret waits for the right one, and the miss
 counts against accuracy. The place where it should have gone flashes red, the
-on-screen keyboard (when shown) marks the key you hit in red next to the one
+on-screen keyboard marks the key you hit in red next to the one
 that was wanted, and **Test ▸ Beep on a Wrong Key** adds a sound — in every
 mode, not only this one.
 

@@ -37,6 +37,9 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
 static NSString * const HRBeepOnErrorDefaultsKey = @"HRBeepOnError";
 static NSString * const HRKeyboardInCourseDefaultsKey = @"HRShowKeyboardInCourse";
 static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
+/* code has a setting of its own, on to begin with: brackets, operators and
+ * the Shift they need are where a keyboard to glance at helps most */
+static NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
@@ -59,6 +62,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 
     NSMenu *_layoutMenu;
     NSMenuItem *_keyboardMenuItem;
+    NSMenuItem *_testKeyboardMenuItem;   /* the same command in the Test menu, where code and tests look for it */
     NSMenu *_courseMenu;
     NSMutableArray *_startedCourseItems;   /* the part of the Course menu that is rebuilt */
     NSArray *_courses;               /* Lessons/gtypist/index.plist */
@@ -339,6 +343,11 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
                 [failures addObject:@"a section of code did not start"];
             }
             if (![_modePopUp isHidden]) [failures addObject:@"the test controls are still showing in code mode"];
+            [[NSUserDefaults standardUserDefaults] removeObjectForKey:HRKeyboardInCodeDefaultsKey];
+            [self syncKeyboard];
+            if (!_keyboardShown || [_keyboardView isHidden]) [failures addObject:@"the keyboard is not shown in code mode"];
+            if (![[_keyboardView litKeyDescription] hasPrefix:@"key:"]) [failures addObject:@"the keyboard did not light the first key of the code"];
+            if (NSMinY([_testView frame]) < NSMaxY([_keyboardView frame]) - 0.5) [failures addObject:@"the keyboard covers the code"];
             NSMutableString *text = [NSMutableString string];
             BOOL styled = NO;
             NSUInteger count = [_session.words count];
@@ -703,6 +712,9 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
                                                           keyEquivalent:@"4"];
         [codeItem setTarget:self];
         [testMenu addItem:(NSMenuItem *)[NSMenuItem separatorItem]];
+        _testKeyboardMenuItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Show Keyboard") action:@selector(toggleKeyboard:)
+                                                          keyEquivalent:@""];
+        [_testKeyboardMenuItem setTarget:self];
         NSMenuItem *statsItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Statistics\u2026") action:@selector(showStatistics:)
                                                            keyEquivalent:@"S"];
         [statsItem setTarget:self];
@@ -1337,20 +1349,27 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     return _configuration.mode == HRTestModeLesson;
 }
 
+/* Show Keyboard is remembered three times over: following a course and
+ * typing code (on unless switched off), and the free tests (off unless
+ * switched on). */
+- (NSString *)keyboardDefaultsKey
+{
+    if ([self isInCourse]) return HRKeyboardInCourseDefaultsKey;
+    if (_configuration.mode == HRTestModeCode) return HRKeyboardInCodeDefaultsKey;
+    return HRKeyboardInTestsDefaultsKey;
+}
+
 - (BOOL)wantsKeyboard
 {
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
-    if ([self isInCourse]) {
-        return [d objectForKey:HRKeyboardInCourseDefaultsKey] ? [d boolForKey:HRKeyboardInCourseDefaultsKey] : YES;
-    }
-    return [d boolForKey:HRKeyboardInTestsDefaultsKey];
+    NSString *key = [self keyboardDefaultsKey];
+    if ([d objectForKey:key]) return [d boolForKey:key];
+    return ![key isEqualToString:HRKeyboardInTestsDefaultsKey];
 }
 
 - (IBAction)toggleKeyboard:(id)sender
 {
-    [[NSUserDefaults standardUserDefaults] setBool:![self wantsKeyboard]
-                                            forKey:([self isInCourse] ? HRKeyboardInCourseDefaultsKey
-                                                                      : HRKeyboardInTestsDefaultsKey)];
+    [[NSUserDefaults standardUserDefaults] setBool:![self wantsKeyboard] forKey:[self keyboardDefaultsKey]];
     [self syncKeyboard];
 }
 
@@ -1368,6 +1387,7 @@ static NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     }
     BOOL show = [self wantsKeyboard] && layout != nil;
     [_keyboardMenuItem setState:([self wantsKeyboard] ? NSControlStateValueOn : NSControlStateValueOff)];
+    [_testKeyboardMenuItem setState:[_keyboardMenuItem state]];
     _keyboardView.keyboardLayout = layout;
     _keyboardView.expectedInput = (show && _session && _testView.pageText == nil) ? [_session expectedInput] : nil;
     if (show != _keyboardShown) [self setKeyboardShown:show];

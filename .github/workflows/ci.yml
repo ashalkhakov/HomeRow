@@ -214,6 +214,18 @@ jobs:
           path: ${{ env.INSTALL_PATH }}
           key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
 
+      # gnustep-base picks ICU up on its own when libicu-dev is installed
+      # (it is, above) and says nothing when it is not -- and without it
+      # NSCalendar, NSDateFormatter, NSLocale's collation and Unicode
+      # normalisation quietly do nothing.  HomeRow copes (see HRStatistics,
+      # HRPrecomposed), but the AppImage should not have to.
+      - name: gnustep-base was built with ICU
+        run: |
+          base=$(find "$INSTALL_PATH" -name 'libgnustep-base.so' | head -1)
+          ldd "$base" | grep -q 'libicu' \
+            || { echo "::error::$base does not link ICU: is libicu-dev installed before dependencies.sh runs?"; exit 1; }
+          ldd "$base" | grep 'libicu'
+
       - name: Build HomeRow
         run: |
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
