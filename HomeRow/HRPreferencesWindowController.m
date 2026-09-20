@@ -242,8 +242,12 @@ NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 {
     NSURL *store = [_delegate storeURLForPreferences:self];
     if (!store) return;
-    [[NSWorkspace sharedWorkspace] selectFile:[store path]
-                     inFileViewerRootedAtPath:[[store path] stringByDeletingLastPathComponent]];
+    NSString *folder = [[store path] stringByDeletingLastPathComponent];
+    /* GNUstep asks a GNUstep file manager to do this, and there often is
+     * none: then let the desktop open the folder */
+    if (![[NSWorkspace sharedWorkspace] selectFile:[store path] inFileViewerRootedAtPath:folder]) {
+        [[NSWorkspace sharedWorkspace] openURL:[NSURL fileURLWithPath:folder]];
+    }
 }
 
 @end

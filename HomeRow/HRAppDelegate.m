@@ -31,6 +31,9 @@
 #import "HRPlotView.h"
 #import "HRStatTilesView.h"
 #import <objc/runtime.h>
+#if defined(GNUSTEP)
+#import <GNUstepBase/NSTask+GNUstepBase.h>   /* +launchPathForTool:, for the smoke test */
+#endif
 #import "HRPace.h"
 #import "HRReplay.h"
 #import "HRSoundPlayer.h"
@@ -946,6 +949,19 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
     [[_window contentView] display];
     [self toggleKeyboard:self];
     [[_window contentView] display];
+
+#if defined(GNUSTEP)
+    /* Inside the AppImage the link in the Info panel goes through
+     * NSWorkspace to "xdg-open", looked up in GNUstep's own tool directories
+     * first: the image has to carry one (Scripts/appimage/open) that hands
+     * the job to the host, or the link does nothing. */
+    if ([[[NSProcessInfo processInfo] environment] objectForKey:@"HR_HOST_PATH"]) {   /* set by the image's AppRun */
+        NSString *opener = [NSTask launchPathForTool:@"xdg-open"];
+        if ([opener rangeOfString:@"/usr/System/Tools/"].location == NSNotFound) {
+            [failures addObject:[NSString stringWithFormat:@"the AppImage's own xdg-open is not the one NSWorkspace would find (%@)", opener]];
+        }
+    }
+#endif
 
     /* The first launch: the question is asked of someone new only, and
      * "teach me" starts a course for the layout in use */

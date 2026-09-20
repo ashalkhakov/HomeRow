@@ -34,6 +34,12 @@ export GNUSTEP_LOCAL_LIBRARY="$HERE/usr/Local/Library"
 export GNUSTEP_LOCAL_TOOLS="$HERE/usr/Local/Tools"
 export GNUSTEP_LOCAL_APPS="$HERE/usr/Local/Applications"
 
+# Saved before they are pointed at the image: Scripts/appimage/open puts these
+# back before handing a URL to the host's browser, which cannot run against the
+# libraries this image carries.
+export HR_HOST_LD_LIBRARY_PATH="${LD_LIBRARY_PATH:-}"
+export HR_HOST_PATH="$PATH"
+
 export LD_LIBRARY_PATH="$HERE/usr/lib:$HERE/usr/System/Library/Libraries:$HERE/usr/Local/Library/Libraries:${LD_LIBRARY_PATH:-}"
 export PATH="$HERE/usr/local/bin:$HERE/usr/bin:$PATH"
 
