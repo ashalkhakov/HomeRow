@@ -180,7 +180,7 @@ jobs:
             pkg-config libgnutls28-dev libffi-dev libicu-dev libxml2-dev libxslt1-dev \
             libssl-dev libavahi-client-dev zlib1g-dev gnutls-bin libcurl4-gnutls-dev \
             libgmp-dev libcairo2-dev libjpeg-dev libtiff-dev libpng-dev libicns-dev \
-            libpthread-workqueue-dev libsqlite3-dev \
+            libpthread-workqueue-dev libsqlite3-dev libsndfile1-dev libao-dev \
             libfreetype-dev libfontconfig1-dev libxrender-dev liblcms2-dev \
             libxt-dev libxmu-dev libxft-dev libxrandr-dev libxfixes-dev libxcursor-dev \
             xvfb
@@ -194,12 +194,15 @@ jobs:
 
       # The key is the recipe: dependencies.sh (which holds the FreeCoreData
       # pin) and the gnustep patches. Change either and the stack rebuilds.
+      # v2: gnustep-gui configured with libsndfile and libao present, which is
+      # what makes it build its two sound plug-ins (key sounds). The package
+      # list is not part of the hash below, hence the number.
       - name: Restore GNUstep
         id: gnustep-cache
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'
@@ -212,7 +215,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v1-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
 
       # gnustep-base picks ICU up on its own when libicu-dev is installed
       # (it is, above) and says nothing when it is not -- and without it
@@ -225,6 +228,11 @@ jobs:
           ldd "$base" | grep -q 'libicu' \
             || { echo "::error::$base does not link ICU: is libicu-dev installed before dependencies.sh runs?"; exit 1; }
           ldd "$base" | grep 'libicu'
+
+      - name: gnustep-gui built its sound plug-ins
+        run: |
+          find "$INSTALL_PATH" -maxdepth 5 -name '*.nssound' | grep . \
+            || { echo "::error::no .nssound bundles: are libsndfile1-dev and libao-dev installed before dependencies.sh runs?"; exit 1; }
 
       - name: Build HomeRow
         run: |

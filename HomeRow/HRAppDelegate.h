@@ -8,13 +8,43 @@
  * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import <AppKit/AppKit.h>
-#import "HRTestView.h"
 
+@class HRTestView;
 @class HRChartView;
 @class HRResultsView;
 @class HRKeyboardView;
+@class HRAppModel;
+@class HRStage;
+@class HRActivity;
+@class HRFreeTestActivity;
+@class HRCourseActivity;
+@class HRCodeActivity;
+@class HRKeyboardDock;
+@class HRMenuController;
+@class HRControlBar;
+@class HRStatsWindowController;
+@class HRPreferencesWindowController;
+@class HRLayoutChooserController;
+@class HRWelcomeWindowController;
 
-@interface HRAppDelegate : NSObject <NSApplicationDelegate, HRTestViewDelegate>
+/* The app delegate loads MainMenu.xib's window, makes the parts and puts
+ * them to work together:
+ *
+ *   HRAppModel           configuration, results store, packs
+ *   HRStage              the typing view and the results panel; clock, pace
+ *                        caret, replay, sounds
+ *   HRActivity           what is typed and what becomes of it --
+ *     HRFreeTestActivity   time, words, zen, custom text, weak keys
+ *     HRCourseActivity     a course's lessons (and the Courses window)
+ *     HRCodeActivity       a file's sections (and the Code window)
+ *   HRKeyboardDock       the on-screen keyboard's place in the window
+ *   HRControlBar         mode, amount, punctuation, numbers: the strip over the text
+ *   HRMenuController     the menus that depend on packs and courses
+ *
+ * What is left here is what belongs to nobody else: which activity is on, the windows of the app as a whole
+ * (Preferences, Statistics, the layout chooser, the welcome), and passing
+ * on what one part has to tell another. */
+@interface HRAppDelegate : NSObject <NSApplicationDelegate>
 
 @property (nonatomic, strong) IBOutlet NSWindow *window;
 @property (nonatomic, strong) IBOutlet HRTestView *testView;
@@ -33,19 +63,33 @@
 @property (nonatomic, strong) IBOutlet NSTextField *detailField;
 @property (nonatomic, strong) IBOutlet NSTextField *hintField;
 
+/* The control bar */
 - (IBAction)modeChanged:(id)sender;
-- (IBAction)selectMode:(id)sender;
 - (IBAction)amountChanged:(id)sender;
 - (IBAction)optionChanged:(id)sender;
+/* MainMenu.xib's Test menu */
 - (IBAction)restartTest:(id)sender;
 - (IBAction)openText:(id)sender;
-- (IBAction)selectLanguage:(id)sender;
-- (IBAction)selectWordList:(id)sender;
-- (IBAction)selectLayout:(id)sender;
-- (IBAction)showCourses:(id)sender;
+/* The menus HRMenuController builds: HRMenuActions, plus */
 - (IBAction)continueCourse:(id)sender;
-- (IBAction)switchToCourse:(id)sender;
-- (IBAction)restartLesson:(id)sender;
-- (IBAction)toggleKeyboard:(id)sender;
+- (IBAction)practiseWeakKeys:(id)sender;
+
+/* The parts, for one another's sake and the smoke test's. */
+@property (nonatomic, readonly) HRAppModel *model;
+@property (nonatomic, readonly) HRStage *stage;
+@property (nonatomic, readonly) HRFreeTestActivity *freeTests;
+@property (nonatomic, readonly) HRCourseActivity *course;
+@property (nonatomic, readonly) HRCodeActivity *code;
+@property (nonatomic, readonly) HRActivity *activity;   /* the one that is on */
+@property (nonatomic, readonly) HRKeyboardDock *keyboardDock;
+@property (nonatomic, readonly) HRMenuController *menus;
+@property (nonatomic, readonly) HRControlBar *controlBar;
+
+- (HRStatsWindowController *)statsWindow;
+- (HRPreferencesWindowController *)preferencesWindow;
+- (HRLayoutChooserController *)layoutChooser;
+- (HRWelcomeWindowController *)welcomeWindow;
+/* Nothing on record and never asked: the welcome is for them. */
+- (BOOL)isNewHere;
 
 @end

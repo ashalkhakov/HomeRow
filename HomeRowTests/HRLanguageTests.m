@@ -86,4 +86,20 @@
     [[NSFileManager defaultManager] removeItemAtPath:tmp error:NULL];
 }
 
+- (void)testKeywordListsAreLanguagesOfTheirOwnKind
+{
+    NSArray *langs = [HRLanguage languagesInDirectory:[self languagesDirectory] problems:NULL];
+    NSUInteger code = 0;
+    for (HRLanguage *l in langs) {
+        XCTAssertEqual(l.isCode, [l.identifier hasPrefix:@"code_"], @"%@", l.identifier);
+        if (l.isCode) {
+            code++;
+            XCTAssertFalse([l.displayName hasPrefix:@"Code"], @"%@ is named for the menu it sits in", l.identifier);
+        }
+        if ([l.identifier isEqualToString:@"code_csharp"]) XCTAssertEqualObjects(l.displayName, @"C#");
+        if ([l.identifier isEqualToString:@"english"]) XCTAssertEqualObjects(l.kind, @"prose");
+    }
+    XCTAssertGreaterThan(code, (NSUInteger)40);
+}
+
 @end

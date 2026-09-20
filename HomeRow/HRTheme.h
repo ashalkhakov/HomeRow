@@ -37,6 +37,13 @@
  * (the AppImage brings DejaVu Sans Mono and Liberation Mono), else any
  * font with "Mono" in its name that measures up. */
 + (NSFont *)fixedPitchFontOfSize:(CGFloat)size;
+/* The families Preferences offers: fixed-pitch by the ruler, sorted. */
++ (NSArray *)fixedPitchFontFamilies;
+/* The sizes set in Preferences, or the defaults (24 and 15). */
++ (CGFloat)proseFontSize;
++ (CGFloat)codeFontSize;
+/* The font code is set in: the family chosen for code, or else the one above. */
++ (NSFont *)codeFontOfSize:(CGFloat)size;
 /* For the smoke test: NO when even that search ended on a proportional font. */
 + (BOOL)fontIsFixedPitch:(NSFont *)font;
 
@@ -48,3 +55,11 @@
 + (NSColor *)colorFromHex:(NSString *)hex;
 
 @end
+
+/* User defaults.  HRFontFamily empty: choose one (see above).  HRTheme:
+ * "auto" (follow the system), "light", "dark". */
+extern NSString * const HRFontFamilyDefaultsKey;
+extern NSString * const HRCodeFontFamilyDefaultsKey;   /* empty: the same as the text */
+extern NSString * const HRProseFontSizeDefaultsKey;
+extern NSString * const HRCodeFontSizeDefaultsKey;
+extern NSString * const HRThemeDefaultsKey;

@@ -16,6 +16,7 @@
 /* What the target is expected to implement. */
 @interface NSObject (HRResultsViewTarget)
 - (IBAction)restartTest:(id)sender;
+- (IBAction)replayLastTest:(id)sender;   /* the "r" key */
 @end
 
 @interface HRResultsView : NSView

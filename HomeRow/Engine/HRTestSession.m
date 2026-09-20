@@ -8,12 +8,15 @@
  * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRTestSession.h"
+#import "HRReplay.h"
 
 /* How far ahead of the caret an endless source is kept filled.  Enough for
  * the three visible lines at any sane window width. */
 static const NSUInteger HRLookahead = 60;
 /* Extra characters accepted past a word's end; more is only noise. */
 static const NSUInteger HRMaxExtra = 20;
+/* a key that took longer than this was not being typed: it was being looked for, or waited on */
+static const NSTimeInterval HRLongestKeyTime = 2.0;
 
 @implementation HRTestSession
 {
@@ -26,11 +29,16 @@ static const NSUInteger HRMaxExtra = 20;
     NSTimeInterval _startTime;
     NSTimeInterval _endTime;
 
+    NSTimeInterval _lastKeystrokeTime;   /* for the time a key takes, see -recordKeystrokeCorrect: */
+    BOOL _lastKeystrokeWasCorrect, _haveLastKeystroke;
+
+    NSUInteger _deletions;               /* presses of Backspace, of either kind */
     NSUInteger _correctKeystrokes;
     NSUInteger _incorrectKeystrokes;
     NSMutableArray *_keysPerSecond;    /* NSNumber */
     NSMutableArray *_errorsPerSecond;  /* NSNumber */
     NSMutableDictionary *_keyStats;    /* char -> NSMutableDictionary */
+    NSMutableArray *_inputLog;         /* HRInputEvent */
 }
 
 - (instancetype)initWithConfiguration:(HRTestConfiguration *)configuration
@@ -135,7 +143,19 @@ static const NSUInteger HRMaxExtra = 20;
         }
         NSString *k = correct ? @"hits" : @"misses";
         s[k] = @([s[k] unsignedIntegerValue] + 1);
+        /* How long the key took: the time since the keystroke before it --
+         * for a key that was hit, straight after a key that was hit.  After
+         * a mistake the hand is somewhere else; after a pause the mind was;
+         * and text typed in one go (paste, tests) has no time in it. */
+        NSTimeInterval gap = time - _lastKeystrokeTime;
+        if (correct && _lastKeystrokeWasCorrect && _haveLastKeystroke && gap > 0.0 && gap <= HRLongestKeyTime) {
+            s[@"time"] = @([s[@"time"] doubleValue] + gap);
+            s[@"timed"] = @([s[@"timed"] unsignedIntegerValue] + 1);
+        }
     }
+    _lastKeystrokeTime = time;
+    _lastKeystrokeWasCorrect = correct;
+    _haveLastKeystroke = YES;
 }
 
 #pragma mark - Input
@@ -150,8 +170,21 @@ static const NSUInteger HRMaxExtra = 20;
     return _currentWordIndex < [_words count] ? _words[_currentWordIndex] : nil;
 }
 
+- (void)log:(HRInputKind)kind text:(NSString *)text atTime:(NSTimeInterval)time
+{
+    if (_state == HRSessionFinished) return;
+    if (!_inputLog) _inputLog = [NSMutableArray array];
+    [_inputLog addObject:[HRInputEvent eventWithKind:kind text:text time:time]];
+}
+
+- (NSArray *)inputLog
+{
+    return [_inputLog copy] ?: @[];
+}
+
 - (void)insertText:(NSString *)text atTime:(NSTimeInterval)time
 {
+    [self log:HRInputText text:text atTime:time];
     for (NSString *ch in [HRWord charactersOfString:text]) {
         if ([self expireAtTime:time]) return;
         if ([ch isEqualToString:@" "]) {
@@ -235,7 +268,7 @@ static const NSUInteger HRMaxExtra = 20;
         return;
     }
     BOOL wordCorrect = [typed isEqualToArray:word.characters];
-    if (!wordCorrect && _configuration.stopOnError) {
+    if (!wordCorrect && _configuration.stopPolicy != HRStopNever) {
         /* the word is not finished: a separator here is a wrong key too */
         [self noteWrongInput:expected refused:YES];
         [self recordKeystrokeCorrect:NO expected:([typed count] < [word.characters count] ? word.characters[[typed count]] : expected) atTime:time];
@@ -269,10 +302,21 @@ static const NSUInteger HRMaxExtra = 20;
     return YES;
 }
 
+/* "No backspace" and "a word must be right before it is left" together
+ * would be a trap: one slip and the test can neither go on nor back.  The
+ * word being typed can then still be corrected. */
+- (BOOL)backspaceIsOff
+{
+    return _configuration.backspacePolicy == HRBackspaceNone && _configuration.stopPolicy != HRStopOnWord;
+}
+
 - (void)deleteBackwardAtTime:(NSTimeInterval)time
 {
+    [self log:HRInputDeleteBackward text:nil atTime:time];
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
-    if (_configuration.backspacePolicy == HRBackspaceNone) return;
+    if ([self backspaceIsOff]) return;
+    _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
+    _deletions++;
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] > 0) {
         [typed removeLastObject];
@@ -283,8 +327,11 @@ static const NSUInteger HRMaxExtra = 20;
 
 - (void)deleteWordBackwardAtTime:(NSTimeInterval)time
 {
+    [self log:HRInputDeleteWord text:nil atTime:time];
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
-    if (_configuration.backspacePolicy == HRBackspaceNone) return;
+    if ([self backspaceIsOff]) return;
+    _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
+    _deletions++;
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] == 0 && ![self stepBackIntoPreviousWord]) return;
     [[self currentTyped] removeAllObjects];
@@ -297,6 +344,7 @@ static const NSUInteger HRMaxExtra = 20;
 
 - (void)finishAtTime:(NSTimeInterval)time
 {
+    [self log:HRInputFinish text:nil atTime:time];
     if (![self expireAtTime:time]) [self endAtTime:time];
 }
 
@@ -348,7 +396,7 @@ static const NSUInteger HRMaxExtra = 20;
     NSArray *target = word.characters;
     NSUInteger n = [typed count];
     /* a mistake behind the caret comes first -- if it can be taken back */
-    if (_configuration.backspacePolicy != HRBackspaceNone) {
+    if (![self backspaceIsOff]) {
         if (n > [target count]) return @"\b";
         for (NSUInteger i = 0; i < n; i++) {
             if (![typed[i] isEqualToString:target[i]]) return @"\b";
@@ -384,6 +432,7 @@ static const NSUInteger HRMaxExtra = 20;
         case HRTestModeCustom:
         case HRTestModeLesson:
         case HRTestModeCode:
+        case HRTestModePractice:
             return (NSInteger)[_words count] - (NSInteger)[_committed count];
         case HRTestModeZen:
             return -1;
@@ -463,6 +512,8 @@ static const NSUInteger HRMaxExtra = 20;
     s.correctKeystrokes = _correctKeystrokes;
     s.incorrectKeystrokes = _incorrectKeystrokes;
     s.accuracy = [self liveAccuracy];
+    s.deletions = _deletions;
+    s.separatorsTyped = [_committed count];
 
     /* One sample per second.  The last second is usually partial: scale it
      * up when there is enough of it to mean something, drop it otherwise. */

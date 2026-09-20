@@ -54,6 +54,8 @@
     HRTextMateRegistry *_registry;
     NSMutableDictionary *_documents;   /* file identifier -> HRCodeDocument */
     NSArray *_userFiles;               /* HRCodeFile */
+    NSArray *_folderFiles;             /* HRCodeFile, of all the folders */
+    NSDictionary *_folderOfPath;       /* file path -> the folder it came in with */
 }
 
 - (instancetype)initWithDirectory:(NSString *)directory
@@ -159,10 +161,114 @@
 - (NSArray *)filesForLanguage:(HRCodeLanguage *)language
 {
     NSMutableArray *files = [NSMutableArray arrayWithArray:language.bundledFiles ?: @[]];
-    for (HRCodeFile *f in _userFiles) {
-        if ([f.languageID isEqualToString:(language.identifier ?: @"")]) [files addObject:f];
+    NSMutableSet *paths = [NSMutableSet set];
+    for (NSArray *group in @[_userFiles ?: @[], _folderFiles ?: @[]]) {
+        for (HRCodeFile *f in group) {
+            if (![f.languageID isEqualToString:(language.identifier ?: @"")] || [paths containsObject:f.path]) continue;
+            [paths addObject:f.path];
+            [files addObject:f];
+        }
     }
     return files;
+}
+
+#pragma mark - Folders
+
+const NSUInteger HRCodeFolderFileLimit = 300;
+
+- (NSArray *)scanFolder:(NSString *)folder
+{
+    static NSSet *skipped = nil;
+    if (!skipped) {
+        skipped = [NSSet setWithArray:@[@"node_modules", @"vendor", @"Pods", @"Carthage", @"build", @"Build", @"dist", @"out",
+                                        @"target", @"bin", @"obj", @"DerivedData", @"__pycache__", @"venv", @"env",
+                                        @"site-packages", @"third_party", @"ThirdParty", @"thirdparty", @"external", @"deps"]];
+    }
+    NSFileManager *fm = [NSFileManager defaultManager];
+    NSMutableArray *found = [NSMutableArray array];
+    NSDirectoryEnumerator *walk = [fm enumeratorAtPath:folder];
+    NSString *relative = nil;
+    NSUInteger looked = 0;
+    while ((relative = [walk nextObject]) != nil) {
+        /* a home folder dropped by mistake must not take a minute */
+        if (++looked > 50000) break;
+        NSString *name = [relative lastPathComponent];
+        NSDictionary *attributes = [walk fileAttributes];
+        BOOL isDirectory = [[attributes fileType] isEqualToString:NSFileTypeDirectory];
+        if ([name hasPrefix:@"."] || (isDirectory && [skipped containsObject:name])) {
+            if (isDirectory) [walk skipDescendents];
+            continue;
+        }
+        if (isDirectory || ![[attributes fileType] isEqualToString:NSFileTypeRegular]) continue;
+        if (![self languageForPath:name]) continue;
+        if ([attributes fileSize] > 200 * 1024 || [attributes fileSize] == 0) continue;
+        NSString *lower = [name lowercaseString];
+        if ([lower rangeOfString:@".min."].location != NSNotFound || [lower rangeOfString:@".generated."].location != NSNotFound
+            || [lower rangeOfString:@".designer."].location != NSNotFound || [lower hasSuffix:@".pb.go"]
+            || [lower hasSuffix:@".d.ts"] || [lower hasSuffix:@".g.cs"]) continue;
+        [found addObject:relative];
+    }
+    [found sortUsingSelector:@selector(caseInsensitiveCompare:)];
+    if ([found count] > HRCodeFolderFileLimit) [found removeObjectsInRange:NSMakeRange(HRCodeFolderFileLimit, [found count] - HRCodeFolderFileLimit)];
+    return found;
+}
+
+- (void)setUserFolderPaths:(NSArray *)paths
+{
+    NSMutableArray *kept = [NSMutableArray array], *files = [NSMutableArray array];
+    NSMutableDictionary *folders = [NSMutableDictionary dictionary];
+    for (NSString *folder in paths) {
+        BOOL isDirectory = NO;
+        if (![folder isKindOfClass:[NSString class]] || [kept containsObject:folder]) continue;
+        if (![[NSFileManager defaultManager] fileExistsAtPath:folder isDirectory:&isDirectory] || !isDirectory) continue;
+        [kept addObject:folder];
+        NSString *folderName = [folder lastPathComponent];
+        for (NSString *relative in [self scanFolder:folder]) {
+            NSString *path = [folder stringByAppendingPathComponent:relative];
+            HRCodeLanguage *language = [self languageForPath:path];
+            [files addObject:[[HRCodeFile alloc] initWithIdentifier:[@"code:file:" stringByAppendingString:path]
+                                                              title:[folderName stringByAppendingPathComponent:relative]
+                                                               path:path
+                                                         languageID:(language.identifier ?: @"")
+                                                            bundled:NO
+                                                         provenance:folder]];
+            folders[path] = folder;
+        }
+    }
+    _userFolderPaths = [kept copy];
+    _folderFiles = [files copy];
+    _folderOfPath = [folders copy];
+}
+
+- (NSUInteger)addUserFolderAtPath:(NSString *)path
+{
+    NSMutableArray *paths = [NSMutableArray arrayWithArray:_userFolderPaths ?: @[]];
+    [paths removeObject:path];
+    [paths insertObject:path atIndex:0];
+    while ([paths count] > 12) [paths removeLastObject];
+    [self setUserFolderPaths:paths];
+    NSUInteger brought = 0;
+    for (NSString *p in _folderOfPath) if ([_folderOfPath[p] isEqualToString:path]) brought++;
+    return brought;
+}
+
+- (void)removeUserFolderAtPath:(NSString *)path
+{
+    NSMutableArray *paths = [NSMutableArray arrayWithArray:_userFolderPaths ?: @[]];
+    [paths removeObject:path];
+    [self setUserFolderPaths:paths];
+}
+
+- (void)removeUserFileAtPath:(NSString *)path
+{
+    NSMutableArray *paths = [NSMutableArray arrayWithArray:_userFilePaths ?: @[]];
+    [paths removeObject:path];
+    [self setUserFilePaths:paths];
+}
+
+- (NSString *)folderOfFile:(HRCodeFile *)file
+{
+    return file.path ? _folderOfPath[file.path] : nil;
 }
 
 - (HRCodeFile *)fileWithIdentifier:(NSString *)identifier
@@ -171,6 +277,7 @@
         for (HRCodeFile *f in l.bundledFiles) if ([f.identifier isEqualToString:identifier]) return f;
     }
     for (HRCodeFile *f in _userFiles) if ([f.identifier isEqualToString:identifier]) return f;
+    for (HRCodeFile *f in _folderFiles) if ([f.identifier isEqualToString:identifier]) return f;
     return nil;
 }
 

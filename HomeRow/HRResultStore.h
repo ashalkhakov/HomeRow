@@ -73,6 +73,13 @@
               countsForBest:(BOOL)countsForBest
                    inCourse:(NSString *)courseFile
                       error:(NSError **)error;
+/* The exercises of the attempt at a lesson that is under way -- saved since
+ * the lesson was last started -- before `step`, oldest first, in the form
+ * -[HRCourseRun addEarlierExercises:] takes.  The keystroke count is
+ * estimated from the characters; results do not store it. */
+- (NSArray *)earlierExercisesOfLesson:(NSUInteger)lessonIndex
+                             inCourse:(NSString *)courseFile
+                           beforeStep:(NSUInteger)step;
 /* Forgets position and lesson records of a course; exercise results stay
  * in the history. */
 - (BOOL)resetCourse:(NSString *)courseFile error:(NSError **)error;
@@ -86,10 +93,31 @@
  * character is the one that was WANTED when the key was pressed. */
 - (NSDictionary *)keyCountsForKind:(HRStatKind)kind since:(NSDate *)since;
 
+/* --- history ---------------------------------------------------------- */
+
+/* The best result (by WPM) of every setting of the time and words tests
+ * that has one, best first: HRTestResult. */
+- (NSArray *)personalBests;
+/* Removes one result with its key stats.  Lesson records and the place in
+ * a course are not touched. */
+- (BOOL)deleteResult:(HRTestResult *)result error:(NSError **)error;
+
+/* Every result as a record for HRResultExchange, oldest first.  Results
+ * from before there were uuids are given one on the way (and keep it), so
+ * that exporting twice and importing both adds nothing twice. */
+- (NSArray *)exportRecords;
+/* Adds the records that are not here yet: the same uuid, or -- for files
+ * without them -- the same moment, mode and speed, is "here".  Returns how
+ * many were added; `duplicates` how many were not.  One save for all. */
+- (NSUInteger)importRecords:(NSArray *)records duplicates:(NSUInteger *)duplicates error:(NSError **)error;
+
 /* Newest first; limit 0 = all. */
 - (NSArray *)recentResultsWithLimit:(NSUInteger)limit error:(NSError **)error;
 
 /* Highest WPM recorded for these settings, or nil. */
 - (HRTestResult *)personalBestForSettingsKey:(NSString *)settingsKey error:(NSError **)error;
+/* The speeds (NSNumber, wpm) of the latest `limit` results with these
+ * settings, oldest first: what the pace caret's "my average" goes by. */
+- (NSArray *)recentSpeedsForSettingsKey:(NSString *)settingsKey limit:(NSUInteger)limit;
 
 @end

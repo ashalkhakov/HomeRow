@@ -96,4 +96,13 @@ test -f "$found/Resources/Lessons/gtypist/index.plist" || { echo "  MISSING: the
 test -f "$found/Resources/Code/index.plist" || { echo "  MISSING: the code samples and grammars" >&2; exit 1; }
 test -f "$found/Resources/CodeWindow.xib" || { echo "  MISSING: CodeWindow.xib" >&2; exit 1; }
 test -f "$found/Resources/StatsWindow.xib" || { echo "  MISSING: StatsWindow.xib" >&2; exit 1; }
+test -f "$found/Resources/PreferencesWindow.xib" || { echo "  MISSING: PreferencesWindow.xib" >&2; exit 1; }
+test -f "$found/Resources/LayoutChooser.xib" || { echo "  MISSING: LayoutChooser.xib" >&2; exit 1; }
+test -f "$found/Resources/WelcomeWindow.xib" || { echo "  MISSING: WelcomeWindow.xib" >&2; exit 1; }
+test -f "$found/Resources/Sounds/click/key-1.wav" || { echo "  MISSING: Sounds" >&2; exit 1; }
+# Sound needs gnustep-gui's two plug-ins (built when libsndfile and libao were
+# there at configure time).  Without them the app is merely silent, so this
+# is a warning -- but one to see in the log.
+find AppDir/usr -maxdepth 5 -name "*.nssound" 2>/dev/null | grep -q . \
+    || echo "  warning: no .nssound bundles in the GNUstep prefix; the AppImage will make no sound" >&2
 test -d "$found/Resources/Languages/english"  || { echo "  MISSING: the English language pack" >&2; exit 1; }

@@ -30,6 +30,9 @@
     return [[self alloc] init];
 }
 
+- (BOOL)stopOnError { return _stopPolicy == HRStopOnLetter; }
+- (void)setStopOnError:(BOOL)stop { _stopPolicy = stop ? HRStopOnLetter : HRStopNever; }
+
 - (id)copyWithZone:(NSZone *)zone
 {
     HRTestConfiguration *c = [[[self class] allocWithZone:zone] init];
@@ -38,7 +41,7 @@
     c.punctuation = _punctuation;
     c.numbers = _numbers;
     c.backspacePolicy = _backspacePolicy;
-    c.stopOnError = _stopOnError;
+    c.stopPolicy = _stopPolicy;
     c.languageID = _languageID;
     c.wordListName = _wordListName;
     c.layoutID = _layoutID;
@@ -54,6 +57,7 @@
         case HRTestModeZen:    return @"zen";
         case HRTestModeLesson: return @"lesson";
         case HRTestModeCode:   return @"code";
+        case HRTestModePractice: return @"practice";
     }
     return @"time";
 }
@@ -65,6 +69,7 @@
     if ([name isEqualToString:@"zen"])    return HRTestModeZen;
     if ([name isEqualToString:@"lesson"]) return HRTestModeLesson;
     if ([name isEqualToString:@"code"])   return HRTestModeCode;
+    if ([name isEqualToString:@"practice"]) return HRTestModePractice;
     return HRTestModeTime;
 }
 
@@ -88,7 +93,7 @@
         @"punctuation": @(_punctuation),
         @"numbers": @(_numbers),
         @"backspacePolicy": @(_backspacePolicy),
-        @"stopOnError": @(_stopOnError),
+        @"stopPolicy": @(_stopPolicy),
         @"languageID": _languageID ?: @"english",
         @"wordListName": _wordListName ?: @"words-200",
         @"layoutID": _layoutID ?: @"qwerty",
@@ -103,7 +108,10 @@
         if (d[@"punctuation"])     _punctuation = [d[@"punctuation"] boolValue];
         if (d[@"numbers"])         _numbers = [d[@"numbers"] boolValue];
         if (d[@"backspacePolicy"]) _backspacePolicy = [d[@"backspacePolicy"] integerValue];
-        if (d[@"stopOnError"])     _stopOnError = [d[@"stopOnError"] boolValue];
+        /* "stopOnError" is how it was saved before there were three of them */
+        if (d[@"stopOnError"])     _stopPolicy = [d[@"stopOnError"] boolValue] ? HRStopOnLetter : HRStopNever;
+        if (d[@"stopPolicy"])      _stopPolicy = MAX(HRStopNever, MIN(HRStopOnWord, [d[@"stopPolicy"] integerValue]));
+        _backspacePolicy = MAX(HRBackspaceFree, MIN(HRBackspaceNone, _backspacePolicy));
         if (d[@"languageID"])      _languageID = [d[@"languageID"] copy];
         if (d[@"wordListName"])    _wordListName = [d[@"wordListName"] copy];
         if (d[@"layoutID"])        _layoutID = [d[@"layoutID"] copy];

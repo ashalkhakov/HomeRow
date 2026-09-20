@@ -11,6 +11,12 @@
 
 @implementation HRStatSample
 
+- (instancetype)init
+{
+    if ((self = [super init])) _overhead = -1.0;
+    return self;
+}
+
 - (HRStatKind)kind
 {
     if ([_mode isEqualToString:@"lesson"]) return HRStatKindCourse;
@@ -31,7 +37,20 @@
     return total > 0 ? (double)_misses / (double)total : 0.0;
 }
 
+- (NSTimeInterval)averageTime
+{
+    return _timedHits > 0 ? _totalTime / (double)_timedHits : 0.0;
+}
+
 @end
+
+NSString * const HRKeyClassLetters = @"letters";
+NSString * const HRKeyClassCapitals = @"capitals";
+NSString * const HRKeyClassDigits = @"digits";
+NSString * const HRKeyClassBrackets = @"brackets";
+NSString * const HRKeyClassOperators = @"operators";
+NSString * const HRKeyClassPunctuation = @"punctuation";
+NSString * const HRKeyClassWhitespace = @"whitespace";
 
 @implementation HRStatistics
 {
@@ -66,6 +85,14 @@
             accuracyTime += s.accuracy * d;
             _bestWpm = MAX(_bestWpm, s.wpm);
         }
+        double overheadTime = 0.0, overheadWeight = 0.0;
+        for (HRStatSample *s in _samples) {
+            if (s.overhead < 0.0) continue;
+            NSTimeInterval d = s.duration > 0.0 ? s.duration : 1.0;
+            overheadTime += s.overhead * d;
+            overheadWeight += d;
+        }
+        _averageOverhead = overheadWeight > 0.0 ? overheadTime / overheadWeight : -1.0;
         _count = [_samples count];
         NSTimeInterval weight = 0.0;
         for (HRStatSample *s in _samples) weight += s.duration > 0.0 ? s.duration : 1.0;
@@ -144,6 +171,8 @@
         k.character = ch;
         k.hits = [counts[ch][@"hits"] unsignedIntegerValue];
         k.misses = [counts[ch][@"misses"] unsignedIntegerValue];
+        k.timedHits = [counts[ch][@"timed"] unsignedIntegerValue];
+        k.totalTime = [counts[ch][@"time"] doubleValue];
         if (k.hits + k.misses < minimumPresses) continue;
         [keys addObject:k];
     }
@@ -156,7 +185,81 @@
     return keys;
 }
 
-+ (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone
++ (NSString *)classOfCharacter:(NSString *)character
+{
+    if ([character length] == 0) return HRKeyClassPunctuation;
+    if ([character isEqualToString:@" "] || [character isEqualToString:@"\n"] || [character isEqualToString:@"\t"]) return HRKeyClassWhitespace;
+    unichar c = [character characterAtIndex:0];
+    if ([[NSCharacterSet decimalDigitCharacterSet] characterIsMember:c]) return HRKeyClassDigits;
+    if ([@"()[]{}<>" rangeOfString:character].location != NSNotFound && [character length] == 1) return HRKeyClassBrackets;
+    if ([@"+-*/=%&|^~!?:@#$\\" rangeOfString:character].location != NSNotFound && [character length] == 1) return HRKeyClassOperators;
+    if ([[NSCharacterSet letterCharacterSet] characterIsMember:c]) {
+        return [[NSCharacterSet uppercaseLetterCharacterSet] characterIsMember:c] ? HRKeyClassCapitals : HRKeyClassLetters;
+    }
+    return HRKeyClassPunctuation;
+}
+
++ (NSArray *)keyClassesFromCounts:(NSDictionary *)counts
+{
+    NSMutableDictionary *byClass = [NSMutableDictionary dictionary];
+    for (NSString *ch in counts) {
+        NSString *name = [self classOfCharacter:ch];
+        HRStatKey *k = byClass[name];
+        if (!k) { k = [[HRStatKey alloc] init]; k.character = name; byClass[name] = k; }
+        k.hits += [counts[ch][@"hits"] unsignedIntegerValue];
+        k.misses += [counts[ch][@"misses"] unsignedIntegerValue];
+        k.timedHits += [counts[ch][@"timed"] unsignedIntegerValue];
+        k.totalTime += [counts[ch][@"time"] doubleValue];
+    }
+    NSMutableArray *rows = [NSMutableArray array];
+    for (NSString *name in @[HRKeyClassLetters, HRKeyClassCapitals, HRKeyClassDigits, HRKeyClassBrackets,
+                             HRKeyClassOperators, HRKeyClassPunctuation, HRKeyClassWhitespace]) {
+        HRStatKey *k = byClass[name];
+        if (k && k.hits + k.misses > 0) [rows addObject:k];
+    }
+    return rows;
+}
+
++ (NSString *)lineForKeyClasses:(NSArray *)classes names:(NSDictionary *)names
+{
+    NSMutableArray *parts = [NSMutableArray array];
+    for (HRStatKey *k in classes) {
+        NSString *name = names[k.character] ?: k.character;
+        if (k.timedHits > 0) {
+            [parts addObject:[NSString stringWithFormat:@"%@ %.0f%% %.0f ms", name, [k errorRate] * 100.0, [k averageTime] * 1000.0]];
+        } else {
+            [parts addObject:[NSString stringWithFormat:@"%@ %.0f%%", name, [k errorRate] * 100.0]];
+        }
+    }
+    return [parts componentsJoinedByString:@"    "];
+}
+
++ (NSArray *)slowKeysFromCounts:(NSDictionary *)counts minimumTimed:(NSUInteger)minimumTimed
+{
+    NSMutableArray *keys = [NSMutableArray array];
+    for (HRStatKey *k in [self keysFromCounts:counts minimumPresses:0]) {
+        if (k.timedHits == 0 || k.timedHits < minimumTimed) continue;
+        [keys addObject:k];
+    }
+    [keys sortUsingComparator:^NSComparisonResult(HRStatKey *a, HRStatKey *b) {
+        double ta = [a averageTime], tb = [b averageTime];
+        if (ta != tb) return ta > tb ? NSOrderedAscending : NSOrderedDescending;
+        return [a.character compare:b.character];
+    }];
+    return keys;
+}
+
++ (NSTimeInterval)averageKeyTimeInCounts:(NSDictionary *)counts
+{
+    double time = 0.0, timed = 0.0;
+    for (NSString *ch in counts) {
+        time += [counts[ch][@"time"] doubleValue];
+        timed += [counts[ch][@"timed"] doubleValue];
+    }
+    return timed > 0.0 ? time / timed : 0.0;
+}
+
++ (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone year:(long *)outYear
 {
     if (!date) return @"";
     NSTimeZone *zone = timeZone ?: [NSTimeZone localTimeZone];
@@ -172,7 +275,20 @@
     long month = mp < 10 ? mp + 3 : mp - 9;
     static NSString * const names[] = {@"Jan", @"Feb", @"Mar", @"Apr", @"May", @"Jun",
                                        @"Jul", @"Aug", @"Sep", @"Oct", @"Nov", @"Dec"};
+    if (outYear) *outYear = yoe + era * 400 + (month <= 2 ? 1 : 0);
     return [NSString stringWithFormat:@"%@ %ld", names[month - 1], day];
+}
+
++ (NSString *)shortStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone
+{
+    return [self shortStringForDate:date timeZone:timeZone year:NULL];
+}
+
++ (NSString *)mediumStringForDate:(NSDate *)date timeZone:(NSTimeZone *)timeZone
+{
+    long year = 0;
+    NSString *s = [self shortStringForDate:date timeZone:timeZone year:&year];
+    return [s length] > 0 ? [NSString stringWithFormat:@"%@, %ld", s, year] : @"";
 }
 
 + (NSString *)stringForDuration:(NSTimeInterval)duration

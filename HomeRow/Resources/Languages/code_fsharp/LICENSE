@@ -1,0 +1,7 @@
+Imported by Scripts/import-monkeytype.py
+
+code_fsharp.json
+    From MonkeyType, https://github.com/monkeytypegame/monkeytype
+    commit 91bd24bb8513785c7364cbea29296ff7adafac41, frontend/static/languages/
+    GNU General Public License, version 3.  Copyright (C) the MonkeyType
+    contributors.  De-duplicated and NFC-normalized; otherwise unchanged.

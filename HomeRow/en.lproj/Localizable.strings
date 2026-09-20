@@ -84,3 +84,96 @@
 "Results are not being saved, so there is nothing to show." = "Results are not being saved, so there is nothing to show.";
 "Missed most often:   %@      (the deepest tint is %.0f%% of presses)" = "Missed most often:   %@      (the deepest tint is %.0f%% of presses)";
 "No key stands out yet." = "No key stands out yet.";
+
+/* preferences */
+"Preferences\U2026" = "Preferences\U2026";
+"Follow the system" = "Follow the system";
+"Light" = "Light";
+"Dark" = "Dark";
+"Automatic" = "Automatic";
+"Never \U2014 mistakes go in" = "Never \U2014 mistakes go in";
+"On every letter \U2014 a wrong key does not go in" = "On every letter \U2014 a wrong key does not go in";
+"On every word \U2014 a word must be right to be left" = "On every word \U2014 a word must be right to be left";
+"Anywhere, back into earlier mistakes" = "Anywhere, back into earlier mistakes";
+"Only in the word being typed" = "Only in the word being typed";
+"Off" = "Off";
+"Show in Finder" = "Show in Finder";
+"Results are not being saved." = "Results are not being saved.";
+
+/* layout chooser */
+"Keyboard Layout\U2026" = "Keyboard Layout\U2026";
+"Keyboard Layout: %@\U2026" = "Keyboard Layout: %@\U2026";
+"%lu layouts" = "%lu layouts";
+"%lu of %lu layouts" = "%lu of %lu layouts";
+
+/* weak-spot practice */
+"weak keys" = "weak keys";
+"Practise Weak Keys" = "Practise Weak Keys";
+"There is not enough on record yet to say which keys are weak \U2014\nor none stands out.\n\nType a few tests, lessons or sections of code first.\nreturn \U2014 a time test" = "There is not enough on record yet to say which keys are weak \U2014\nor none stands out.\n\nType a few tests, lessons or sections of code first.\nreturn \U2014 a time test";
+"Practising the keys you miss most:   %@" = "Practising the keys you miss most:   %@";
+
+/* statistics: history, progress, exchange */
+"missed most:   %@" = "missed most:   %@";
+"slowest:   %@" = "slowest:   %@";
+"Practising the keys \U2014 %@" = "Practising the keys \U2014 %@";
+"Keys by mistakes" = "Keys by mistakes";
+"Keys by speed" = "Keys by speed";
+"Best speed, lesson by lesson" = "Best speed, lesson by lesson";
+"Mistakes in the best run, lesson by lesson" = "Mistakes in the best run, lesson by lesson";
+"No key has been timed often enough yet \U2014 results from before this version carry no times." = "No key has been timed often enough yet \U2014 results from before this version carry no times.";
+"Slowest:   %@      (average %.0f ms; plain is the fastest key, %.0f ms)" = "Slowest:   %@      (average %.0f ms; plain is the fastest key, %.0f ms)";
+"part" = "part";
+"%ld s" = "%ld s";
+"%ld words" = "%ld words";
+"punctuation" = "punctuation";
+"numbers" = "numbers";
+"%@   \U2014   %@   \U2014   characters %ld/%ld/%ld/%ld%@" = "%@   \U2014   %@   \U2014   characters %ld/%ld/%ld/%ld%@";
+"   \U2014   personal best for this setting" = "   \U2014   personal best for this setting";
+"Delete this result?" = "Delete this result?";
+"It is removed from the history and from the statistics. The place in a course and its lesson records stay as they are." = "It is removed from the history and from the statistics. The place in a course and its lesson records stay as they are.";
+"Delete" = "Delete";
+"The file could not be written." = "The file could not be written.";
+"The file could not be read." = "The file could not be read.";
+"%lu results were added." = "%lu results were added.";
+"  %lu were here already." = "  %lu were here already.";
+"  %lu could not be read and were left out." = "  %lu could not be read and were left out.";
+"Name the file .json to keep everything (and to import it again), or .csv for a spreadsheet \U2014 the CSV has MonkeyType's columns." = "Name the file .json to keep everything (and to import it again), or .csv for a spreadsheet \U2014 the CSV has MonkeyType's columns.";
+"The results were not exported." = "The results were not exported.";
+"A results file exported by HomeRow (.json or .csv), or a results.csv exported by MonkeyType." = "A results file exported by HomeRow (.json or .csv), or a results.csv exported by MonkeyType.";
+"Nothing was imported." = "Nothing was imported.";
+"Start a course or a code file, and its progress shows here." = "Start a course or a code file, and its progress shows here.";
+"Best speed, part by part" = "Best speed, part by part";
+"Mistakes in the best run, part by part" = "Mistakes in the best run, part by part";
+"%lu of %lu done   \U2014   %@ of typing" = "%lu of %lu done   \U2014   %@ of typing";
+"%lu results selected   \U2014   %@ of typing" = "%lu results selected   \U2014   %@ of typing";
+"Delete these %lu results?" = "Delete these %lu results?";
+"They are removed from the history and from the statistics, the keys that weak-spot practice goes by included. The place in a course and its lesson records stay as they are." = "They are removed from the history and from the statistics, the keys that weak-spot practice goes by included. The place in a course and its lesson records stay as they are.";
+"Practising the keys, in %@ \U2014 %@" = "Practising the keys, in %@ \U2014 %@";
+
+/* Code: folders, Tab, kinds of key */
+"%@ could not be read as UTF-8 text." = "%@ could not be read as UTF-8 text.";
+"A folder of your own code: a project, a repository. Its source files turn up under their languages." = "A folder of your own code: a project, a repository. Its source files turn up under their languages.";
+"HomeRow looks for files in the programming languages it knows, and leaves out hidden folders, dependencies, build output, generated and very large files." = "HomeRow looks for files in the programming languages it knows, and leaves out hidden folders, dependencies, build output, generated and very large files.";
+"Kinds of key" = "Kinds of key";
+"Nothing to type was found in %@." = "Nothing to type was found in %@.";
+"Programming" = "Programming";
+"Remove" = "Remove";
+"Remove Folder" = "Remove Folder";
+"The same as the text" = "The same as the text";
+"brackets" = "brackets";
+"capitals" = "capitals";
+"digits" = "digits";
+"keystroke overhead" = "keystroke overhead";
+"letters" = "letters";
+"operators" = "operators";
+"overhead %.0f%%   \U2014   %@   \U2014   %.0fs" = "overhead %.0f%%   \U2014   %@   \U2014   %.0fs";
+"space, return, tab" = "space, return, tab";
+
+/* Pace caret, replay, sounds */
+"      r \U2014 replay" = "      r \U2014 replay";
+"   \U2014   pace caret at %.0f wpm" = "   \U2014   pace caret at %.0f wpm";
+"A speed I choose:" = "A speed I choose:";
+"My average" = "My average";
+"My best" = "My best";
+"Replay the Last Test" = "Replay the Last Test";
+"replay   %.0f wpm   %.0f%%   %.0fs   \U2014   esc \U2014 back to the result" = "replay   %.0f wpm   %.0f%%   %.0fs   \U2014   esc \U2014 back to the result";

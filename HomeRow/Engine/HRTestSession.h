@@ -99,4 +99,8 @@ typedef NS_ENUM(NSInteger, HRCharacterState) {
 /* Valid once finished. */
 - (HRTestSummary *)summary;
 
+/* Everything that came in, in order (HRInputEvent): what HRReplay plays
+ * back.  Input that arrived after the end is not in it. */
+- (NSArray *)inputLog;
+
 @end

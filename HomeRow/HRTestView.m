@@ -8,6 +8,7 @@
  * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRTestView.h"
+#import "HRPace.h"
 #import "HRTestSession.h"
 #import "HRTheme.h"
 #import "HRClock.h"
@@ -17,16 +18,30 @@ static const NSUInteger HRVisibleLines = 3;
 static const CGFloat HRInset = 24.0;
 static const NSTimeInterval HRFlashDuration = 0.35;
 
+/* `defaults write org.homerow.HomeRow HRLogInput -bool YES`, or -HRLogInput YES
+ * on the command line: every step of the conversation with the input
+ * system goes to the log.  For when an accent does not arrive. */
+static BOOL HRInputLogging(void)
+{
+    static int on = -1;
+    if (on < 0) on = [[NSUserDefaults standardUserDefaults] boolForKey:@"HRLogInput"] ? 1 : 0;
+    return on == 1;
+}
+#define HRInputLog(...) do { if (HRInputLogging()) NSLog(@"HomeRow input: %@", [NSString stringWithFormat:__VA_ARGS__]); } while (0)
+
 @implementation HRTestView
 {
     NSTimeInterval _eventTime;
     NSTimeInterval _flashUntil;   /* monotonic; 0 = no wrong key being shown */
     BOOL _flashRefused;           /* ...and it was refused: flash the caret's place */
+    NSRect _caretCell;            /* where the next character goes, as last drawn */
+    NSFont *_caretFont;
 }
 
 - (void)setUpDefaults
 {
-    if (!_font) _font = [HRTheme fixedPitchFontOfSize:24.0];
+    _paceCharacters = -1.0;
+    if (!_font) _font = [HRTheme fixedPitchFontOfSize:[HRTheme proseFontSize]];
 }
 
 - (instancetype)initWithFrame:(NSRect)frame
@@ -45,11 +60,12 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 - (BOOL)isOpaque { return YES; }
 - (BOOL)acceptsFirstResponder { return YES; }
 - (BOOL)becomeFirstResponder { [self setNeedsDisplay:YES]; return YES; }
-- (BOOL)resignFirstResponder { [self setNeedsDisplay:YES]; return YES; }
+- (BOOL)resignFirstResponder { [self discardMarkedText]; [self setNeedsDisplay:YES]; return YES; }
 
 - (void)setSession:(HRTestSession *)session
 {
     _session = session;
+    [self discardMarkedText];
     _flashUntil = 0.0;
     [self setNeedsDisplay:YES];
 }
@@ -75,6 +91,34 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 - (void)setTheme:(HRTheme *)theme
 {
     _theme = theme;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setPaceCharacters:(double)paceCharacters
+{
+    /* the caret moves a cell at a time: redraw when it has */
+    BOOL moved = floor(paceCharacters) != floor(_paceCharacters) || (paceCharacters < 0.0) != (_paceCharacters < 0.0);
+    _paceCharacters = paceCharacters;
+    if (moved) [self setNeedsDisplay:YES];
+}
+
+- (BOOL)getPaceWord:(NSUInteger *)word character:(NSUInteger *)character
+{
+    if (_paceCharacters < 0.0 || !_session || _session.state == HRSessionFinished || _codeLayout || _pageText) return NO;
+    return [HRPace getWordIndex:word characterIndex:character forCharacters:_paceCharacters inWords:_session.words];
+}
+
+- (NSString *)paceCaretDescription
+{
+    NSUInteger word = 0, character = 0;
+    if (![self getPaceWord:&word character:&character]) return nil;
+    return [NSString stringWithFormat:@"%lu:%lu", (unsigned long)word, (unsigned long)character];
+}
+
+- (void)setReplaying:(BOOL)replaying
+{
+    _replaying = replaying;
+    [self discardMarkedText];
     [self setNeedsDisplay:YES];
 }
 
@@ -125,6 +169,25 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 
 - (void)drawRect:(NSRect)dirtyRect
 {
+    _caretCell = NSZeroRect;
+    [self drawSurface];
+    /* a dead key has been pressed and waits for its letter: show the accent
+     * where the letter will go, underlined as marked text is everywhere */
+    if ([_markedText length] > 0 && !NSIsEmptyRect(_caretCell) && _caretFont) {
+        NSDictionary *attrs = @{NSFontAttributeName: _caretFont, NSForegroundColorAttributeName: _theme.accent};
+        NSSize size = [_markedText sizeWithAttributes:attrs];
+        NSRect cell = _caretCell;
+        cell.size.width = MAX(NSWidth(cell), size.width);
+        [(_theme.background ?: [NSColor whiteColor]) set];
+        NSRectFill(cell);
+        [_markedText drawAtPoint:NSMakePoint(NSMinX(cell) + (NSWidth(cell) - size.width) / 2.0, NSMinY(cell) - 1.0) withAttributes:attrs];
+        [_theme.accent set];
+        NSRectFill(NSMakeRect(NSMinX(cell), NSMaxY(cell) - 2.0, NSWidth(cell), 2.0));
+    }
+}
+
+- (void)drawSurface
+{
     NSRect bounds = [self bounds];
     [(_theme.background ?: [NSColor whiteColor]) set];
     NSRectFill(bounds);
@@ -168,12 +231,23 @@ static const NSTimeInterval HRFlashDuration = 0.35;
         }
     }
 
+    NSUInteger paceWord = NSNotFound, paceCharacter = 0;
+    if (![self getPaceWord:&paceWord character:&paceCharacter]) paceWord = NSNotFound;
+
     for (NSUInteger row = 0; row < HRVisibleLines && firstLine + row < [lines count]; row++) {
         NSRange range = [lines[firstLine + row] rangeValue];
         CGFloat y = top + row * lineHeight;
         NSUInteger col = 0;
         for (NSUInteger wi = range.location; wi < NSMaxRange(range); wi++) {
             NSUInteger len = [_session displayLengthOfWordAtIndex:wi];
+            if (wi == paceWord) {
+                /* under the text and paler than the caret: company, not a second cursor.
+                 * It goes by the word as it should be, so extras typed into a
+                 * word do not push it along. */
+                CGFloat x = HRInset + (col + paceCharacter) * advance;
+                [[_theme.untyped colorWithAlphaComponent:0.8] set];
+                [NSBezierPath fillRect:NSMakeRect(x - 1.0, y + 2.0, 2.0, lineHeight - 10.0)];
+            }
             for (NSUInteger ci = 0; ci < len; ci++) {
                 HRCharacterState st = [_session stateOfCharacterAtIndex:ci inWordAtIndex:wi];
                 NSString *ch = [_session displayCharacterAtIndex:ci inWordAtIndex:wi];
@@ -192,6 +266,8 @@ static const NSTimeInterval HRFlashDuration = 0.35;
             }
             if (wi == current && _session.state != HRSessionFinished) {
                 CGFloat x = HRInset + (col + [_session caretIndexInCurrentWord]) * advance;
+                _caretCell = NSMakeRect(x, y + 2.0, advance, lineHeight - 10.0);
+                _caretFont = _font;
                 BOOL focused = [[self window] firstResponder] == self;
                 if ([self isFlashing]) {
                     /* the key was refused: nothing went in, so say so where the eyes are */
@@ -247,7 +323,10 @@ static const NSTimeInterval HRFlashDuration = 0.35;
                         NSColor *color = (st == HRCharacterUntyped)
                             ? [_theme colorForTextStyle:[word styleOfCharacterAtIndex:ci]] : [self colorForState:st];
                         NSPoint p = NSMakePoint(origin.x + (col + ci) * advance, y);
-                        [[_session displayCharacterAtIndex:ci inWordAtIndex:wi] drawAtPoint:p
+                        NSString *glyph = [_session displayCharacterAtIndex:ci inWordAtIndex:wi];
+                        /* a Tab to be typed shows as an arrow in its one column */
+                        if ([glyph isEqualToString:@"\t"]) glyph = @"\u2192";
+                        [glyph drawAtPoint:p
                             withAttributes:@{NSFontAttributeName: font, NSForegroundColorAttributeName: color}];
                         if (st == HRCharacterIncorrect || st == HRCharacterExtra || st == HRCharacterMissed) {
                             [_theme.incorrect set];
@@ -257,6 +336,8 @@ static const NSTimeInterval HRFlashDuration = 0.35;
                     if (wi == current && _session.state != HRSessionFinished) {
                         NSUInteger caret = [_session caretIndexInCurrentWord];
                         CGFloat x = origin.x + (col + caret) * advance;
+                        _caretCell = NSMakeRect(x, y + 1.0, advance, lineHeight - 4.0);
+                        _caretFont = font;
                         BOOL focused = [[self window] firstResponder] == self;
                         if ([self isFlashing]) {
                             [[_theme.incorrect colorWithAlphaComponent:0.35] set];
@@ -300,7 +381,7 @@ static const NSTimeInterval HRFlashDuration = 0.35;
 
 - (void)drawCodeInRect:(NSRect)bounds
 {
-    NSFont *font = [HRTheme fixedPitchFontOfSize:15.0];
+    NSFont *font = [HRTheme codeFontOfSize:[HRTheme codeFontSize]];
     CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width;
     CGFloat lineHeight = ceil(([font ascender] - [font descender]) * 1.35);
     if (advance <= 0.0 || lineHeight <= 0.0) return;
@@ -388,9 +469,26 @@ static NSString *HRExpandTabs(NSString *line)
     NSString *chars = [event charactersIgnoringModifiers];
     unichar c = [chars length] > 0 ? [chars characterAtIndex:0] : 0;
     NSUInteger mods = [event modifierFlags];
+#if !defined(GNUSTEP)
+    HRInputLog(@"keyDown keyCode %d characters '%@' ignoringModifiers '%@' flags %#lx; client %d, inputContext %@, marked %@",
+               (int)[event keyCode], [event characters], chars, (unsigned long)mods,
+               (int)[self conformsToProtocol:@protocol(NSTextInputClient)], [self inputContext], _markedText);
+#endif
 
     if ((mods & NSEventModifierFlagCommand) != 0) {
         [super keyDown:event];
+        return;
+    }
+    if (_replaying) {
+        BOOL leaves = (c == NSTabCharacter || c == 0x1B || c == NSCarriageReturnCharacter
+                       || c == NSNewlineCharacter || c == NSEnterCharacter);
+        if (leaves) [_delegate testViewDidRequestRestart:self];
+        return;
+    }
+    if ([self hasMarkedText]) {
+        /* an accent is waiting: the next key completes or cancels it, and
+         * that is the input context's call, Backspace and Escape included */
+        [self interpretKeyEvents:@[event]];
         return;
     }
     if (_pageText) {
@@ -455,25 +553,129 @@ static NSString *HRExpandTabs(NSString *line)
 
 - (void)insertText:(id)string
 {
+    HRInputLog(@"insertText:%@ (the plain NSResponder one)", string);
     NSString *s = [string isKindOfClass:[NSAttributedString class]] ? [string string] : string;
-    if (_session.state == HRSessionFinished) return;
+    if (_session.state == HRSessionFinished || _replaying) return;
     NSUInteger wrongBefore = _session.wrongInputCount;
     [_session insertText:s atTime:_eventTime];
-    if (_session.wrongInputCount != wrongBefore) [self wrongInput];
+    BOOL wrong = _session.wrongInputCount != wrongBefore;
+    if (wrong) [self wrongInput];
     else [self endFlash];   /* the right key: the red goes at once */
+    [self keySounded:s correct:!wrong];
     [self afterInput];
+}
+
+- (void)keySounded:(NSString *)input correct:(BOOL)correct
+{
+    if ([_delegate respondsToSelector:@selector(testView:didTypeInput:correctly:)]) {
+        [_delegate testView:self didTypeInput:input correctly:correct];
+    }
 }
 
 - (void)typeText:(NSString *)text atTime:(NSTimeInterval)time
 {
+    if (_replaying) return;
     _eventTime = time;
     [self insertText:text];
 }
 
-/* NSTextInputClient spells it this way on macOS when it is asked. */
+#pragma mark - Marked text (dead keys, Option accents)
+
+/* What the view tells the input context about its text is deliberately next
+ * to nothing: there is no document here to select in or to read back, only
+ * a caret.  That is enough for dead keys and for input methods that compose
+ * in place; it is not enough for ones that reconvert existing text, which a
+ * typing test has no use for. */
+
+- (void)setMarkedTextForTesting:(NSString *)text
+{
+    _markedText = [text length] > 0 ? [text copy] : nil;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)discardMarkedText
+{
+    if (!_markedText) return;
+    _markedText = nil;
+#if !defined(GNUSTEP)
+    [[self inputContext] discardMarkedText];
+#endif
+    [self setNeedsDisplay:YES];
+}
+
 - (void)insertText:(id)string replacementRange:(NSRange)range
 {
+    HRInputLog(@"insertText:%@ replacementRange:%@ (marked was %@)", string, NSStringFromRange(range), _markedText);
+    /* the composed character replaces the accent that was waiting */
+    _markedText = nil;
+    /* press-and-hold is switched off (see main.m), but should an input
+     * method ask to replace what was just typed, take that back first */
+    if (range.location != NSNotFound && range.length > 0 && range.length <= 4) {
+        for (NSUInteger i = 0; i < range.length; i++) [_session deleteBackwardAtTime:_eventTime];
+    }
     [self insertText:string];
+}
+
+- (void)setMarkedText:(id)string selectedRange:(NSRange)selectedRange replacementRange:(NSRange)replacementRange
+{
+    NSString *s = [string isKindOfClass:[NSAttributedString class]] ? [string string] : string;
+    HRInputLog(@"setMarkedText:%@ selectedRange:%@ replacementRange:%@", s, NSStringFromRange(selectedRange), NSStringFromRange(replacementRange));
+    _markedText = [s length] > 0 ? [s copy] : nil;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)unmarkText
+{
+    /* Only forget it.  AppKit sends this at moments of its own choosing, and
+     * whatever is to be typed always arrives through -insertText:...; typing
+     * the pending accent here as well would put a bare ` in the text. */
+    HRInputLog(@"unmarkText (was %@)", _markedText);
+    _markedText = nil;
+    [self setNeedsDisplay:YES];
+}
+
+- (BOOL)hasMarkedText
+{
+    return [_markedText length] > 0;
+}
+
+- (NSRange)markedRange
+{
+    return [_markedText length] > 0 ? NSMakeRange(0, [_markedText length]) : NSMakeRange(NSNotFound, 0);
+}
+
+- (NSRange)selectedRange
+{
+    /* no document, no selection */
+    return NSMakeRange(NSNotFound, 0);
+}
+
+- (NSArray *)validAttributesForMarkedText
+{
+    return @[];
+}
+
+- (NSAttributedString *)attributedSubstringForProposedRange:(NSRange)range actualRange:(NSRangePointer)actualRange
+{
+    return nil;
+}
+
+- (NSUInteger)characterIndexForPoint:(NSPoint)point
+{
+    return 0;
+}
+
+/* Where an input method may put its candidate window: by the caret. */
+- (NSRect)firstRectForCharacterRange:(NSRange)range actualRange:(NSRangePointer)actualRange
+{
+    NSRect cell = NSIsEmptyRect(_caretCell) ? NSMakeRect(HRInset, HRInset, 1.0, 20.0) : _caretCell;
+    NSRect inWindow = [self convertRect:cell toView:nil];
+#if defined(GNUSTEP)
+    NSPoint origin = [[self window] convertBaseToScreen:inWindow.origin];
+    return NSMakeRect(origin.x, origin.y, NSWidth(inWindow), NSHeight(inWindow));
+#else
+    return [[self window] convertRectToScreen:inWindow];
+#endif
 }
 
 - (void)insertNewline:(id)sender
@@ -483,19 +685,27 @@ static NSString *HRExpandTabs(NSString *line)
 
 - (void)deleteBackward:(id)sender
 {
+    if (_replaying) return;
     [_session deleteBackwardAtTime:_eventTime];
+    [self keySounded:@"\b" correct:YES];
     [self afterInput];
 }
 
 - (void)deleteWordBackward:(id)sender
 {
+    if (_replaying) return;
     [_session deleteWordBackwardAtTime:_eventTime];
+    [self keySounded:@"\b" correct:YES];
     [self afterInput];
 }
 
+/* Tab starts the test over -- unless Tab is what the text wants next (code,
+ * with "type Tab where the code indents deeper" on): then it is typed.  Esc
+ * still starts over. */
 - (void)insertTab:(id)sender
 {
-    [_delegate testViewDidRequestRestart:self];
+    if ([[_session expectedInput] isEqualToString:@"\t"]) [self insertText:@"\t"];
+    else [_delegate testViewDidRequestRestart:self];
 }
 
 - (void)cancelOperation:(id)sender
@@ -529,7 +739,7 @@ static NSString *HRExpandTabs(NSString *line)
 - (void)tick
 {
     if (_flashUntil > 0.0 && HRMonotonicNow() >= _flashUntil) [self endFlash];
-    if (_session.state != HRSessionRunning) return;
+    if (_session.state != HRSessionRunning || _replaying) return;   /* a replay runs on its own clock */
     [_session tickAtTime:HRMonotonicNow()];
     [_delegate testViewDidChange:self];
     if (_session.state == HRSessionFinished) {

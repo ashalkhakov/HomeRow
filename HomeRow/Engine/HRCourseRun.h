@@ -50,6 +50,15 @@
  * NO: too many errors, the same exercise is up again. */
 - (BOOL)recordExercise:(HRTestSummary *)summary;
 
+/* A run that resumed mid-lesson (after a relaunch) knows nothing of the
+ * exercises typed before it.  The store does: hand them over, oldest first,
+ * as @{@"step", @"wpm", @"accuracy", @"duration", @"keystrokes"} (NSNumbers),
+ * and the totals cover the whole lesson again.  Entries for steps at or
+ * after the resume point, or for steps that are not exercises, are ignored;
+ * a step that occurs more than once was repeated.  When every exercise
+ * before the resume point is accounted for, coversWholeLesson becomes YES. */
+- (void)addEarlierExercises:(NSArray *)exercises;
+
 - (HRLessonSummary *)summary;
 
 @end

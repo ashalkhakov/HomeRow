@@ -11,6 +11,16 @@
 #include <math.h>
 
 @implementation HRTestSummary
+
+- (double)keystrokeOverhead
+{
+    double all = (double)(_correctKeystrokes + _incorrectKeystrokes + _deletions);
+    if (all <= 0.0) return 0.0;
+    /* what stands, right, at the end: the correct characters and the separators between the words */
+    double productive = (double)(_correctCharacters + _separatorsTyped);
+    return MAX(0.0, MIN(1.0, 1.0 - productive / all));
+}
+
 @end
 
 @implementation HRScorer

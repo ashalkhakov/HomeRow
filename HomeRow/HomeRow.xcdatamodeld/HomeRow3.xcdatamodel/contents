@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22758" systemVersion="23G93" minimumToolsVersion="Automatic" sourceLanguage="Objective-C" userDefinedModelVersionIdentifier="2">
+    <entity name="CourseProgress" representedClassName="HRCourseProgress" syncable="YES">
+        <attribute name="courseFile" attributeType="String"/>
+        <attribute name="lastDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lessonIndex" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="startedDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="stepIndex" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="KeyStat" representedClassName="HRKeyStat" syncable="YES">
+        <attribute name="character" attributeType="String"/>
+        <attribute name="hits" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="misses" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="timedHits" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="totalTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <relationship name="result" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="TestResult" inverseName="keyStats" inverseEntity="TestResult"/>
+    </entity>
+    <entity name="LessonRecord" representedClassName="HRLessonRecord" syncable="YES">
+        <attribute name="attempts" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="bestAccuracy" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="bestWpm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="completions" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="courseFile" attributeType="String"/>
+        <attribute name="lastAccuracy" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="lastDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="lastWpm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="lessonIndex" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="totalDuration" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="TestResult" representedClassName="HRTestResult" syncable="YES">
+        <attribute name="accuracy" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="amount" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="courseFile" optional="YES" attributeType="String"/>
+        <attribute name="consistency" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="correctCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="duration" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="extraCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="incorrectCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="languageID" optional="YES" attributeType="String"/>
+        <attribute name="layoutID" optional="YES" attributeType="String"/>
+        <attribute name="lessonIndex" optional="YES" attributeType="Integer 32" usesScalarValueType="NO"/>
+        <attribute name="missedCharacters" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="NO"/>
+        <attribute name="mode" attributeType="String"/>
+        <attribute name="rawWpm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <attribute name="series" optional="YES" attributeType="Binary"/>
+        <attribute name="settingsKey" attributeType="String"/>
+        <attribute name="stepIndex" optional="YES" attributeType="Integer 32" usesScalarValueType="NO"/>
+        <attribute name="uuid" optional="YES" attributeType="String"/>
+        <attribute name="wpm" attributeType="Double" defaultValueString="0.0" usesScalarValueType="NO"/>
+        <relationship name="keyStats" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="KeyStat" inverseName="result" inverseEntity="KeyStat"/>
+    </entity>
+</model>

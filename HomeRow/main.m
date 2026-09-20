@@ -11,5 +11,14 @@
 
 int main(int argc, const char *argv[])
 {
+#if defined(__APPLE__)
+    /* A held key repeats, as it does in a terminal or an editor set up for
+     * code -- it does not open the accent pop-up, which has no text to work
+     * on here.  Accents come from dead keys and Option.  (registerDefaults:
+     * so a user's own setting for HomeRow still wins.) */
+    @autoreleasepool {
+        [[NSUserDefaults standardUserDefaults] registerDefaults:@{@"ApplePressAndHoldEnabled": @NO}];
+    }
+#endif
     return NSApplicationMain(argc, argv);
 }

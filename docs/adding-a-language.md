@@ -30,6 +30,7 @@ there with the same identifier as a bundled one replaces it.
 | `bcp47` | no | language tag, e.g. `de-DE` |
 | `defaultLayout` | no | layout pack to preselect; default `qwerty-us` |
 | `script` | no | ISO 15924 code, e.g. `Latn`, `Cyrl` |
+| `kind` | no | `prose` (default) or `code`. A `code` pack — the keywords of a programming language — is listed under **Language ▸ Programming** and typed as it stands, without punctuation or numbers worked in |
 | `direction` | no | `ltr` (default). `rtl` is reserved and not supported yet |
 
 See `english/info.plist` for a complete example.

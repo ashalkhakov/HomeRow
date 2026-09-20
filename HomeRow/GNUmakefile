@@ -19,7 +19,7 @@ APP_NAME = HomeRow
 HomeRow_APPLICATION_ICON = HomeRow.png
 
 #
-# Resources.  Languages, Lessons and Themes are copied as whole folders, so a
+# Resources.  Languages, Lessons, Sounds and Themes are copied as whole folders, so a
 # new language pack, course or theme is picked up without touching this file.
 #
 HomeRow_RESOURCE_FILES = \
@@ -27,11 +27,15 @@ HomeRow_RESOURCE_FILES = \
     Resources/CourseWindow.xib \
     Resources/CodeWindow.xib \
     Resources/StatsWindow.xib \
+    Resources/PreferencesWindow.xib \
+    Resources/LayoutChooser.xib \
+    Resources/WelcomeWindow.xib \
     Resources/Code \
     Resources/HomeRow.png \
     Resources/Languages \
     Resources/Layouts \
     Resources/Lessons \
+    Resources/Sounds \
     Resources/Themes
 
 HomeRow_LANGUAGES = en
@@ -46,19 +50,33 @@ HomeRow_XCDATAMODELD_FILES = HomeRow.xcdatamodeld
 #
 HomeRow_OBJC_FILES = \
     $(wildcard Engine/*.m) \
+    HRActivity.m \
     HRAppDelegate.m \
+    HRAppModel.m \
     HRChartView.m \
+    HRCodeActivity.m \
+    HRControlBar.m \
+    HRCourseActivity.m \
     HRCourseWindowController.m \
     HRCodeWindowController.m \
     HRPlotView.m \
+    HRPreferencesWindowController.m \
     HRStatTilesView.m \
     HRStatsWindowController.m \
+    HRFreeTestActivity.m \
+    HRKeyboardDock.m \
     HRKeyboardView.m \
+    HRLayoutChooserController.m \
     HRManagedObjects.m \
+    HRMenuController.m \
     HRResultStore.m \
     HRResultsView.m \
+    HRSmokeTest.m \
+    HRSoundPlayer.m \
+    HRStage.m \
     HRTestView.m \
     HRTheme.m \
+    HRWelcomeWindowController.m \
     main.m
 
 # Oniguruma: exactly these -- the other .c files in that folder are

@@ -40,6 +40,13 @@
 - (id<HRTextSource>)sourceForSection:(NSUInteger)section typeComments:(BOOL)typeComments;
 /* The same for an arbitrary run of lines. */
 - (NSArray *)wordsForLines:(NSRange)lineRange typeComments:(BOOL)typeComments;
+/* `typeTabs`: a line indented deeper than the typed line before it begins
+ * with Tab (@"\t" as the first characters of its first word), once per
+ * level of the file's own indent step.  Everything else about indentation
+ * stays filled in, as an editor with auto-indent has it. */
+- (NSArray *)wordsForLines:(NSRange)lineRange typeComments:(BOOL)typeComments typeTabs:(BOOL)typeTabs;
+- (id<HRTextSource>)sourceForSection:(NSUInteger)section typeComments:(BOOL)typeComments typeTabs:(BOOL)typeTabs;
+- (NSUInteger)indentUnit;
 
 /* Maps TextMate scopes to one of HomeRow's few styles, innermost first. */
 + (uint8_t)styleForScopes:(NSArray *)scopes;

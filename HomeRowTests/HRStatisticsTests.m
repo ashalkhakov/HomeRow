@@ -124,6 +124,9 @@
     /* 2024-02-29 23:30 UTC is already March 1st an hour to the east */
     NSDate *leap = [NSDate dateWithTimeIntervalSince1970:1709249400.0];
     XCTAssertEqualObjects([HRStatistics shortStringForDate:leap timeZone:_utc], @"Feb 29");
+    XCTAssertEqualObjects([HRStatistics mediumStringForDate:leap timeZone:_utc], @"Feb 29, 2024");
+    XCTAssertEqualObjects([HRStatistics mediumStringForDate:[NSDate dateWithTimeIntervalSince1970:-86400.0] timeZone:_utc], @"Dec 31, 1969");
+    XCTAssertEqualObjects([HRStatistics mediumStringForDate:nil timeZone:_utc], @"");
     XCTAssertEqualObjects([HRStatistics shortStringForDate:leap timeZone:[NSTimeZone timeZoneForSecondsFromGMT:3600]], @"Mar 1");
     XCTAssertEqualObjects([HRStatistics shortStringForDate:[NSDate dateWithTimeIntervalSince1970:0] timeZone:_utc], @"Jan 1");
     XCTAssertEqualObjects([HRStatistics stringForDuration:40], @"40 s");
