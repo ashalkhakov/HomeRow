@@ -62,7 +62,11 @@ mode and speed. Importing the same file twice adds nothing the second time.
   many of the hits were `timed` and what those took together, `time`, in
   seconds (see [metrics.md](metrics.md)). Results from before HomeRow
   recorded times have `timed: 0`.
-- `series` — raw WPM and wrong keystrokes, one entry per second.
+- `series` — raw WPM and wrong keystrokes, one entry per second. Results
+  saved since keystroke overhead is measured also carry, in the same object,
+  the numbers `overhead` (0–1), `deletions` (characters taken away by
+  Backspace) and `keystrokes` (all of them, right and wrong). A reader must
+  not expect them.
 - `isBest` — informational; it is worked out again on import.
 - Everything except `timestamp`, `mode` and `wpm` may be missing. A reader
   must ignore members it does not know; a writer that adds any raises

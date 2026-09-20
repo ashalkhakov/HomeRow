@@ -10,7 +10,8 @@ the lists are updated.  Each pack gets a LICENSE naming the commit it came
 from.
 
 What is left out, and why:
-  code_*                      keyword lists, for Code mode later
+  code_* that are jokes       (SKIP_CODE below); the rest become packs of
+                              kind "code", shown under Language > Programming
   rightToLeft                 HomeRow has no RTL layout yet
   chinese_*, japanese_hiragana, japanese_katakana, korean
                               need an input method; out of scope for now
@@ -24,6 +25,15 @@ import argparse, json, os, plistlib, re, subprocess, sys, unicodedata
 
 SKIP = {"docker_file", "git", "league_of_legends", "lorem_ipsum", "pokemon",
         "twitch_emotes", "wordle"}
+SKIP_CODE = {"brainfck", "ook", "rockstar", "yoptascript"}
+# display names that title-casing the file name would get wrong
+CODE_NAMES = {"6502_assembly": "6502 Assembly", "abap": "ABAP", "c++": "C++", "csharp": "C#",
+              "css": "CSS", "cuda": "CUDA", "fsharp": "F#", "gdscript": "GDScript",
+              "gdscript_2": "GDScript 2", "html": "HTML", "javascript": "JavaScript",
+              "javascript_react": "JavaScript (React)", "latex": "LaTeX", "matlab": "MATLAB",
+              "ocaml": "OCaml", "opencl": "OpenCL", "php": "PHP", "powershell": "PowerShell",
+              "r": "R", "sql": "SQL", "systemverilog": "SystemVerilog", "typescript": "TypeScript",
+              "vhdl": "VHDL", "vimscript": "Vim script", "cobol": "COBOL"}
 NEEDS_IME = re.compile(r"^(chinese_|japanese_hiragana|japanese_katakana|korean)")
 MAX_WORDS = 10000
 MARK = "Imported by Scripts/import-monkeytype.py"
@@ -65,7 +75,8 @@ def main():
         name = data["name"]
         m = re.match(r"^(.*?)_(\d+k)$", name)
         base, sized = (m.group(1), m.group(2)) if m else (name, None)
-        if (name.startswith("code_") or data.get("rightToLeft") or NEEDS_IME.match(name)
+        code = base.startswith("code_")
+        if ((code and base[5:] in SKIP_CODE) or data.get("rightToLeft") or NEEDS_IME.match(name)
                 or base in SKIP or len(data["words"]) > MAX_WORDS):
             continue
         words, seen = [], set()
@@ -78,7 +89,10 @@ def main():
             words.append(w)
         if len(words) < 20:
             continue
-        pack = packs.setdefault(base, {"lists": [], "bcp47": None, "sources": []})
+        if code:
+            # the language code of these lists says nothing: they are not prose
+            data.pop("bcp47", None)
+        pack = packs.setdefault(base, {"lists": [], "bcp47": None, "sources": [], "code": code})
         pack["lists"].append((sized, words))
         if not (base == "english" and sized is None):
             pack["sources"].append(fn)
@@ -115,6 +129,9 @@ def main():
             info = {"identifier": base,
                     "displayName": base.replace("_", " ").title(),
                     "direction": "ltr"}
+            if pack["code"]:
+                info["displayName"] = CODE_NAMES.get(base[5:], base[5:].replace("_", " ").title())
+                info["kind"] = "code"
         if pack["bcp47"]:
             info["bcp47"] = pack["bcp47"]
         # a set of code points, combining marks included; see adding-a-language.md

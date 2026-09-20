@@ -11,6 +11,12 @@
 
 @implementation HRStatSample
 
+- (instancetype)init
+{
+    if ((self = [super init])) _overhead = -1.0;
+    return self;
+}
+
 - (HRStatKind)kind
 {
     if ([_mode isEqualToString:@"lesson"]) return HRStatKindCourse;
@@ -37,6 +43,14 @@
 }
 
 @end
+
+NSString * const HRKeyClassLetters = @"letters";
+NSString * const HRKeyClassCapitals = @"capitals";
+NSString * const HRKeyClassDigits = @"digits";
+NSString * const HRKeyClassBrackets = @"brackets";
+NSString * const HRKeyClassOperators = @"operators";
+NSString * const HRKeyClassPunctuation = @"punctuation";
+NSString * const HRKeyClassWhitespace = @"whitespace";
 
 @implementation HRStatistics
 {
@@ -71,6 +85,14 @@
             accuracyTime += s.accuracy * d;
             _bestWpm = MAX(_bestWpm, s.wpm);
         }
+        double overheadTime = 0.0, overheadWeight = 0.0;
+        for (HRStatSample *s in _samples) {
+            if (s.overhead < 0.0) continue;
+            NSTimeInterval d = s.duration > 0.0 ? s.duration : 1.0;
+            overheadTime += s.overhead * d;
+            overheadWeight += d;
+        }
+        _averageOverhead = overheadWeight > 0.0 ? overheadTime / overheadWeight : -1.0;
         _count = [_samples count];
         NSTimeInterval weight = 0.0;
         for (HRStatSample *s in _samples) weight += s.duration > 0.0 ? s.duration : 1.0;
@@ -161,6 +183,55 @@
         return [a.character compare:b.character];
     }];
     return keys;
+}
+
++ (NSString *)classOfCharacter:(NSString *)character
+{
+    if ([character length] == 0) return HRKeyClassPunctuation;
+    if ([character isEqualToString:@" "] || [character isEqualToString:@"\n"] || [character isEqualToString:@"\t"]) return HRKeyClassWhitespace;
+    unichar c = [character characterAtIndex:0];
+    if ([[NSCharacterSet decimalDigitCharacterSet] characterIsMember:c]) return HRKeyClassDigits;
+    if ([@"()[]{}<>" rangeOfString:character].location != NSNotFound && [character length] == 1) return HRKeyClassBrackets;
+    if ([@"+-*/=%&|^~!?:@#$\\" rangeOfString:character].location != NSNotFound && [character length] == 1) return HRKeyClassOperators;
+    if ([[NSCharacterSet letterCharacterSet] characterIsMember:c]) {
+        return [[NSCharacterSet uppercaseLetterCharacterSet] characterIsMember:c] ? HRKeyClassCapitals : HRKeyClassLetters;
+    }
+    return HRKeyClassPunctuation;
+}
+
++ (NSArray *)keyClassesFromCounts:(NSDictionary *)counts
+{
+    NSMutableDictionary *byClass = [NSMutableDictionary dictionary];
+    for (NSString *ch in counts) {
+        NSString *name = [self classOfCharacter:ch];
+        HRStatKey *k = byClass[name];
+        if (!k) { k = [[HRStatKey alloc] init]; k.character = name; byClass[name] = k; }
+        k.hits += [counts[ch][@"hits"] unsignedIntegerValue];
+        k.misses += [counts[ch][@"misses"] unsignedIntegerValue];
+        k.timedHits += [counts[ch][@"timed"] unsignedIntegerValue];
+        k.totalTime += [counts[ch][@"time"] doubleValue];
+    }
+    NSMutableArray *rows = [NSMutableArray array];
+    for (NSString *name in @[HRKeyClassLetters, HRKeyClassCapitals, HRKeyClassDigits, HRKeyClassBrackets,
+                             HRKeyClassOperators, HRKeyClassPunctuation, HRKeyClassWhitespace]) {
+        HRStatKey *k = byClass[name];
+        if (k && k.hits + k.misses > 0) [rows addObject:k];
+    }
+    return rows;
+}
+
++ (NSString *)lineForKeyClasses:(NSArray *)classes names:(NSDictionary *)names
+{
+    NSMutableArray *parts = [NSMutableArray array];
+    for (HRStatKey *k in classes) {
+        NSString *name = names[k.character] ?: k.character;
+        if (k.timedHits > 0) {
+            [parts addObject:[NSString stringWithFormat:@"%@ %.0f%% %.0f ms", name, [k errorRate] * 100.0, [k averageTime] * 1000.0]];
+        } else {
+            [parts addObject:[NSString stringWithFormat:@"%@ %.0f%%", name, [k errorRate] * 100.0]];
+        }
+    }
+    return [parts componentsJoinedByString:@"    "];
 }
 
 + (NSArray *)slowKeysFromCounts:(NSDictionary *)counts minimumTimed:(NSUInteger)minimumTimed

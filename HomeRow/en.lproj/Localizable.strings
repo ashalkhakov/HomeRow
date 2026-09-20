@@ -149,3 +149,22 @@
 "Delete these %lu results?" = "Delete these %lu results?";
 "They are removed from the history and from the statistics, the keys that weak-spot practice goes by included. The place in a course and its lesson records stay as they are." = "They are removed from the history and from the statistics, the keys that weak-spot practice goes by included. The place in a course and its lesson records stay as they are.";
 "Practising the keys, in %@ \U2014 %@" = "Practising the keys, in %@ \U2014 %@";
+
+/* Code: folders, Tab, kinds of key */
+"%@ could not be read as UTF-8 text." = "%@ could not be read as UTF-8 text.";
+"A folder of your own code: a project, a repository. Its source files turn up under their languages." = "A folder of your own code: a project, a repository. Its source files turn up under their languages.";
+"HomeRow looks for files in the programming languages it knows, and leaves out hidden folders, dependencies, build output, generated and very large files." = "HomeRow looks for files in the programming languages it knows, and leaves out hidden folders, dependencies, build output, generated and very large files.";
+"Kinds of key" = "Kinds of key";
+"Nothing to type was found in %@." = "Nothing to type was found in %@.";
+"Programming" = "Programming";
+"Remove" = "Remove";
+"Remove Folder" = "Remove Folder";
+"The same as the text" = "The same as the text";
+"brackets" = "brackets";
+"capitals" = "capitals";
+"digits" = "digits";
+"keystroke overhead" = "keystroke overhead";
+"letters" = "letters";
+"operators" = "operators";
+"overhead %.0f%%   \U2014   %@   \U2014   %.0fs" = "overhead %.0f%%   \U2014   %@   \U2014   %.0fs";
+"space, return, tab" = "space, return, tab";

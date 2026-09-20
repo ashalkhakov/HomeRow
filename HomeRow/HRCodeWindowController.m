@@ -15,6 +15,8 @@
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
+NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
+NSString * const HRCodeUserFoldersDefaultsKey = @"HRCodeUserFolders";
 NSString * const HRCodeTypeCommentsDefaultsKey = @"HRCodeTypeComments";
 
 @implementation HRCodeWindowController
@@ -50,6 +52,12 @@ NSString * const HRCodeTypeCommentsDefaultsKey = @"HRCodeTypeComments";
     [_commentsCheck setState:([[NSUserDefaults standardUserDefaults] boolForKey:HRCodeTypeCommentsDefaultsKey]
                               ? NSControlStateValueOn : NSControlStateValueOff)];
     [_sectionTable setTarget:self];
+    /* files and folders can be dropped on the list */
+#if defined(GNUSTEP)
+    [_sectionTable registerForDraggedTypes:@[NSFilenamesPboardType]];
+#else
+    [_sectionTable registerForDraggedTypes:@[NSPasteboardTypeFileURL]];
+#endif
     [_sectionTable setDoubleAction:@selector(typeSelectedSection:)];
     [self selectLanguageInPopUp];
     [self reloadProgress];
@@ -107,7 +115,7 @@ NSString * const HRCodeTypeCommentsDefaultsKey = @"HRCodeTypeComments";
         [_sectionTable selectRowIndexes:[NSIndexSet indexSetWithIndex:(NSUInteger)row] byExtendingSelection:NO];
         [_sectionTable scrollRowToVisible:row];
     }
-    [_typeButton setEnabled:[_sectionTable selectedRow] >= 0];
+    [self syncButtons];
 }
 
 - (void)revealFile:(HRCodeFile *)file section:(NSUInteger)section
@@ -123,7 +131,7 @@ NSString * const HRCodeTypeCommentsDefaultsKey = @"HRCodeTypeComments";
             break;
         }
     }
-    [_typeButton setEnabled:[_sectionTable selectedRow] >= 0];
+    [self syncButtons];
 }
 
 #pragma mark - Actions
@@ -144,32 +152,150 @@ NSString * const HRCodeTypeCommentsDefaultsKey = @"HRCodeTypeComments";
     [_delegate codeWindow:self didRequestFile:entry[0] section:[entry[1] unsignedIntegerValue]];
 }
 
-/* One of your own files.  Its language goes by the extension; a language
- * HomeRow has no grammar for is typed as plain text. */
+#pragma mark - Files and folders of one's own
+
+- (void)saveLibrary
+{
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    [d setObject:(_library.userFilePaths ?: @[]) forKey:HRCodeUserFilesDefaultsKey];
+    [d setObject:(_library.userFolderPaths ?: @[]) forKey:HRCodeUserFoldersDefaultsKey];
+}
+
+- (void)say:(NSString *)message detail:(NSString *)detail
+{
+    NSAlert *alert = [[NSAlert alloc] init];
+    [alert setMessageText:message];
+    if (detail) [alert setInformativeText:detail];
+    [alert runModal];
+}
+
+/* Files go in one by one, folders whole.  The last thing added is what the
+ * list then shows; a single file in a language HomeRow has no grammar for
+ * is typed straight away, as plain text, for there is no list to show it in. */
+- (BOOL)addPaths:(NSArray *)paths
+{
+    HRCodeFile *reveal = nil, *plain = nil;
+    NSString *unreadable = nil;
+    NSMutableArray *emptyFolders = [NSMutableArray array];
+    for (NSString *path in paths) {
+        BOOL isDirectory = NO;
+        if (![[NSFileManager defaultManager] fileExistsAtPath:path isDirectory:&isDirectory]) continue;
+        if (isDirectory) {
+            if ([_library addUserFolderAtPath:path] == 0) {
+                [emptyFolders addObject:[path lastPathComponent]];
+                [_library removeUserFolderAtPath:path];
+                continue;
+            }
+            for (HRCodeLanguage *language in _library.languages) {
+                for (HRCodeFile *f in [_library filesForLanguage:language]) {
+                    if (!reveal && [[_library folderOfFile:f] isEqualToString:path]) reveal = f;
+                }
+            }
+        } else {
+            HRCodeFile *file = [_library addUserFileAtPath:path];
+            if (!file || ![_library documentForFile:file error:NULL]) {
+                unreadable = [path lastPathComponent];
+                if (file) [_library removeUserFileAtPath:path];
+                continue;
+            }
+            if ([file.languageID length] == 0) plain = file; else reveal = file;
+        }
+    }
+    [self saveLibrary];
+    if (unreadable) [self say:[NSString stringWithFormat:HRLoc(@"%@ could not be read as UTF-8 text."), unreadable] detail:nil];
+    if ([emptyFolders count] > 0) {
+        [self say:[NSString stringWithFormat:HRLoc(@"Nothing to type was found in %@."), [emptyFolders componentsJoinedByString:@", "]]
+           detail:HRLoc(@"HomeRow looks for files in the programming languages it knows, and leaves out hidden folders, dependencies, build output, generated and very large files.")];
+    }
+    if (reveal) [self revealFile:reveal section:0];
+    else if (plain) [_delegate codeWindow:self didRequestFile:plain section:0];
+    else [self reloadProgress];
+    return reveal != nil || plain != nil;
+}
+
 - (IBAction)openFile:(id)sender
 {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
-    [panel setAllowsMultipleSelection:NO];
+    [panel setAllowsMultipleSelection:YES];
     [panel setCanChooseDirectories:NO];
     if ([panel runModal] != NSModalResponseOK) return;
+    NSMutableArray *paths = [NSMutableArray array];
+    for (NSURL *url in [panel URLs]) if ([url path]) [paths addObject:[url path]];
+    [self addPaths:paths];
+}
+
+- (IBAction)addFolder:(id)sender
+{
+    NSOpenPanel *panel = [NSOpenPanel openPanel];
+    [panel setAllowsMultipleSelection:NO];
+    [panel setCanChooseDirectories:YES];
+    [panel setCanChooseFiles:NO];
+    [panel setMessage:HRLoc(@"A folder of your own code: a project, a repository. Its source files turn up under their languages.")];
+    if ([panel runModal] != NSModalResponseOK) return;
     NSString *path = [[[panel URLs] firstObject] path];
-    if (!path) return;
-    HRCodeFile *file = [_library addUserFileAtPath:path];
-    NSError *error = nil;
-    if (!file || ![_library documentForFile:file error:&error]) {
-        NSAlert *alert = [[NSAlert alloc] init];
-        [alert setMessageText:HRLoc(@"That file could not be read as UTF-8 text.")];
-        if (error) [alert setInformativeText:[error localizedDescription]];
-        [alert runModal];
-        return;
+    if (path) [self addPaths:@[path]];
+}
+
+- (HRCodeFile *)selectedFile
+{
+    NSInteger row = [_sectionTable selectedRow];
+    return (row >= 0 && row < (NSInteger)[_rows count]) ? _rows[(NSUInteger)row][0] : nil;
+}
+
+- (IBAction)removeSelected:(id)sender
+{
+    HRCodeFile *file = [self selectedFile];
+    if (!file || file.isBundled) return;
+    NSString *folder = [_library folderOfFile:file];
+    if (folder) [_library removeUserFolderAtPath:folder];
+    else [_library removeUserFileAtPath:file.path];
+    [self saveLibrary];
+    [_sectionTable deselectAll:self];
+    [self reloadProgress];
+}
+
+- (void)syncButtons
+{
+    HRCodeFile *file = [self selectedFile];
+    [_typeButton setEnabled:file != nil];
+    [_removeButton setEnabled:(file != nil && !file.isBundled)];
+    [_removeButton setTitle:([_library folderOfFile:file] ? HRLoc(@"Remove Folder") : HRLoc(@"Remove"))];
+}
+
+#pragma mark - Drag and drop
+
+- (NSArray *)pathsOnPasteboard:(NSPasteboard *)pasteboard
+{
+    NSMutableArray *paths = [NSMutableArray array];
+#if defined(GNUSTEP)
+    id list = [pasteboard propertyListForType:NSFilenamesPboardType];
+    if ([list isKindOfClass:[NSArray class]]) [paths addObjectsFromArray:list];
+#else
+    for (NSURL *url in [pasteboard readObjectsForClasses:@[[NSURL class]]
+                                                 options:@{NSPasteboardURLReadingFileURLsOnlyKey: @YES}] ?: @[]) {
+        if ([url path]) [paths addObject:[url path]];
     }
-    [[NSUserDefaults standardUserDefaults] setObject:_library.userFilePaths forKey:@"HRCodeUserFiles"];
-    if ([file.languageID length] == 0) {
-        /* no language to list it under: straight to typing */
-        [_delegate codeWindow:self didRequestFile:file section:0];
-        return;
-    }
-    [self revealFile:file section:0];
+#endif
+    return paths;
+}
+
+- (NSDragOperation)tableView:(NSTableView *)tableView validateDrop:(id<NSDraggingInfo>)info
+                 proposedRow:(NSInteger)row proposedDropOperation:(NSTableViewDropOperation)operation
+{
+    if ([[self pathsOnPasteboard:[info draggingPasteboard]] count] == 0) return NSDragOperationNone;
+    /* on the list as a whole, not between two of its rows */
+    [tableView setDropRow:-1 dropOperation:NSTableViewDropOn];
+    return NSDragOperationCopy;
+}
+
+- (BOOL)tableView:(NSTableView *)tableView acceptDrop:(id<NSDraggingInfo>)info
+              row:(NSInteger)row dropOperation:(NSTableViewDropOperation)operation
+{
+    NSArray *paths = [self pathsOnPasteboard:[info draggingPasteboard]];
+    if ([paths count] == 0) return NO;
+    /* after the drag has ended: an alert inside the drop would hold the other application's drag up */
+    [self performSelector:@selector(addPaths:) withObject:paths afterDelay:0.0];
+    return YES;
 }
 
 - (IBAction)commentsChanged:(id)sender
@@ -227,7 +353,7 @@ NSString * const HRCodeTypeCommentsDefaultsKey = @"HRCodeTypeComments";
 
 - (void)tableViewSelectionDidChange:(NSNotification *)notification
 {
-    [_typeButton setEnabled:[_sectionTable selectedRow] >= 0];
+    [self syncButtons];
 }
 
 @end

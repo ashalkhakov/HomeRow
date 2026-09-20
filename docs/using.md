@@ -57,8 +57,7 @@ hand, or Backspace when there is a mistake to take back first.
 **Test ▸ Code…** (Cmd/Ctrl+4) lists source files by programming language —
 C, Objective-C, C#, Python, JavaScript, TypeScript, Go, Rust, SQL and shell —
 each cut into parts of about fifty lines at blank lines. Pick a part and
-press *Type Section*, or *Open File…* to type one of your own files (its
-language goes by the extension). As with a course, HomeRow keeps your place
+press *Type Section*. As with a course, HomeRow keeps your place
 in every file, shows each part's best speed and accuracy, and Return after a
 part goes on to the next.
 
@@ -70,6 +69,36 @@ counts against accuracy. The place where it should have gone flashes red, the
 on-screen keyboard marks the key you hit in red next to the one
 that was wanted, and **Test ▸ Beep on a Wrong Key** adds a sound — in every
 mode, not only this one.
+
+**Your own code.** *Open File…* takes one or more files; *Add Folder…* takes
+a whole project, and so does dropping files or folders on the list. A file's
+language goes by its extension, and a folder's files turn up under their
+languages as `folder/path/to/file`. HomeRow reads a folder again at every
+launch, so new files appear by themselves; it leaves out hidden folders,
+dependencies and build output (`node_modules`, `vendor`, `Pods`, `build`,
+`target`…), generated and minified files, anything over 200 KB, and stops at
+300 files a folder. *Remove* forgets the selected file, or the folder it came
+with; nothing on disk is touched and your progress in the files is kept.
+
+**Tab.** With *Type Tab where the code indents deeper* on (Preferences ▸
+Code), indentation is no longer all free: where a line starts deeper than the
+line before it, the step is yours to type — one Tab per level, shown as `→`.
+Lines that stay level or come back out are still filled in, as an editor
+would. (While a Tab is wanted, Tab does not start the test over; Esc does.)
+
+**What a section tells you.** Besides speed and accuracy, the result of a
+section gives the *keystroke overhead* — the share of your keystrokes that
+left nothing behind: wrong keys, and Backspace with what it took away — and
+error rate and time per key by *kind of key*: letters, capitals, digits,
+brackets, operators, punctuation, and space/return/tab. Code is mostly
+decided on the brackets and operators line. The
+[definitions](metrics.md#keystroke-overhead).
+
+**Keywords as a word list.** **Language ▸ Programming** has MonkeyType's
+keyword lists for some sixty programming languages. They are word lists like
+any other — time and words tests, weak-spot practice — typed as they stand,
+without punctuation or numbers worked in. Good for the vocabulary of a
+language; the files above are for its punctuation.
 
 The colours come from [TextMate grammars](adding-a-code-language.md) —
 the format VS Code uses too — so adding a language means adding a grammar
@@ -85,9 +114,12 @@ file and some source, not writing a lexer.
 speed, accuracy); speed and accuracy test after test, each dot a test and the
 line the average of the last ten; minutes of practice day by day, gaps
 included; and the keyboard as a heatmap, with the worst keys named underneath.
+Among the headline numbers is the average *keystroke overhead*.
 *Keys by mistakes* tints a key by how often it is missed per press (the worst
 of its characters); *Keys by speed* by how long it takes, from the fastest key
-(plain) to the slowest. Move the mouse over a chart to read a single test or
+(plain) to the slowest; *Kinds of key* keeps the tint of mistakes and names,
+underneath, the error rate and time per key of letters, capitals, digits,
+brackets, operators, punctuation and white space. Move the mouse over a chart to read a single test or
 day.
 
 **History** — every saved result, newest first, personal bests starred.
@@ -151,5 +183,7 @@ tests (as *practice*) and count in the statistics.
   well-known layouts first and a preview of the selected one; the same list
   is under **Language ▸ Keyboard Layout…**), and whether the keyboard shows
   in courses, in code and in the free tests.
-- **Code** — whether comments are typed too.
+- **Code** — a font of its own for code (or the same as the text), whether
+  comments are typed too, and whether Tab is typed where the code indents
+  deeper.
 - **Your data** — where the results are kept, with a button to show the file.

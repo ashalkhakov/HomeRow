@@ -51,9 +51,13 @@ plans.
 - [ ] **Generated courses** — lesson plan × layout × language, for everything
       GNU Typist has no course for. With it: layout packs for Czech, Slovenian
       and Romanian, and a numeric keypad drawing.
-- [ ] **Code mode** — code metrics (keystroke overhead spent on errors, speed
-      per symbol class); drag-and-drop; a folder as a personal library;
-      optional typing of Tab; MonkeyType's `code_*` word lists; font choice.
+- [x] **Code mode** — keystroke overhead and error rate and speed per kind of
+      key (for a section, and in Statistics); files and folders by
+      drag-and-drop; folders as a personal library, read again at every
+      launch; Tab typed where the code indents deeper (a preference);
+      MonkeyType's `code_*` keyword lists under Language ▸ Programming; a font
+      for code. *Not seen on a display yet.* Still open: a tab width, overhead
+      over time as a chart, kinds of key narrowed to one programming language.
 - [ ] **Quote mode** — needs quotes that may be shipped: public-domain texts
       (Project Gutenberg), not MonkeyType's collection.
 - [ ] **Polish for 1.0** — pace caret (race your average or best), replay of

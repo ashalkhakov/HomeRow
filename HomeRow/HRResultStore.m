@@ -210,7 +210,10 @@
     r.extraCharacters = @(s.extraCharacters);
     r.missedCharacters = @(s.missedCharacters);
 
-    NSDictionary *series = @{@"raw": s.rawWpmPerSecond ?: @[], @"errors": s.errorsPerSecond ?: @[]};
+    /* the blob takes what has no column of its own: no migration for a number */
+    NSDictionary *series = @{@"raw": s.rawWpmPerSecond ?: @[], @"errors": s.errorsPerSecond ?: @[],
+                             @"overhead": @([s keystrokeOverhead]), @"deletions": @(s.deletions),
+                             @"keystrokes": @(s.correctKeystrokes + s.incorrectKeystrokes + s.deletions)};
     r.series = [NSPropertyListSerialization dataWithPropertyList:series
                                                           format:NSPropertyListBinaryFormat_v1_0
                                                          options:0
@@ -244,6 +247,8 @@
     s.rawWpm = [r.rawWpm doubleValue];
     s.accuracy = [r.accuracy doubleValue];
     s.duration = [r.duration doubleValue];
+    NSNumber *overhead = [r seriesDictionary][@"overhead"];
+    if ([overhead isKindOfClass:[NSNumber class]]) s.overhead = [overhead doubleValue];
     return s;
 }
 

@@ -57,7 +57,7 @@ Rules for files:
 - Files are copied **unmodified**, copyright header included.
 - Pick files that read like everyday code: 100–500 lines, no generated
   code, no giant tables, mostly ASCII. Tabs are fine (shown as four
-  columns; never typed).
+  columns).
 
 Then add the new rows to the table in `THIRD-PARTY`.
 
@@ -79,6 +79,13 @@ language.
 
 ## Your own files, without any of the above
 
-*Open File…* in the Code window types any UTF-8 text file. Its language goes
-by the extension; a file HomeRow has no grammar for is typed as plain text.
-HomeRow remembers the last thirty such files and your place in each.
+*Open File…* in the Code window types any UTF-8 text file, *Add Folder…* a
+whole project; both can also be dropped on the list. A file's language goes
+by its extension; a single file HomeRow has no grammar for is typed as plain
+text, while a folder brings only files in languages it knows. HomeRow
+remembers the last thirty single files, up to twelve folders, and your place
+in every file. See [Using HomeRow](using.md#typing-code).
+
+MonkeyType's `code_*` keyword lists are something else: language packs of
+kind `code`, imported by `Scripts/import-monkeytype.py` and listed under
+**Language ▸ Programming**. See [adding-a-language.md](adding-a-language.md).

@@ -27,6 +27,9 @@ typedef NS_ENUM(NSInteger, HRStatKind) {
 @property (nonatomic) double rawWpm;
 @property (nonatomic) double accuracy;           /* 0...100 */
 @property (nonatomic) NSTimeInterval duration;
+/* Share of the keystrokes that did not end up as text, 0...1; negative when
+ * the result is from before it was recorded. */
+@property (nonatomic) double overhead;
 - (HRStatKind)kind;
 @end
 
@@ -49,6 +52,14 @@ typedef NS_ENUM(NSInteger, HRStatKind) {
 - (NSTimeInterval)averageTime;                   /* seconds per timed hit; 0 when none */
 @end
 
+extern NSString * const HRKeyClassLetters;
+extern NSString * const HRKeyClassCapitals;
+extern NSString * const HRKeyClassDigits;
+extern NSString * const HRKeyClassBrackets;
+extern NSString * const HRKeyClassOperators;
+extern NSString * const HRKeyClassPunctuation;
+extern NSString * const HRKeyClassWhitespace;
+
 @interface HRStatistics : NSObject
 
 /* `samples` in any order; kept oldest first.  `days` 0 = everything,
@@ -68,6 +79,9 @@ typedef NS_ENUM(NSInteger, HRStatKind) {
 @property (nonatomic, readonly) double bestWpm;
 @property (nonatomic, readonly) double averageAccuracy;      /* time-weighted */
 @property (nonatomic, readonly) double recentWpm;            /* mean of the last ten */
+/* Keystroke-weighted would be truer, but the keystrokes are not always on
+ * record: time-weighted, over the results that have it; negative when none. */
+@property (nonatomic, readonly) double averageOverhead;
 
 /* The mean of each sample and the up to `window - 1` before it: the trend
  * line under the dots.  One NSNumber per sample. */
@@ -89,6 +103,16 @@ typedef NS_ENUM(NSInteger, HRStatKind) {
 + (NSArray *)slowKeysFromCounts:(NSDictionary *)counts minimumTimed:(NSUInteger)minimumTimed;
 /* Seconds per timed hit over all keys; 0 when nothing was timed. */
 + (NSTimeInterval)averageKeyTimeInCounts:(NSDictionary *)counts;
+
+/* Keys by kind -- what code is made of, and prose mostly is not.  Rows in a
+ * fixed order (letters, capitals, digits, brackets, operators, punctuation,
+ * space and return), those without presses left out: HRStatKey, with
+ * `character` holding the class's name (HRKeyClass...). */
++ (NSArray *)keyClassesFromCounts:(NSDictionary *)counts;
+/* "letters 1% 190 ms   brackets 6% 480 ms   ..." -- names through `names`
+ * (class -> display name), times left out where nothing was timed. */
++ (NSString *)lineForKeyClasses:(NSArray *)classes names:(NSDictionary *)names;
++ (NSString *)classOfCharacter:(NSString *)character;
 
 /* "Jan 10" -- by arithmetic, for the same reason -days avoids NSCalendar
  * (NSDateFormatter is as empty-handed without ICU). */

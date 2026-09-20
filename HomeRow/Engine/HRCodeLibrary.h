@@ -36,6 +36,8 @@
 /* Resources/Code: index.plist, Grammars/, Files/ -- see
  * Scripts/import-code.py -- plus the files the user has opened.
  * Foundation only. */
+extern const NSUInteger HRCodeFolderFileLimit;   /* 300 */
+
 @interface HRCodeLibrary : NSObject
 
 @property (nonatomic, readonly, copy) NSArray *languages;   /* HRCodeLanguage, by display name */
@@ -60,6 +62,23 @@
 
 /* Reads, tokenizes and sections a file; cached.  nil with an error when it
  * cannot be read as UTF-8 text. */
+/* Folders of one's own code: every file in them, however deep, that has an
+ * extension HomeRow knows, turns up under its language.  What is not there
+ * to be typed is left out -- hidden files and folders, dependencies and
+ * build output (node_modules, vendor, Pods, build, dist, target, ...),
+ * minified and generated files, anything over 200 KB -- and no folder
+ * contributes more than HRCodeFolderFileLimit files.  Set the paths (from
+ * user defaults) or add one; both scan at once. */
+@property (nonatomic, copy) NSArray *userFolderPaths;
+- (NSUInteger)addUserFolderAtPath:(NSString *)path;   /* how many files it brought */
+- (void)removeUserFolderAtPath:(NSString *)path;
+/* Forgets a single file opened with -addUserFileAtPath:. */
+- (void)removeUserFileAtPath:(NSString *)path;
+/* The folder a file came in with; nil for bundled and single files. */
+- (NSString *)folderOfFile:(HRCodeFile *)file;
+/* The files a scan of `folder` finds, relative paths, sorted; for tests. */
+- (NSArray *)scanFolder:(NSString *)folder;
+
 - (HRCodeDocument *)documentForFile:(HRCodeFile *)file error:(NSError **)error;
 
 @end

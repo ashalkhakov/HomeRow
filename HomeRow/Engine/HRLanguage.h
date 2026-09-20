@@ -22,6 +22,11 @@ extern NSString * const HRPackErrorDomain;
 @property (nonatomic, readonly, copy) NSString *defaultLayoutID;
 @property (nonatomic, readonly, copy) NSString *direction; /* "ltr"; "rtl" is reserved */
 @property (nonatomic, readonly, copy) NSString *alphabet;
+/* "prose" unless info.plist says otherwise; "code" for the keyword lists of
+ * a programming language, which get their own submenu and are typed as they
+ * stand: no capitals or punctuation worked in. */
+@property (nonatomic, readonly, copy) NSString *kind;
+@property (nonatomic, readonly) BOOL isCode;
 @property (nonatomic, readonly, copy) NSString *directory;
 /* Names of the word lists present, without extension, e.g. "words-200". */
 @property (nonatomic, readonly, copy) NSArray *wordListNames;

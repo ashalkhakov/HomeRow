@@ -36,7 +36,6 @@ static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 static NSString * const HRCurrentCourseDefaultsKey = @"HRCurrentCourse";
 /* the file being typed in code mode, and the files opened from disk */
 static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
-static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
 /* (when the keyboard shows and the beep: HRPreferencesWindowController.h) */
 
 #define HRLoc(key) NSLocalizedString(key, nil)
@@ -55,6 +54,8 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     NSTimer *_timer;
 
     NSMenu *_languageMenu;
+    NSMenu *_programmingMenu;
+    NSMenuItem *_programmingItem;
     NSMenu *_wordListMenu;
     NSMutableDictionary *_scripts;   /* course file -> HRTypScript, parsed on demand */
 
@@ -406,13 +407,87 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
             [[_window contentView] display];
             [[self codeWindow] showWindow:self];
             if ([[self codeWindow].sectionTable numberOfRows] < 2) [failures addObject:@"the Code window lists no sections"];
-            [[[self codeWindow] window] orderOut:self];
+            if (![self codeWindow].folderButton || ![self codeWindow].removeButton) {
+                [failures addObject:@"CodeWindow.xib: the folder or the remove button is not connected"];
+            }
             [_store resetCourse:first.identifier error:NULL];
+
+            /* a folder of one's own, with Tab typed where the code goes deeper */
+            NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
+            id tabsBefore = [defaults objectForKey:HRCodeTypeTabsDefaultsKey];
+            id foldersBefore = [defaults objectForKey:HRCodeUserFoldersDefaultsKey];
+            id filesBefore = [defaults objectForKey:HRCodeUserFilesDefaultsKey];
+            NSString *folder = [NSTemporaryDirectory() stringByAppendingPathComponent:
+                                [NSString stringWithFormat:@"homerow-smoke-%d", (int)[[NSProcessInfo processInfo] processIdentifier]]];
+            [[NSFileManager defaultManager] createDirectoryAtPath:[folder stringByAppendingPathComponent:@"node_modules"]
+                                      withIntermediateDirectories:YES attributes:nil error:NULL];
+            NSString *source = @"int f(int x)\n{\n    if (x) {\n        return 1;\n    }\n    return 0;\n}\n";
+            [source writeToFile:[folder stringByAppendingPathComponent:@"smoke.c"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+            [source writeToFile:[folder stringByAppendingPathComponent:@"node_modules/skipped.c"] atomically:YES encoding:NSUTF8StringEncoding error:NULL];
+            if (![[self codeWindow] addPaths:@[folder]]) [failures addObject:@"a folder of code was not taken in"];
+            HRCodeFile *mine = nil;
+            NSUInteger fromFolder = 0;
+            for (HRCodeFile *file in [library filesForLanguage:[library languageWithIdentifier:@"c"]]) {
+                if ([[library folderOfFile:file] isEqualToString:folder]) { fromFolder++; mine = file; }
+            }
+            if (fromFolder != 1) [failures addObject:[NSString stringWithFormat:@"the folder brought %lu files, not the one outside node_modules", (unsigned long)fromFolder]];
+            if (mine) {
+                [defaults setBool:YES forKey:HRCodeTypeTabsDefaultsKey];
+                [self codeWindow:nil didRequestFile:mine section:0];
+                NSMutableString *typed = [NSMutableString string];
+                NSUInteger tabs = 0, n = [_session.words count];
+                for (NSUInteger i = 0; i < n; i++) {
+                    HRWord *w = _session.words[i];
+                    if ([w.text hasPrefix:@"\t"]) tabs++;
+                    [typed appendString:w.text];
+                    if (i + 1 < n) [typed appendString:(w.separator == HRSeparatorNewline ? @"\n" : @" ")];
+                }
+                if (tabs != 2) [failures addObject:[NSString stringWithFormat:@"%lu Tabs to type where the code goes deeper twice", (unsigned long)tabs]];
+                if (![[_keyboardView litKeyDescription] hasPrefix:@"key:"]) [failures addObject:@"no key is lit at the start of one's own file"];
+                [[_window contentView] display];   /* the arrows of the Tabs */
+                [_testView typeText:typed atTime:HRMonotonicNow()];
+                if (_session.state != HRSessionFinished) [failures addObject:@"a section with Tabs in it did not type through"];
+                if ([[_detailField stringValue] rangeOfString:@"overhead"].location == NSNotFound) {
+                    [failures addObject:@"the result of a section of code does not give the keystroke overhead"];
+                }
+                [defaults setBool:NO forKey:HRCodeTypeTabsDefaultsKey];
+                [self codeWindow:nil didRequestFile:mine section:0];
+                for (HRWord *w in _session.words) {
+                    if ([w.text rangeOfString:@"\t"].location != NSNotFound) { [failures addObject:@"Tab is asked for with the preference off"]; break; }
+                }
+                [[self codeWindow] revealFile:mine section:0];
+                [[self codeWindow] removeSelected:self];
+                if ([library fileWithIdentifier:mine.identifier]) [failures addObject:@"removing a folder left its files"];
+                [_store resetCourse:mine.identifier error:NULL];
+            }
+            [[NSFileManager defaultManager] removeItemAtPath:folder error:NULL];
+            for (NSArray *pair in @[@[HRCodeTypeTabsDefaultsKey, tabsBefore ?: [NSNull null]],
+                                    @[HRCodeUserFoldersDefaultsKey, foldersBefore ?: [NSNull null]],
+                                    @[HRCodeUserFilesDefaultsKey, filesBefore ?: [NSNull null]]]) {
+                if (pair[1] == [NSNull null]) [defaults removeObjectForKey:pair[0]];
+                else [defaults setObject:pair[1] forKey:pair[0]];
+            }
+            [[[self codeWindow] window] orderOut:self];
         } else {
             [failures addObject:@"there is no C file to type"];
         }
         printf("HomeRow smoke test: %lu code files in %lu languages\n",
                (unsigned long)files, (unsigned long)[library.languages count]);
+    }
+    /* a keyword list is a language like any other, under its own submenu,
+     * typed as it stands */
+    {
+        NSMenuItem *python = (NSMenuItem *)[_programmingMenu itemWithTitle:@"Python"];
+        if (!python || [_languageMenu itemWithTitle:@"Python"]) [failures addObject:@"Python's keywords are not under Language > Programming"];
+        if (python) {
+            BOOL punctuationBefore = _configuration.punctuation;
+            _configuration.punctuation = YES;
+            [self selectLanguage:python];
+            if (![self currentLanguage].isCode || [_session.words count] == 0) [failures addObject:@"choosing Python did not start a test of its keywords"];
+            if ([_punctuationCheck isEnabled]) [failures addObject:@"punctuation is on offer for a keyword list"];
+            if ([_programmingItem state] != NSControlStateValueMixed) [failures addObject:@"the Programming submenu does not show that the language is inside it"];
+            _configuration.punctuation = punctuationBefore;
+        }
     }
     [self selectLanguage:[_languageMenu itemWithTitle:@"Russian"]];
     if (_keyboardShown) [failures addObject:@"the keyboard stayed up outside the course"];
@@ -643,6 +718,7 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
             @"layoutButton": prefs.layoutButton ?: (id)[NSNull null],
             @"keyboardCourseCheck": prefs.keyboardCourseCheck ?: (id)[NSNull null], @"keyboardCodeCheck": prefs.keyboardCodeCheck ?: (id)[NSNull null],
             @"keyboardTestsCheck": prefs.keyboardTestsCheck ?: (id)[NSNull null], @"commentsCheck": prefs.commentsCheck ?: (id)[NSNull null],
+            @"codeFontPopUp": prefs.codeFontPopUp ?: (id)[NSNull null], @"tabsCheck": prefs.tabsCheck ?: (id)[NSNull null],
             @"dataField": prefs.dataField ?: (id)[NSNull null], @"revealButton": prefs.revealButton ?: (id)[NSNull null]};
         for (NSString *name in prefsOutlets) {
             if (prefsOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"PreferencesWindow.xib: outlet %@ is not connected", name]];
@@ -830,8 +906,10 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     [_amountPopUp setEnabled:[amounts count] > 0];
 
     BOOL generated = (_configuration.mode == HRTestModeTime || _configuration.mode == HRTestModeWords);
-    [_punctuationCheck setEnabled:generated];
-    [_numbersCheck setEnabled:generated];
+    /* keywords are typed as they stand: "printf," teaches nothing */
+    BOOL prose = ![self currentLanguage].isCode;
+    [_punctuationCheck setEnabled:generated && prose];
+    [_numbersCheck setEnabled:generated && prose];
     /* following a course, none of the three means anything: the lesson
      * decides the text.  Greyed-out is for "not now"; this is "not here". */
     /* the same goes for code: the file decides */
@@ -951,13 +1029,21 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     [_languageMenu addItem:[NSMenuItem separatorItem]];
     NSArray *byName = [_languages sortedArrayUsingDescriptors:
                        @[[NSSortDescriptor sortDescriptorWithKey:@"displayName" ascending:YES]]];
+    /* keyword lists of programming languages: words to type like any
+     * other, but sixty more names do not belong among Afrikaans and Zulu */
+    _programmingMenu = [[NSMenu alloc] initWithTitle:HRLoc(@"Programming")];
     for (HRLanguage *l in byName) {
         NSMenuItem *item = [[NSMenuItem alloc] initWithTitle:l.displayName
                                                       action:@selector(selectLanguage:)
                                                keyEquivalent:@""];
         [item setTarget:self];
         [item setRepresentedObject:l.identifier];
-        [_languageMenu addItem:item];
+        [(l.isCode ? _programmingMenu : _languageMenu) addItem:item];
+    }
+    if ([_programmingMenu numberOfItems] > 0) {
+        _programmingItem = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Programming") action:NULL keyEquivalent:@""];
+        [_programmingItem setSubmenu:_programmingMenu];
+        [_languageMenu insertItem:_programmingItem atIndex:2];
     }
     NSMenuItem *languageItem = [[NSMenuItem alloc] initWithTitle:HRLoc(@"Language") action:NULL keyEquivalent:@""];
     [languageItem setSubmenu:_languageMenu];
@@ -1151,11 +1237,18 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
             [item setState:(_configuration.mode == HRTestModeCode ? NSControlStateValueOn : NSControlStateValueOff)];
         }
     }
-    for (NSMenuItem *item in [_languageMenu itemArray]) {
-        if (![item representedObject]) continue;
-        BOOL on = [[item representedObject] isEqual:[self currentLanguage].identifier];
-        [item setState:(on ? NSControlStateValueOn : NSControlStateValueOff)];
+    NSMutableArray *languageMenus = [NSMutableArray array];   /* neither is there before buildMenus */
+    if (_languageMenu) [languageMenus addObject:_languageMenu];
+    if (_programmingMenu) [languageMenus addObject:_programmingMenu];
+    for (NSMenu *menu in languageMenus) {
+        for (NSMenuItem *item in [menu itemArray]) {
+            if (![item representedObject]) continue;
+            BOOL on = [[item representedObject] isEqual:[self currentLanguage].identifier];
+            [item setState:(on ? NSControlStateValueOn : NSControlStateValueOff)];
+        }
     }
+    /* a dash on the submenu says the tick is inside it */
+    [_programmingItem setState:([self currentLanguage].isCode ? NSControlStateValueMixed : NSControlStateValueOff)];
     [_layoutMenuItem setTitle:[NSString stringWithFormat:HRLoc(@"Keyboard Layout: %@\u2026"),
                                [HRLayoutChooserController titleForIdentifier:(_configuration.layoutID ?: @"qwerty")]]];
     [_wordListMenu removeAllItems];
@@ -1491,6 +1584,8 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
         _codeLibrary = [[HRCodeLibrary alloc] initWithDirectory:directory];
         NSArray *paths = [[NSUserDefaults standardUserDefaults] arrayForKey:HRCodeUserFilesDefaultsKey];
         if (paths) _codeLibrary.userFilePaths = paths;
+        NSArray *folders = [[NSUserDefaults standardUserDefaults] arrayForKey:HRCodeUserFoldersDefaultsKey];
+        if (folders) _codeLibrary.userFolderPaths = folders;
     }
     return _codeLibrary;
 }
@@ -1584,7 +1679,8 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     _testView.pageText = nil;
     _testView.codeLayout = YES;
     _session = [[HRTestSession alloc] initWithConfiguration:configuration
-                                                     source:[document sourceForSection:_codeSection typeComments:comments]];
+                                                     source:[document sourceForSection:_codeSection typeComments:comments
+                                                                              typeTabs:[[NSUserDefaults standardUserDefaults] boolForKey:HRCodeTypeTabsDefaultsKey]]];
     _testView.session = _session;
     [_resultsView setHidden:YES];
     [_testView setHidden:NO];
@@ -1619,6 +1715,14 @@ static NSString * const HRCodeUserFilesDefaultsKey = @"HRCodeUserFiles";
     _codeSectionDone = YES;
 
     [self showSummary:s isBest:NO];
+    /* for code, what the mistakes cost and where they were made says more than consistency does */
+    NSDictionary *classNames = @{HRKeyClassLetters: HRLoc(@"letters"), HRKeyClassCapitals: HRLoc(@"capitals"), HRKeyClassDigits: HRLoc(@"digits"),
+                                 HRKeyClassBrackets: HRLoc(@"brackets"), HRKeyClassOperators: HRLoc(@"operators"),
+                                 HRKeyClassPunctuation: HRLoc(@"punctuation"), HRKeyClassWhitespace: HRLoc(@"space, return, tab")};
+    [_detailField setStringValue:[NSString stringWithFormat:HRLoc(@"overhead %.0f%%   \u2014   %@   \u2014   %.0fs"),
+                                  [s keystrokeOverhead] * 100.0,
+                                  [HRStatistics lineForKeyClasses:[HRStatistics keyClassesFromCounts:s.keyStats ?: @{}] names:classNames],
+                                  s.duration]];
     [_hintField setStringValue:(next < _codeSectionCount
         ? [NSString stringWithFormat:HRLoc(@"return — part %lu of %lu"), (unsigned long)(next + 1), (unsigned long)_codeSectionCount]
         : HRLoc(@"That was the last part of this file.  return — code"))];
@@ -1986,8 +2090,8 @@ static const NSUInteger HRPracticeWords = 40;
             if ([words count] == 0) words = @[@"home", @"row"];
             HRWordListSource *source = [[HRWordListSource alloc] initWithWords:words
                                                                         random:[HRRandom randomWithSystemSeed]];
-            source.punctuation = _configuration.punctuation;
-            source.numbers = _configuration.numbers;
+            source.punctuation = _configuration.punctuation && !language.isCode;
+            source.numbers = _configuration.numbers && !language.isCode;
             if (_configuration.mode == HRTestModeWords) source.limit = (NSUInteger)_configuration.amount;
             return source;
         }

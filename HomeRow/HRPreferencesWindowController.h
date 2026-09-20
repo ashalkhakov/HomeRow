@@ -47,7 +47,9 @@ typedef NS_OPTIONS(NSUInteger, HRPreferencesChange) {
 @property (nonatomic, strong) IBOutlet NSButton *keyboardCourseCheck;
 @property (nonatomic, strong) IBOutlet NSButton *keyboardCodeCheck;
 @property (nonatomic, strong) IBOutlet NSButton *keyboardTestsCheck;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *codeFontPopUp;
 @property (nonatomic, strong) IBOutlet NSButton *commentsCheck;
+@property (nonatomic, strong) IBOutlet NSButton *tabsCheck;
 @property (nonatomic, strong) IBOutlet NSTextField *dataField;
 @property (nonatomic, strong) IBOutlet NSButton *revealButton;
 
@@ -63,6 +65,7 @@ typedef NS_OPTIONS(NSUInteger, HRPreferencesChange) {
 @end
 
 /* User defaults the window shares with the rest of the app. */
+extern NSString * const HRCodeTypeTabsDefaultsKey;        /* Tab is typed where code indents deeper */
 extern NSString * const HRBeepOnErrorDefaultsKey;
 extern NSString * const HRKeyboardInCourseDefaultsKey;   /* on unless set */
 extern NSString * const HRKeyboardInCodeDefaultsKey;     /* on unless set */

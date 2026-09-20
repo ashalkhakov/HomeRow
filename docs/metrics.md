@@ -64,6 +64,36 @@ with the same *settings key* — mode, amount, language and word list,
 punctuation, numbers (e.g. `time:30:en/words-200:p`). Custom and zen tests
 have no personal best.
 
+## Keystroke overhead
+
+    overhead = 1 − (correct characters + separators typed) / (all keystrokes + deletions)
+
+What stands at the end of a test, right, is the correct characters and the
+spaces and Returns between the words. Everything else that was pressed is
+overhead: a wrong key, the Backspace that removed it, the right characters
+Backspace took along and that had to be typed again. A clean run has 0%;
+one wrong key corrected at once costs three keystrokes for one character.
+In code mode, where a wrong key does not go in, overhead is simply the share
+of wrong keys. Shown for a section of code and, averaged, in Statistics;
+results saved before it was recorded are left out of the average.
+
+## Kinds of key
+
+Hits, misses and times per character are also added up by kind:
+
+| Kind | Characters |
+|---|---|
+| letters, capitals | by Unicode: any lowercase (or caseless) letter; any uppercase letter |
+| digits | `0`–`9` and other decimal digits |
+| brackets | `( ) [ ] { } < >` |
+| operators | `+ - * / = % & | ^ ~ ! ? : @ # $ \` |
+| white space | space, Return, Tab |
+| punctuation | everything else: `. , ; ' " _` and the rest |
+
+`<` and `>` count as brackets whatever they mean in the language at hand; a
+character has one kind. Error rate is misses per press, time is the
+[time per key](#time-per-key).
+
 ## Time per key
 
 A key's time is the interval since the keystroke before it, counted only when

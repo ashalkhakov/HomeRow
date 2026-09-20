@@ -28,6 +28,8 @@
 @property (nonatomic, strong) IBOutlet NSButton *typeButton;
 @property (nonatomic, strong) IBOutlet NSButton *openButton;
 @property (nonatomic, strong) IBOutlet NSButton *commentsCheck;
+@property (nonatomic, strong) IBOutlet NSButton *folderButton;
+@property (nonatomic, strong) IBOutlet NSButton *removeButton;
 
 - (instancetype)initWithLibrary:(HRCodeLibrary *)library
                           store:(HRResultStore *)store
@@ -42,9 +44,18 @@
 - (IBAction)languageChanged:(id)sender;
 - (IBAction)typeSelectedSection:(id)sender;
 - (IBAction)openFile:(id)sender;
+- (IBAction)addFolder:(id)sender;
+/* Forgets the selected file of one's own, or the folder it came in with.
+ * Nothing on disk is touched, and progress in the files is kept. */
+- (IBAction)removeSelected:(id)sender;
+/* What was dropped on the window, or chosen in a panel: files and folders. */
+- (BOOL)addPaths:(NSArray *)paths;
 - (IBAction)commentsChanged:(id)sender;
 
 @end
 
+/* User defaults: the folders and files of one's own. */
+extern NSString * const HRCodeUserFilesDefaultsKey;
+extern NSString * const HRCodeUserFoldersDefaultsKey;
 /* User default: type the comments too (off: they are shown, not typed). */
 extern NSString * const HRCodeTypeCommentsDefaultsKey;

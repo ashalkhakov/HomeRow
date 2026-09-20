@@ -52,9 +52,13 @@ Details: [docs/building.md](docs/building.md).
   punctuation and numbers, live WPM and accuracy, and a results screen with a
   per-second chart.
 - **Code** — 23 real source files in C, Objective-C, C#, Python, JavaScript,
-  TypeScript, Go, Rust, SQL and shell, plus any file of your own. Typed the way
-  an editor has you type it: indentation, blank lines and comments fill
-  themselves in, and a wrong key does not go in. Syntax colours come from the
+  TypeScript, Go, Rust, SQL and shell, plus your own: files and whole project
+  folders, dropped on the window. Typed the way an editor has you type it:
+  indentation, blank lines and comments fill themselves in (Tab can be yours
+  where the code goes deeper), and a wrong key does not go in. A section
+  reports its keystroke overhead and how brackets and operators went compared
+  with letters. Keyword lists for some sixty languages sit beside the prose
+  languages. Syntax colours come from the
   **TextMate grammars** VS Code uses, run by a tokenizer written for HomeRow.
 - **Statistics** — headline numbers, speed and accuracy test after test with a
   moving average, practice day by day, and the keyboard as a heatmap of
@@ -83,9 +87,9 @@ How to use all of it, with every shortcut: [docs/using.md](docs/using.md).
   letter pairs.
 - **No sync.** Moving a history between machines is export and import by hand;
   the place in a course does not travel yet.
-- **Code mode** has no code-specific metrics yet, never asks for Tab, and
-  TextMate grammar *injections* are ignored (none of the bundled languages
-  needs them).
+- **Code mode** ignores TextMate grammar *injections* (none of the bundled
+  languages needs them), and a folder brings only files in the ten languages
+  it has grammars for.
 - **Not imported:** right-to-left languages, languages that need an input
   method (Chinese, Japanese, Korean), word lists over 10,000 words. Three
   courses (Czech, Slovenian, Romanian) and the keypad courses have no
@@ -118,7 +122,7 @@ block-beta
 Everything under `Engine/` is free of AppKit and takes its timestamps as
 arguments, so the rules — what counts as an error, when a drill repeats, how a
 file is cut into parts, what a grammar makes of a line — are tested without a
-display: 77 XCTest cases, including vscode-textmate's own tokenizer suite, run
+display: 81 XCTest cases, including vscode-textmate's own tokenizer suite, run
 on both platforms in CI. What cannot be unit-tested is covered by a smoke test
 built into the app (`HR_SMOKE_TEST=1`): CI starts the packaged AppImage and the
 macOS app, which check their own outlets, type a test, a lesson and a section

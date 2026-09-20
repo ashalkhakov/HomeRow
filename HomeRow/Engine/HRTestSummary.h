@@ -27,6 +27,16 @@
 
 @property (nonatomic) NSUInteger correctKeystrokes;
 @property (nonatomic) NSUInteger incorrectKeystrokes;
+/* Presses of Backspace (deleting a word counts once), and the separators
+ * that were accepted -- both for -keystrokeOverhead. */
+@property (nonatomic) NSUInteger deletions;
+@property (nonatomic) NSUInteger separatorsTyped;
+
+/* The share of the keystrokes that did not end up as text: wrong keys, the
+ * Backspaces that took them back, and right keys that were deleted along
+ * the way.  0...1.  What Typing.io calls unproductive keystrokes -- the cost
+ * of mistakes in the currency it is paid in. */
+- (double)keystrokeOverhead;
 
 /* One NSNumber per second of the test: raw WPM in that second, and the
  * number of wrong keystrokes in it. */

@@ -31,6 +31,7 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
     NSTimeInterval _lastKeystrokeTime;   /* for the time a key takes, see -recordKeystrokeCorrect: */
     BOOL _lastKeystrokeWasCorrect, _haveLastKeystroke;
 
+    NSUInteger _deletions;               /* presses of Backspace, of either kind */
     NSUInteger _correctKeystrokes;
     NSUInteger _incorrectKeystrokes;
     NSMutableArray *_keysPerSecond;    /* NSNumber */
@@ -299,6 +300,7 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
     if ([self backspaceIsOff]) return;
     _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
+    _deletions++;
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] > 0) {
         [typed removeLastObject];
@@ -312,6 +314,7 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
     if ([self backspaceIsOff]) return;
     _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
+    _deletions++;
     NSMutableArray *typed = [self currentTyped];
     if ([typed count] == 0 && ![self stepBackIntoPreviousWord]) return;
     [[self currentTyped] removeAllObjects];
@@ -491,6 +494,8 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
     s.correctKeystrokes = _correctKeystrokes;
     s.incorrectKeystrokes = _incorrectKeystrokes;
     s.accuracy = [self liveAccuracy];
+    s.deletions = _deletions;
+    s.separatorsTyped = [_committed count];
 
     /* One sample per second.  The last second is usually partial: scale it
      * up when there is enough of it to mean something, drop it otherwise. */

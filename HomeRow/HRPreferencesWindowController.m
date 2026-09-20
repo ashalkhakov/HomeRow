@@ -14,6 +14,7 @@
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
+NSString * const HRCodeTypeTabsDefaultsKey = @"HRCodeTypeTabs";
 NSString * const HRBeepOnErrorDefaultsKey = @"HRBeepOnError";
 NSString * const HRKeyboardInCourseDefaultsKey = @"HRShowKeyboardInCourse";
 NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
@@ -57,6 +58,8 @@ NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
 
     NSArray *families = [HRTheme fixedPitchFontFamilies];
     [self fill:_fontPopUp titles:[@[HRLoc(@"Automatic")] arrayByAddingObjectsFromArray:families]
+        values:[@[@""] arrayByAddingObjectsFromArray:families]];
+    [self fill:_codeFontPopUp titles:[@[HRLoc(@"The same as the text")] arrayByAddingObjectsFromArray:families]
         values:[@[@""] arrayByAddingObjectsFromArray:families]];
 
     NSMutableArray *proseTitles = [NSMutableArray array], *proseValues = [NSMutableArray array];
@@ -112,6 +115,8 @@ NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     [_keyboardCodeCheck setState:([self boolForKey:HRKeyboardInCodeDefaultsKey unlessSet:YES] ? NSControlStateValueOn : NSControlStateValueOff)];
     [_keyboardTestsCheck setState:([self boolForKey:HRKeyboardInTestsDefaultsKey unlessSet:NO] ? NSControlStateValueOn : NSControlStateValueOff)];
     [_commentsCheck setState:([d boolForKey:HRCodeTypeCommentsDefaultsKey] ? NSControlStateValueOn : NSControlStateValueOff)];
+    [_tabsCheck setState:([d boolForKey:HRCodeTypeTabsDefaultsKey] ? NSControlStateValueOn : NSControlStateValueOff)];
+    [self select:([d stringForKey:HRCodeFontFamilyDefaultsKey] ?: @"") in:_codeFontPopUp];
 
     NSURL *store = [_delegate storeURLForPreferences:self];
     [_dataField setStringValue:(store ? [[store path] stringByAbbreviatingWithTildeInPath]
@@ -168,6 +173,16 @@ NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
             [d setBool:on forKey:show[1]];
             change |= HRPreferencesChangedKeyboard;
         }
+    }
+    NSString *codeFamily = [[_codeFontPopUp selectedItem] representedObject] ?: @"";
+    if (_codeFontPopUp && ![codeFamily isEqual:([d stringForKey:HRCodeFontFamilyDefaultsKey] ?: @"")]) {
+        [d setObject:codeFamily forKey:HRCodeFontFamilyDefaultsKey];
+        change |= HRPreferencesChangedAppearance;
+    }
+    BOOL tabs = [_tabsCheck state] == NSControlStateValueOn;
+    if (_tabsCheck && tabs != [d boolForKey:HRCodeTypeTabsDefaultsKey]) {
+        [d setBool:tabs forKey:HRCodeTypeTabsDefaultsKey];
+        change |= HRPreferencesChangedTyping;
     }
     BOOL comments = [_commentsCheck state] == NSControlStateValueOn;
     if (comments != [d boolForKey:HRCodeTypeCommentsDefaultsKey]) {

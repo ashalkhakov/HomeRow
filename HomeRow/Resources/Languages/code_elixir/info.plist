@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>alphabet</key>
+	<string>!%&amp;()*+-./01468:&lt;=&gt;?@ABCDEFGIKLMNOPRSTUVW[\]^_abcdefghijklmnopqrstuvwxyz{|}~</string>
+	<key>direction</key>
+	<string>ltr</string>
+	<key>displayName</key>
+	<string>Elixir</string>
+	<key>identifier</key>
+	<string>code_elixir</string>
+	<key>kind</key>
+	<string>code</string>
+</dict>
+</plist>

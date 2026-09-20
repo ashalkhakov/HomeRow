@@ -68,11 +68,13 @@ static const NSUInteger HRStatsMinimumPresses = 10;
                                  @[HRLoc(@"Courses"), @(HRStatKindCourse)], @[HRLoc(@"Code"), @(HRStatKindCode)]]];
     [self fill:_periodPopUp with:@[@[HRLoc(@"Last 7 days"), @7], @[HRLoc(@"Last 30 days"), @30],
                                    @[HRLoc(@"Last 90 days"), @90], @[HRLoc(@"All time"), @0]]];
-    [self fill:_heatPopUp with:@[@[HRLoc(@"Keys by mistakes"), @0], @[HRLoc(@"Keys by speed"), @1]]];
+    [self fill:_heatPopUp with:@[@[HRLoc(@"Keys by mistakes"), @0], @[HRLoc(@"Keys by speed"), @1],
+                                 @[HRLoc(@"Kinds of key"), @2]]];
     NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
     [_kindPopUp selectItemWithTag:[d integerForKey:HRStatsKindDefaultsKey]];
     [_periodPopUp selectItemWithTag:([d objectForKey:HRStatsDaysDefaultsKey] ? [d integerForKey:HRStatsDaysDefaultsKey] : 30)];
-    [_heatPopUp selectItemWithTag:([d boolForKey:HRStatsHeatDefaultsKey] ? 1 : 0)];
+    [_heatPopUp selectItemWithTag:[d integerForKey:HRStatsHeatDefaultsKey]];
+    if (![_heatPopUp selectedItem]) [_heatPopUp selectItemAtIndex:0];
     if (![_kindPopUp selectedItem]) [_kindPopUp selectItemAtIndex:0];
     if (![_periodPopUp selectedItem]) [_periodPopUp selectItemAtIndex:1];
     _pane = (HRStatsPane)MAX(0, MIN(2, [d integerForKey:HRStatsPaneDefaultsKey]));
@@ -232,7 +234,7 @@ static const NSUInteger HRStatsMinimumPresses = 10;
 
 - (IBAction)heatChanged:(id)sender
 {
-    [[NSUserDefaults standardUserDefaults] setBool:([[_heatPopUp selectedItem] tag] == 1) forKey:HRStatsHeatDefaultsKey];
+    [[NSUserDefaults standardUserDefaults] setInteger:[[_heatPopUp selectedItem] tag] forKey:HRStatsHeatDefaultsKey];
     [self reload];
 }
 
@@ -284,7 +286,9 @@ static const NSUInteger HRStatsMinimumPresses = 10;
         @[any ? [NSString stringWithFormat:@"%.0f", st.averageWpm] : dash, HRLoc(@"average wpm")],
         @[any ? [NSString stringWithFormat:@"%.0f", st.recentWpm] : dash, HRLoc(@"wpm, last ten")],
         @[any ? [NSString stringWithFormat:@"%.0f", st.bestWpm] : dash, HRLoc(@"best wpm")],
-        @[any ? [NSString stringWithFormat:@"%.1f%%", st.averageAccuracy] : dash, HRLoc(@"accuracy")]];
+        @[any ? [NSString stringWithFormat:@"%.1f%%", st.averageAccuracy] : dash, HRLoc(@"accuracy")],
+        /* what the mistakes cost: keystrokes that did not end up as text */
+        @[st.averageOverhead >= 0.0 ? [NSString stringWithFormat:@"%.0f%%", st.averageOverhead * 100.0] : dash, HRLoc(@"keystroke overhead")]];
 
     NSMutableArray *wpm = [NSMutableArray array], *accuracy = [NSMutableArray array], *labels = [NSMutableArray array];
     for (HRStatSample *s in st.samples) {
@@ -332,6 +336,14 @@ static const NSUInteger HRStatsMinimumPresses = 10;
         }
     }
     [_practiceButton setEnabled:[counts count] > 0 && _practiceTarget != nil];
+    if ([[_heatPopUp selectedItem] tag] == 2) {
+        /* letters, digits, brackets, operators...: what code is made of.  The board stays on mistakes. */
+        NSDictionary *names = @{HRKeyClassLetters: HRLoc(@"letters"), HRKeyClassCapitals: HRLoc(@"capitals"), HRKeyClassDigits: HRLoc(@"digits"),
+                                HRKeyClassBrackets: HRLoc(@"brackets"), HRKeyClassOperators: HRLoc(@"operators"),
+                                HRKeyClassPunctuation: HRLoc(@"punctuation"), HRKeyClassWhitespace: HRLoc(@"space, return, tab")};
+        [_keysField setStringValue:[HRStatistics lineForKeyClasses:[HRStatistics keyClassesFromCounts:counts] names:names]];
+        return;
+    }
     NSString *list = [worst componentsJoinedByString:@"    "];
     if ([worst count] == 0) {
         [_keysField setStringValue:([counts count] == 0 ? @""

@@ -189,6 +189,7 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
     if ([input isEqualToString:@" "])       *outSpecial = HRSpecialSpace;
     else if ([input isEqualToString:@"\n"]) *outSpecial = HRSpecialReturn;
     else if ([input isEqualToString:@"\b"]) *outSpecial = HRSpecialBackspace;
+    else if ([input isEqualToString:@"\t"]) *outSpecial = HRSpecialTab;
     else *outPosition = [_keyboardLayout positionOfCharacter:input];
 }
 
@@ -217,6 +218,7 @@ typedef NS_ENUM(NSInteger, HRSpecialKey) {
     if (special == HRSpecialSpace) return @"space";
     if (special == HRSpecialReturn) return @"return";
     if (special == HRSpecialBackspace) return @"backspace";
+    if (special == HRSpecialTab) return @"tab";
     if (!p) return nil;
     NSString *d = [NSString stringWithFormat:@"key:%lu:%lu", (unsigned long)p.row, (unsigned long)p.column];
     if ([p needsShift]) d = [d stringByAppendingString:([p usesLeftShift] ? @"+lshift" : @"+rshift")];

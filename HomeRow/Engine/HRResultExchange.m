@@ -217,6 +217,10 @@ static NSArray *HRHomeRowColumns(void)
                 }
                 series[name] = values;
             }
+            for (NSString *name in @[@"overhead", @"deletions", @"keystrokes"]) {
+                NSNumber *n = [self numberFrom:item[@"series"][name]];
+                if (n) series[name] = n;
+            }
             r[@"series"] = series;
         }
         NSDictionary *checked = [self checkedRecord:r];

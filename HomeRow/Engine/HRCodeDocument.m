@@ -33,7 +33,8 @@
 
 @implementation HRCodeDocument
 {
-    NSArray *_styles;      /* per line: NSData, one style byte per UTF-16 unit */
+    NSArray *_styles;      /* per line: NSData, one style byte per UTF-16 unit; nil until needed */
+    HRTextMateGrammar *_grammar;
     NSArray *_sections;    /* NSValue ranges of lines */
 }
 
@@ -86,6 +87,29 @@ static NSString *HRExpandTabsInLine(NSString *line, NSUInteger tabWidth)
     return out;
 }
 
+/* Colours for the whole file in one pass: a block comment or a string may
+ * run across the places where sections are cut.  Done when first asked for,
+ * not when the document is made: the Code window makes a document of every
+ * file it lists -- a folder of two hundred -- only to count their parts. */
+- (void)tokenizeIfNeeded
+{
+    if (_styles) return;
+    NSMutableArray *styles = [NSMutableArray arrayWithCapacity:[_lines count]];
+    HRTextMateState *state = nil;
+    for (NSString *line in _lines) {
+        NSMutableData *data = [NSMutableData dataWithLength:[line length]];
+        if (_grammar) {
+            uint8_t *bytes = [data mutableBytes];
+            for (HRTextMateToken *t in [_grammar tokenizeLine:line state:state outState:&state]) {
+                uint8_t style = [HRCodeDocument styleForScopes:t.scopes];
+                for (NSUInteger i = t.range.location; i < NSMaxRange(t.range) && i < [line length]; i++) bytes[i] = style;
+            }
+        }
+        [styles addObject:data];
+    }
+    _styles = [styles copy];
+}
+
 - (instancetype)initWithText:(NSString *)text grammar:(HRTextMateGrammar *)grammar
                     tabWidth:(NSUInteger)tabWidth targetSectionLines:(NSUInteger)target
 {
@@ -104,22 +128,7 @@ static NSString *HRExpandTabsInLine(NSString *line, NSUInteger tabWidth)
     while ([lines count] > 0 && [[lines lastObject] length] == 0) [lines removeLastObject];
     _lines = [lines copy];
 
-    /* colours for the whole file in one pass: a block comment or a string
-     * may run across the places where sections are cut */
-    NSMutableArray *styles = [NSMutableArray arrayWithCapacity:[lines count]];
-    HRTextMateState *state = nil;
-    for (NSString *line in lines) {
-        NSMutableData *data = [NSMutableData dataWithLength:[line length]];
-        if (grammar) {
-            uint8_t *bytes = [data mutableBytes];
-            for (HRTextMateToken *t in [grammar tokenizeLine:line state:state outState:&state]) {
-                uint8_t style = [HRCodeDocument styleForScopes:t.scopes];
-                for (NSUInteger i = t.range.location; i < NSMaxRange(t.range) && i < [line length]; i++) bytes[i] = style;
-            }
-        }
-        [styles addObject:data];
-    }
-    _styles = [styles copy];
+    _grammar = grammar;
 
     [self cutIntoSectionsOf:target];
     return self;
@@ -164,7 +173,38 @@ static NSString *HRExpandTabsInLine(NSString *line, NSUInteger tabWidth)
  * prefix.  At the end of a line the separator is Return. */
 - (NSArray *)wordsForLines:(NSRange)lineRange typeComments:(BOOL)typeComments
 {
+    return [self wordsForLines:lineRange typeComments:typeComments typeTabs:NO];
+}
+
+static NSUInteger HRLeadingSpaces(NSString *line)
+{
+    NSUInteger n = 0;
+    while (n < [line length] && [line characterAtIndex:n] == ' ') n++;
+    return n;
+}
+
+/* The step by which this file indents: the smallest by which a line is
+ * indented deeper than the line before it.  Four when the file never is. */
+- (NSUInteger)indentUnit
+{
+    NSUInteger unit = 0, previous = 0;
+    BOOL any = NO;
+    for (NSString *line in _lines) {
+        NSUInteger indent = HRLeadingSpaces(line);
+        if (indent == [line length]) continue;   /* blank */
+        if (any && indent > previous && (unit == 0 || indent - previous < unit)) unit = indent - previous;
+        previous = indent;
+        any = YES;
+    }
+    return unit > 0 ? unit : 4;
+}
+
+- (NSArray *)wordsForLines:(NSRange)lineRange typeComments:(BOOL)typeComments typeTabs:(BOOL)typeTabs
+{
+    [self tokenizeIfNeeded];
     NSMutableArray *words = [NSMutableArray array];
+    NSUInteger unit = typeTabs ? [self indentUnit] : 0;
+    __block NSUInteger previousIndent = NSNotFound;
     NSMutableString *pending = [NSMutableString string];
     __block NSString *text = nil, *prefix = nil;
     __block NSData *wordStyles = nil;
@@ -206,8 +246,29 @@ static NSString *HRExpandTabsInLine(NSString *line, NSUInteger tabWidth)
             text = [line substringWithRange:NSMakeRange(wordStart, i - wordStart)];
             /* styles are per UTF-16 unit; a word wants them per composed character */
             NSMutableData *perCharacter = [NSMutableData data];
-            for (NSUInteger k = 0; k < [text length]; k = NSMaxRange([text rangeOfComposedCharacterSequenceAtIndex:k])) {
-                [perCharacter appendBytes:&styles[wordStart + k] length:1];
+            /* Tab, the way an editor with auto-indent asks for it: only where a
+             * line goes DEEPER than the typed line before it, once per level.
+             * (Going back out is the closing brace's doing.)  The Tab takes the
+             * last column of the indentation, so everything stays where it was. */
+            if (typeTabs && !wordOnThisLine) {
+                NSUInteger indent = HRLeadingSpaces(line);
+                if (previousIndent != NSNotFound && indent > previousIndent && wordStart == indent) {
+                    NSUInteger tabs = MAX((NSUInteger)1, (indent - previousIndent) / unit);
+                    NSUInteger trailing = 0;
+                    while (trailing < [pending length] && [pending characterAtIndex:[pending length] - 1 - trailing] == ' ') trailing++;
+                    tabs = MIN(tabs, trailing);
+                    if (tabs > 0) {
+                        [pending deleteCharactersInRange:NSMakeRange([pending length] - tabs, tabs)];
+                        text = [[@"" stringByPaddingToLength:tabs withString:@"\t" startingAtIndex:0] stringByAppendingString:text];
+                        uint8_t plain = HRTextStylePlain;
+                        for (NSUInteger t = 0; t < tabs; t++) [perCharacter appendBytes:&plain length:1];
+                    }
+                }
+                previousIndent = indent;
+            }
+            NSUInteger tabCount = [text length] - (i - wordStart);
+            for (NSUInteger k = tabCount; k < [text length]; k = NSMaxRange([text rangeOfComposedCharacterSequenceAtIndex:k])) {
+                [perCharacter appendBytes:&styles[wordStart + k - tabCount] length:1];
             }
             wordStyles = perCharacter;
             prefix = [pending copy];
@@ -232,7 +293,12 @@ static NSString *HRExpandTabsInLine(NSString *line, NSUInteger tabWidth)
 
 - (id<HRTextSource>)sourceForSection:(NSUInteger)section typeComments:(BOOL)typeComments
 {
-    NSArray *words = [self wordsForLines:[self lineRangeOfSection:section] typeComments:typeComments];
+    return [self sourceForSection:section typeComments:typeComments typeTabs:NO];
+}
+
+- (id<HRTextSource>)sourceForSection:(NSUInteger)section typeComments:(BOOL)typeComments typeTabs:(BOOL)typeTabs
+{
+    NSArray *words = [self wordsForLines:[self lineRangeOfSection:section] typeComments:typeComments typeTabs:typeTabs];
     return [words count] > 0 ? [[HRWordArraySource alloc] initWithWords:words] : nil;
 }
 

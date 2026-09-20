@@ -84,6 +84,7 @@
 #pragma mark - The fixed-pitch font
 
 NSString * const HRFontFamilyDefaultsKey = @"HRFontFamily";
+NSString * const HRCodeFontFamilyDefaultsKey = @"HRCodeFontFamily";
 NSString * const HRProseFontSizeDefaultsKey = @"HRProseFontSize";
 NSString * const HRCodeFontSizeDefaultsKey = @"HRCodeFontSize";
 NSString * const HRThemeDefaultsKey = @"HRTheme";
@@ -144,6 +145,16 @@ NSString * const HRThemeDefaultsKey = @"HRTheme";
         [out addObject:family];
     }
     return [out sortedArrayUsingSelector:@selector(caseInsensitiveCompare:)];
+}
+
++ (NSFont *)codeFontOfSize:(CGFloat)size
+{
+    NSString *wanted = [[NSUserDefaults standardUserDefaults] stringForKey:HRCodeFontFamilyDefaultsKey];
+    if ([wanted length] > 0) {
+        NSFont *font = [self fontOfFamily:wanted size:size];
+        if (font && ([self fontIsFixedPitch:font] || [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width <= 0.0)) return font;
+    }
+    return [self fixedPitchFontOfSize:size];
 }
 
 + (NSFont *)fixedPitchFontOfSize:(CGFloat)size

@@ -282,7 +282,10 @@ static BOOL HRInputLogging(void)
                         NSColor *color = (st == HRCharacterUntyped)
                             ? [_theme colorForTextStyle:[word styleOfCharacterAtIndex:ci]] : [self colorForState:st];
                         NSPoint p = NSMakePoint(origin.x + (col + ci) * advance, y);
-                        [[_session displayCharacterAtIndex:ci inWordAtIndex:wi] drawAtPoint:p
+                        NSString *glyph = [_session displayCharacterAtIndex:ci inWordAtIndex:wi];
+                        /* a Tab to be typed shows as an arrow in its one column */
+                        if ([glyph isEqualToString:@"\t"]) glyph = @"\u2192";
+                        [glyph drawAtPoint:p
                             withAttributes:@{NSFontAttributeName: font, NSForegroundColorAttributeName: color}];
                         if (st == HRCharacterIncorrect || st == HRCharacterExtra || st == HRCharacterMissed) {
                             [_theme.incorrect set];
@@ -337,7 +340,7 @@ static BOOL HRInputLogging(void)
 
 - (void)drawCodeInRect:(NSRect)bounds
 {
-    NSFont *font = [HRTheme fixedPitchFontOfSize:[HRTheme codeFontSize]];
+    NSFont *font = [HRTheme codeFontOfSize:[HRTheme codeFontSize]];
     CGFloat advance = [@"m" sizeWithAttributes:@{NSFontAttributeName: font}].width;
     CGFloat lineHeight = ceil(([font ascender] - [font descender]) * 1.35);
     if (advance <= 0.0 || lineHeight <= 0.0) return;
@@ -635,9 +638,13 @@ static NSString *HRExpandTabs(NSString *line)
     [self afterInput];
 }
 
+/* Tab starts the test over -- unless Tab is what the text wants next (code,
+ * with "type Tab where the code indents deeper" on): then it is typed.  Esc
+ * still starts over. */
 - (void)insertTab:(id)sender
 {
-    [_delegate testViewDidRequestRestart:self];
+    if ([[_session expectedInput] isEqualToString:@"\t"]) [self insertText:@"\t"];
+    else [_delegate testViewDidRequestRestart:self];
 }
 
 - (void)cancelOperation:(id)sender

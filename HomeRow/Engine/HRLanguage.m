@@ -74,6 +74,7 @@ static double HRListSize(NSString *listName)
     l->_identifier = [info[@"identifier"] copy];
     l->_displayName = [info[@"displayName"] copy];
     l->_alphabet = [info[@"alphabet"] copy];
+    l->_kind = [([info[@"kind"] isKindOfClass:[NSString class]] ? info[@"kind"] : @"prose") copy];
     l->_defaultLayoutID = [(info[@"defaultLayout"] ?: @"qwerty") copy];
     l->_direction = [(info[@"direction"] ?: @"ltr") copy];
     l->_directory = [directory copy];
@@ -120,6 +121,11 @@ static double HRListSize(NSString *listName)
         return nil;
     }
     return words;
+}
+
+- (BOOL)isCode
+{
+    return [_kind isEqualToString:@"code"];
 }
 
 @end
