@@ -290,6 +290,20 @@
     return [_context executeFetchRequest:req error:error];
 }
 
+- (NSArray *)recentSpeedsForSettingsKey:(NSString *)settingsKey limit:(NSUInteger)limit
+{
+    NSFetchRequest *req = [[NSFetchRequest alloc] init];
+    [req setEntity:[NSEntityDescription entityForName:@"TestResult" inManagedObjectContext:_context]];
+    [req setPredicate:[NSPredicate predicateWithFormat:@"settingsKey == %@", settingsKey]];
+    [req setSortDescriptors:@[[NSSortDescriptor sortDescriptorWithKey:@"date" ascending:NO]]];
+    if (limit > 0) [req setFetchLimit:limit];
+    NSMutableArray *speeds = [NSMutableArray array];
+    for (HRTestResult *r in [_context executeFetchRequest:req error:NULL]) {
+        if (r.wpm) [speeds insertObject:r.wpm atIndex:0];
+    }
+    return speeds;
+}
+
 - (HRTestResult *)personalBestForSettingsKey:(NSString *)settingsKey error:(NSError **)error
 {
     NSFetchRequest *req = [[NSFetchRequest alloc] init];

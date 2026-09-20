@@ -39,6 +39,11 @@
         }
         return;
     }
+    if (([event modifierFlags] & (NSEventModifierFlagCommand | NSEventModifierFlagControl | NSEventModifierFlagOption)) == 0
+        && (c == 'r' || c == 'R') && [_target respondsToSelector:@selector(replayLastTest:)]) {
+        [_target performSelector:@selector(replayLastTest:) withObject:self];
+        return;
+    }
     [super keyDown:event];
 }
 

@@ -8,6 +8,7 @@
  * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRTestSession.h"
+#import "HRReplay.h"
 
 /* How far ahead of the caret an endless source is kept filled.  Enough for
  * the three visible lines at any sane window width. */
@@ -37,6 +38,7 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
     NSMutableArray *_keysPerSecond;    /* NSNumber */
     NSMutableArray *_errorsPerSecond;  /* NSNumber */
     NSMutableDictionary *_keyStats;    /* char -> NSMutableDictionary */
+    NSMutableArray *_inputLog;         /* HRInputEvent */
 }
 
 - (instancetype)initWithConfiguration:(HRTestConfiguration *)configuration
@@ -168,8 +170,21 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
     return _currentWordIndex < [_words count] ? _words[_currentWordIndex] : nil;
 }
 
+- (void)log:(HRInputKind)kind text:(NSString *)text atTime:(NSTimeInterval)time
+{
+    if (_state == HRSessionFinished) return;
+    if (!_inputLog) _inputLog = [NSMutableArray array];
+    [_inputLog addObject:[HRInputEvent eventWithKind:kind text:text time:time]];
+}
+
+- (NSArray *)inputLog
+{
+    return [_inputLog copy] ?: @[];
+}
+
 - (void)insertText:(NSString *)text atTime:(NSTimeInterval)time
 {
+    [self log:HRInputText text:text atTime:time];
     for (NSString *ch in [HRWord charactersOfString:text]) {
         if ([self expireAtTime:time]) return;
         if ([ch isEqualToString:@" "]) {
@@ -297,6 +312,7 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
 
 - (void)deleteBackwardAtTime:(NSTimeInterval)time
 {
+    [self log:HRInputDeleteBackward text:nil atTime:time];
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
     if ([self backspaceIsOff]) return;
     _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
@@ -311,6 +327,7 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
 
 - (void)deleteWordBackwardAtTime:(NSTimeInterval)time
 {
+    [self log:HRInputDeleteWord text:nil atTime:time];
     if ([self expireAtTime:time] || _state != HRSessionRunning) return;
     if ([self backspaceIsOff]) return;
     _lastKeystrokeWasCorrect = NO;   /* the hand has been to Backspace: the next key is not timed */
@@ -327,6 +344,7 @@ static const NSTimeInterval HRLongestKeyTime = 2.0;
 
 - (void)finishAtTime:(NSTimeInterval)time
 {
+    [self log:HRInputFinish text:nil atTime:time];
     if (![self expireAtTime:time]) [self endAtTime:time];
 }
 

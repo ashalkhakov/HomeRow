@@ -168,3 +168,12 @@
 "operators" = "operators";
 "overhead %.0f%%   \U2014   %@   \U2014   %.0fs" = "overhead %.0f%%   \U2014   %@   \U2014   %.0fs";
 "space, return, tab" = "space, return, tab";
+
+/* Pace caret, replay, sounds */
+"      r \U2014 replay" = "      r \U2014 replay";
+"   \U2014   pace caret at %.0f wpm" = "   \U2014   pace caret at %.0f wpm";
+"A speed I choose:" = "A speed I choose:";
+"My average" = "My average";
+"My best" = "My best";
+"Replay the Last Test" = "Replay the Last Test";
+"replay   %.0f wpm   %.0f%%   %.0fs   \U2014   esc \U2014 back to the result" = "replay   %.0f wpm   %.0f%%   %.0fs   \U2014   esc \U2014 back to the result";

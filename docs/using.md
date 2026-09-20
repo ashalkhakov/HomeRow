@@ -1,5 +1,12 @@
 # Using HomeRow
 
+The first time it starts, HomeRow asks where you want to begin. *Teach me to
+touch-type* starts the first course for your keyboard layout (GNU Typist's
+quick QWERTY course, or the Dvorak or Colemak one), with the keyboard on
+screen; *Test my typing* leaves you at a 30-second test. It is asked once,
+and only of someone with nothing on record; everything stays a menu away
+whichever you pick.
+
 ## Keys
 
 | Key | Does |
@@ -9,6 +16,7 @@
 | Shift+Return | end the test now (the only way out of zen) |
 | Alt/Option+Backspace, Ctrl+Backspace | delete the word |
 | Return, Tab or Esc on the results | next test |
+| R on the results (Cmd/Ctrl+Shift+R anywhere) | replay the test just typed |
 | Cmd/Ctrl+O | open a text file as a custom test |
 | Cmd/Ctrl+1, 2, 3 | time test, words test, zen — also the way out of a course |
 | Cmd/Ctrl+5 | practise the keys you miss most |
@@ -20,6 +28,32 @@
 
 The **Language** menu picks the language, the word list and the keyboard
 layout the on-screen keyboard draws.
+
+## Pace caret, replay, sounds
+
+**A pace caret** (Preferences ▸ Typing) is a second, paler caret that goes
+through the text at a steady speed: your *average* — of the last ten tests
+with the same settings — your *best* with these settings, or a speed you
+choose. Keep up with it, or beat it. It shows in time, words, custom-text
+and weak-key tests; the line under the text says what speed it is set to
+before you start. With nothing on record for the settings yet, *average* and
+*best* have nothing to show, and there is no pace caret until there is.
+The speed is settled when a test starts, and counts characters the way WPM
+does: five to a word, spaces included.
+
+**Replay.** Press **R** on a result (or Test ▸ Replay the Last Test) and the
+test types itself again exactly as you did — hesitations, mistakes,
+Backspace and all — with the pace caret if there was one. Tab, Esc or Return
+go back to the result. Sections of code replay too; exercises of a lesson do
+not, since a lesson goes straight on. A replay is kept for the result on
+screen only: it is not saved, and neither it nor watching it counts for
+anything.
+
+**Sounds** (Preferences ▸ Typing): *Click*, a dry soft key, or *Typewriter*,
+with a thud for the space bar and a bell for Return; a wrong key has a sound
+of its own. *Beep on a wrong key* is the system's alert sound and is
+separate. The sounds are synthesized by `Scripts/make-sounds.py`. On Linux
+they need the system's libao; without it HomeRow is simply silent.
 
 Accents: dead keys and, on macOS, Option combinations (Option+E then E for é)
 work as they do everywhere; the accent shows underlined at the caret until the
@@ -176,7 +210,8 @@ tests (as *practice*) and count in the statistics.
   this way), or on every word (mistakes go in, but the word must be right
   before it can be left). *Backspace*: anywhere, only in the word being typed,
   or off — except that a word held by "stop on every word" can always be
-  corrected. *Beep on a wrong key.* Changing a rule starts the test under way
+  corrected. *Pace caret* and *Sounds*, [as above](#pace-caret-replay-sounds).
+  *Beep on a wrong key.* Changing a rule starts the test under way
   over.
 - **On-screen keyboard** — the layout it draws (*Choose…* opens a list that
   can be searched — type "col" for Colemak and its variants — with the

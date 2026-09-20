@@ -31,6 +31,10 @@
 #import "HRPlotView.h"
 #import "HRStatTilesView.h"
 #import <objc/runtime.h>
+#import "HRPace.h"
+#import "HRReplay.h"
+#import "HRSoundPlayer.h"
+#import "HRWelcomeWindowController.h"
 
 static NSString * const HRConfigurationDefaultsKey = @"HRConfiguration";
 static NSString * const HRCurrentCourseDefaultsKey = @"HRCurrentCourse";
@@ -40,7 +44,7 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
-@interface HRAppDelegate () <HRCourseWindowDelegate, HRCodeWindowDelegate, HRPreferencesDelegate, HRLayoutChooserDelegate, HRStatsSubjectSource>
+@interface HRAppDelegate () <HRCourseWindowDelegate, HRCodeWindowDelegate, HRPreferencesDelegate, HRLayoutChooserDelegate, HRStatsSubjectSource, HRWelcomeDelegate>
 @end
 
 @implementation HRAppDelegate
@@ -52,6 +56,13 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
     NSArray *_languages;
     NSString *_customText;
     NSTimer *_timer;
+    HRSoundPlayer *_sounds;
+    double _paceWpm;                 /* 0: no pace caret in this test */
+    HRReplay *_lastReplay;           /* the test whose result is on screen */
+    HRReplay *_replay;               /* ...while it is being played back */
+    HRTestSession *_replaySession;
+    NSTimeInterval _replayBegan;
+    HRWelcomeWindowController *_welcomeWindow;
 
     NSMenu *_languageMenu;
     NSMenu *_programmingMenu;
@@ -116,6 +127,8 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
     [_keyboardView setHidden:YES];
     _resultsView.target = self;
     [self applyAppearance];
+    _sounds = [[HRSoundPlayer alloc] init];
+    _sounds.scheme = [[NSUserDefaults standardUserDefaults] stringForKey:HRSoundSchemeDefaultsKey];
 
     [self buildMenus];
     [self syncControls];
@@ -131,6 +144,66 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
 
     if ([[[NSProcessInfo processInfo] environment] objectForKey:@"HR_SMOKE_TEST"]) {
         [self performSelector:@selector(runSmokeTest) withObject:nil afterDelay:0.5];
+    } else {
+        [self welcomeIfNew];
+    }
+}
+
+#pragma mark - The first launch
+
+/* Asked once, and only of someone with nothing on record: whoever has
+ * results or a course under way has answered it already. */
+- (BOOL)isNewHere
+{
+    if ([[NSUserDefaults standardUserDefaults] boolForKey:HRWelcomeDoneDefaultsKey]) return NO;
+    if ([[_store recentResultsWithLimit:1 error:NULL] count] > 0 || [[_store startedCourses] count] > 0) return NO;
+    return YES;
+}
+
+- (void)welcomeIfNew
+{
+    if (![self isNewHere]) {
+        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:HRWelcomeDoneDefaultsKey];
+        return;
+    }
+    [[self welcomeWindow] showWindow:self];
+}
+
+- (HRWelcomeWindowController *)welcomeWindow
+{
+    if (!_welcomeWindow) _welcomeWindow = [[HRWelcomeWindowController alloc] initWithDelegate:self];
+    return _welcomeWindow;
+}
+
+/* The course to start a beginner on: the first one for the layout the
+ * keyboard is set to, in the language of the tests. */
+- (NSString *)beginnersCourseFile
+{
+    NSString *layout = _configuration.layoutID ?: @"qwerty";
+    NSString *fallback = nil;
+    for (NSDictionary *course in _courses) {
+        if (![course[@"layout"] isEqual:layout]) continue;
+        if ([course[@"language"] isEqual:_configuration.languageID]) return course[@"file"];
+        if (!fallback) fallback = course[@"file"];
+    }
+    return fallback;
+}
+
+- (void)welcome:(HRWelcomeWindowController *)controller didChoose:(HRWelcomeChoice)choice
+{
+    [_window makeKeyAndOrderFront:self];
+    if (choice == HRWelcomeTestMe) {
+        [_window makeFirstResponder:_testView];
+        return;   /* the test is there already */
+    }
+    NSString *file = [self beginnersCourseFile];
+    if (file) {
+        NSMenuItem *carrier = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@""];
+        [carrier setRepresentedObject:file];
+        [self switchToCourse:carrier];
+    } else {
+        /* no course for this layout: let them pick */
+        [self showCourses:self];
     }
 }
 
@@ -185,6 +258,16 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
     _configuration.mode = HRTestModeWords;
     _configuration.amount = 10;
     [self syncControls];
+    /* a pace caret at a speed of one's choosing, for the test below */
+    NSUserDefaults *smokeDefaults = [NSUserDefaults standardUserDefaults];
+    id paceKindBefore = [smokeDefaults objectForKey:HRPaceKindDefaultsKey], paceWpmBefore = [smokeDefaults objectForKey:HRPaceCustomWpmDefaultsKey];
+    id soundBefore = [smokeDefaults objectForKey:HRSoundSchemeDefaultsKey];
+    [smokeDefaults setInteger:HRPaceCustom forKey:HRPaceKindDefaultsKey];
+    [smokeDefaults setInteger:30 forKey:HRPaceCustomWpmDefaultsKey];
+    /* sounds on: where they cannot be made, typing must go on as if they were */
+    if ([[HRSoundPlayer schemeNames] count] < 2) [failures addObject:@"the sound schemes were not found"];
+    _sounds.scheme = [[HRSoundPlayer schemeNames] firstObject];
+    printf("HomeRow smoke test: %lu sounds loaded from \"%s\"\n", (unsigned long)_sounds.loadedSounds, [_sounds.scheme UTF8String]);
     [self startNewTest];
     /* Real key events first, through -sendEvent:, because that is the path
      * a keyboard takes: keyDown: -> interpretKeyEvents: -> insertText: /
@@ -228,6 +311,16 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
     NSTimeInterval now = HRMonotonicNow();
     NSUInteger before = [[_store recentResultsWithLimit:0 error:NULL] count];
     [_testView typeText:[texts[0] stringByAppendingString:@" "] atTime:now - 5.0];
+    if (_paceWpm != 30.0) [failures addObject:@"the pace caret did not take the chosen speed"];
+    [self movePaceCaret];
+    [[_window contentView] display];
+    /* 30 wpm for five seconds: twelve characters and a half into the text */
+    NSUInteger paceWord = 0, paceCharacter = 0;
+    [HRPace getWordIndex:&paceWord characterIndex:&paceCharacter forCharacters:12.5 inWords:_session.words];
+    NSString *paceExpected = [NSString stringWithFormat:@"%lu:%lu", (unsigned long)paceWord, (unsigned long)paceCharacter];
+    if (![_testView.paceCaretDescription isEqualToString:paceExpected]) {
+        [failures addObject:[NSString stringWithFormat:@"the pace caret is at %@, not at %@", _testView.paceCaretDescription, paceExpected]];
+    }
     [texts removeObjectAtIndex:0];
     [_testView typeText:[texts componentsJoinedByString:@" "] atTime:now];
     if (_store && [[_store recentResultsWithLimit:0 error:NULL] count] != before + 1) {
@@ -236,6 +329,40 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
     if (_session.state != HRSessionFinished) [failures addObject:@"typing the whole text did not finish the test"];
     if ([_resultsView isHidden]) [failures addObject:@"the results were not shown"];
     if ([[_wpmField stringValue] length] == 0) [failures addObject:@"the results are empty"];
+    if (_testView.paceCharacters >= 0.0) [failures addObject:@"the pace caret outlived the test"];
+
+    /* Replay: the same test again, typed by nobody, and nothing saved */
+    {
+        NSUInteger saved = [[_store recentResultsWithLimit:0 error:NULL] count];
+        double wpm = [_session summary].wpm;
+        if ([[_hintField stringValue] rangeOfString:@"replay"].location == NSNotFound) [failures addObject:@"the result does not offer its replay"];
+        [_window sendEvent:[self keyEventWithCharacters:@"r" keyCode:15]];
+        if (!_replay || !_testView.replaying || [_testView isHidden] || ![_resultsView isHidden]) {
+            [failures addObject:@"r on a result did not start its replay"];
+        } else {
+            [self advanceReplayToElapsed:2.5];
+            /* the first word went in at once, the rest five seconds later */
+            if (_replaySession.state != HRSessionRunning || _replaySession.currentWordIndex != 1) {
+                [failures addObject:@"between the first word and the rest, the replay is somewhere else"];
+            }
+            [[_window contentView] display];
+            NSUInteger caretBefore = [_replaySession caretIndexInCurrentWord];
+            [_window sendEvent:[self keyEventWithCharacters:@"x" keyCode:7]];
+            if ([_replaySession caretIndexInCurrentWord] != caretBefore) [failures addObject:@"a key got into a replay"];
+            [self advanceReplayToElapsed:_replay.duration + 1.0];
+            if (_replay || _testView.replaying || [_resultsView isHidden]) [failures addObject:@"the replay did not end on the result it came from"];
+            /* once more, left with Esc */
+            [self replayLastTest:self];
+            [_window sendEvent:[self keyEventWithCharacters:@"\033" keyCode:53]];
+            if (_replay || [_resultsView isHidden]) [failures addObject:@"Esc did not leave the replay for the result"];
+        }
+        if (fabs([_session summary].wpm - wpm) > 1e-9) [failures addObject:@"the replay changed the result"];
+        if ([[_store recentResultsWithLimit:0 error:NULL] count] != saved) [failures addObject:@"a replay was saved as a result"];
+    }
+    for (NSArray *pair in @[@[HRPaceKindDefaultsKey, paceKindBefore ?: [NSNull null]], @[HRPaceCustomWpmDefaultsKey, paceWpmBefore ?: [NSNull null]]]) {
+        if (pair[1] == [NSNull null]) [smokeDefaults removeObjectForKey:pair[0]];
+        else [smokeDefaults setObject:pair[1] forKey:pair[0]];
+    }
 
     /* Follow a course the way the Courses window makes one do it: choose
      * it, continue, read the pages, type the drills -- and find the place
@@ -719,6 +846,8 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
             @"keyboardCourseCheck": prefs.keyboardCourseCheck ?: (id)[NSNull null], @"keyboardCodeCheck": prefs.keyboardCodeCheck ?: (id)[NSNull null],
             @"keyboardTestsCheck": prefs.keyboardTestsCheck ?: (id)[NSNull null], @"commentsCheck": prefs.commentsCheck ?: (id)[NSNull null],
             @"codeFontPopUp": prefs.codeFontPopUp ?: (id)[NSNull null], @"tabsCheck": prefs.tabsCheck ?: (id)[NSNull null],
+            @"pacePopUp": prefs.pacePopUp ?: (id)[NSNull null], @"paceField": prefs.paceField ?: (id)[NSNull null],
+            @"soundPopUp": prefs.soundPopUp ?: (id)[NSNull null],
             @"dataField": prefs.dataField ?: (id)[NSNull null], @"revealButton": prefs.revealButton ?: (id)[NSNull null]};
         for (NSString *name in prefsOutlets) {
             if (prefsOutlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"PreferencesWindow.xib: outlet %@ is not connected", name]];
@@ -817,6 +946,35 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
     [[_window contentView] display];
     [self toggleKeyboard:self];
     [[_window contentView] display];
+
+    /* The first launch: the question is asked of someone new only, and
+     * "teach me" starts a course for the layout in use */
+    {
+        HRWelcomeWindowController *welcome = [self welcomeWindow];
+        [welcome showWindow:self];
+        if (!welcome.teachButton || !welcome.testButton) [failures addObject:@"WelcomeWindow.xib: a button is not connected"];
+        if ([self isNewHere]) [failures addObject:@"someone with results on record was taken for new"];
+        NSString *beginners = [self beginnersCourseFile];
+        if (!beginners) {
+            [failures addObject:@"there is no course to start a beginner on"];
+        } else {
+            id welcomeBefore = [smokeDefaults objectForKey:HRWelcomeDoneDefaultsKey];
+            id courseBefore = [smokeDefaults objectForKey:HRCurrentCourseDefaultsKey];
+            BOOL started = [_store progressForCourse:beginners] != nil;
+            [welcome teachMe:self];
+            if (!_run || ![_courseFile isEqual:beginners]) [failures addObject:@"\"Teach me\" did not start the beginners' course"];
+            if ([[welcome window] isVisible]) [failures addObject:@"the welcome stayed up after its answer"];
+            if (![smokeDefaults boolForKey:HRWelcomeDoneDefaultsKey]) [failures addObject:@"the welcome would be shown again"];
+            [self leaveLesson];
+            if (!started) [_store resetCourse:beginners error:NULL];
+            if (welcomeBefore) [smokeDefaults setObject:welcomeBefore forKey:HRWelcomeDoneDefaultsKey];
+            else [smokeDefaults removeObjectForKey:HRWelcomeDoneDefaultsKey];
+            if (courseBefore) [smokeDefaults setObject:courseBefore forKey:HRCurrentCourseDefaultsKey];
+            else [smokeDefaults removeObjectForKey:HRCurrentCourseDefaultsKey];
+        }
+    }
+    if (soundBefore) [smokeDefaults setObject:soundBefore forKey:HRSoundSchemeDefaultsKey];
+    else [smokeDefaults removeObjectForKey:HRSoundSchemeDefaultsKey];
 
     if ([failures count] == 0) {
         printf("HomeRow smoke test: OK\n");
@@ -1105,6 +1263,9 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
         NSMenuItem *statsItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Statistics\u2026") action:@selector(showStatistics:)
                                                            keyEquivalent:@"S"];
         [statsItem setTarget:self];
+        NSMenuItem *replayItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Replay the Last Test") action:@selector(replayLastTest:)
+                                                            keyEquivalent:@"R"];   /* Cmd-R is New Test */
+        [replayItem setTarget:self];
         NSMenuItem *beepItem = (NSMenuItem *)[testMenu addItemWithTitle:HRLoc(@"Beep on a Wrong Key") action:@selector(toggleBeep:)
                                                           keyEquivalent:@""];
         [beepItem setTarget:self];
@@ -1452,6 +1613,7 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
 
 - (void)startLessonStep
 {
+    [self cancelReplay];
     if (_run.isFinished) {
         [self finishLesson];
         return;
@@ -1657,6 +1819,7 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
 
 - (void)startCodeSection
 {
+    [self cancelReplay];
     HRCodeDocument *document = [[self codeLibrary] documentForFile:_codeFile error:NULL];
     if (!document) {
         /* one of the user's own files, gone or changed since it was opened */
@@ -1723,9 +1886,9 @@ static NSString * const HRCurrentCodeFileDefaultsKey = @"HRCurrentCodeFile";
                                   [s keystrokeOverhead] * 100.0,
                                   [HRStatistics lineForKeyClasses:[HRStatistics keyClassesFromCounts:s.keyStats ?: @{}] names:classNames],
                                   s.duration]];
-    [_hintField setStringValue:(next < _codeSectionCount
+    [_hintField setStringValue:[self hintWithReplay:(next < _codeSectionCount
         ? [NSString stringWithFormat:HRLoc(@"return — part %lu of %lu"), (unsigned long)(next + 1), (unsigned long)_codeSectionCount]
-        : HRLoc(@"That was the last part of this file.  return — code"))];
+        : HRLoc(@"That was the last part of this file.  return — code"))]];
     [self syncKeyboard];
     [_codeWindow reloadProgress];
 }
@@ -1883,6 +2046,14 @@ static const NSUInteger HRPracticeWords = 40;
 {
     [self saveConfiguration];
     if (change & HRPreferencesChangedAppearance) [self applyAppearance];
+    if (change & HRPreferencesChangedSound) {
+        _sounds.scheme = [[NSUserDefaults standardUserDefaults] stringForKey:HRSoundSchemeDefaultsKey];
+        [_sounds playKey:@"a"];   /* what was chosen, heard at once */
+    }
+    if (change & HRPreferencesChangedPace) {
+        [self choosePace];
+        [self updateLiveField];
+    }
     if (change & HRPreferencesChangedKeyboard) {
         _statsWindow.keyboardLayout = [self layoutNamed:_configuration.layoutID];
         [self syncMenus];
@@ -2057,6 +2228,7 @@ static const NSUInteger HRPracticeWords = 40;
 - (BOOL)validateMenuItem:(NSMenuItem *)item
 {
     if (sel_isEqual([item action], @selector(restartLesson:))) return _run != nil;
+    if (sel_isEqual([item action], @selector(replayLastTest:))) return _lastReplay != nil && !_replay && ![_resultsView isHidden];
     return YES;
 }
 
@@ -2101,6 +2273,8 @@ static const NSUInteger HRPracticeWords = 40;
 
 - (void)startNewTest
 {
+    [self cancelReplay];   /* whatever asked for a new test means it */
+    _lastReplay = nil;
     if (_run) {
         /* Tab in a lesson: this exercise again, not a way out of it */
         [self startLessonStep];
@@ -2148,6 +2322,7 @@ static const NSUInteger HRPracticeWords = 40;
     }
     _session = [[HRTestSession alloc] initWithConfiguration:_configuration source:[self makeSource]];
     _testView.session = _session;
+    [self choosePace];
     [_resultsView setHidden:YES];
     [_testView setHidden:NO];
     [_window makeFirstResponder:_testView];
@@ -2179,12 +2354,14 @@ static const NSUInteger HRPracticeWords = 40;
         return;
     }
     if (_session.state == HRSessionIdle) {
-        [_liveField setStringValue:(_configuration.mode == HRTestModeZen
-                                    ? HRLoc(@"type anything — shift+return to finish")
-                                    : HRLoc(@"start typing"))];
+        NSString *idle = (_configuration.mode == HRTestModeZen
+                          ? HRLoc(@"type anything — shift+return to finish")
+                          : HRLoc(@"start typing"));
+        if (_paceWpm > 0.0) idle = [idle stringByAppendingFormat:HRLoc(@"   \u2014   pace caret at %.0f wpm"), _paceWpm];
+        [_liveField setStringValue:idle];
         return;
     }
-    NSTimeInterval now = HRMonotonicNow();
+    NSTimeInterval now = [self sessionNow];
     NSInteger remaining = [_session remainingAtTime:now];
     NSString *left = remaining >= 0 ? [NSString stringWithFormat:@"%ld   ", (long)remaining] : @"";
     [_liveField setStringValue:[NSString stringWithFormat:@"%@%.0f wpm   %.0f%%",
@@ -2193,13 +2370,152 @@ static const NSUInteger HRPracticeWords = 40;
 
 - (void)timerFired:(NSTimer *)timer
 {
+    if (_replay) {
+        [self replayTick];
+        return;
+    }
     [_testView tick];
+    [self movePaceCaret];
+}
+
+- (NSTimeInterval)sessionNow
+{
+    return HRMonotonicNow();
+}
+
+#pragma mark - The pace caret
+
+/* Settled when a test starts: a caret that changed its mind half-way would
+ * be no pace at all. */
+- (void)choosePace
+{
+    _paceWpm = 0.0;
+    HRTestMode mode = _configuration.mode;
+    BOOL paced = (mode == HRTestModeTime || mode == HRTestModeWords || mode == HRTestModeCustom || mode == HRTestModePractice)
+                 && !_run && !_codeFile;
+    NSUserDefaults *d = [NSUserDefaults standardUserDefaults];
+    HRPaceKind kind = paced ? (HRPaceKind)[d integerForKey:HRPaceKindDefaultsKey] : HRPaceOff;
+    NSString *key = [_configuration settingsKey];
+    switch (kind) {
+        case HRPaceOff:
+            break;
+        case HRPaceAverage:
+            _paceWpm = [HRPace averageOfRecentSpeeds:[_store recentSpeedsForSettingsKey:key limit:10]];
+            break;
+        case HRPaceBest:
+            _paceWpm = [[_store personalBestForSettingsKey:key error:NULL].wpm doubleValue];
+            break;
+        case HRPaceCustom:
+            _paceWpm = (double)[d integerForKey:HRPaceCustomWpmDefaultsKey];
+            if (_paceWpm <= 0.0) _paceWpm = 60.0;
+            break;
+    }
+    /* nothing on record with these settings yet: nothing to race */
+    [self movePaceCaret];
+}
+
+- (void)movePaceCaret
+{
+    HRTestSession *session = _replay ? _replaySession : _session;
+    if (_paceWpm <= 0.0 || !session || session.state == HRSessionFinished) {
+        _testView.paceCharacters = -1.0;
+        return;
+    }
+    NSTimeInterval now = _replay ? [_replay timeAtElapsed:(HRMonotonicNow() - _replayBegan)] : HRMonotonicNow();
+    NSTimeInterval elapsed = session.state == HRSessionRunning ? [session elapsedAtTime:now] : 0.0;
+    _testView.paceCharacters = [HRPace charactersAtWpm:_paceWpm elapsed:elapsed];
+}
+
+#pragma mark - Replay
+
+/* The test whose result is on screen, typed again by nobody, at the speed
+ * it was typed at.  Nothing is recorded; Tab, Esc or Return go back to the
+ * result. */
+- (IBAction)replayLastTest:(id)sender
+{
+    if (!_lastReplay || _replay || [_resultsView isHidden]) return;
+    _replay = _lastReplay;
+    _replaySession = [_replay begin];
+    _replayBegan = HRMonotonicNow();
+    _testView.session = _replaySession;
+    _testView.replaying = YES;
+    [_resultsView setHidden:YES];
+    [_testView setHidden:NO];
+    [_window makeFirstResponder:_testView];
+    [self movePaceCaret];
+    [self replayTick];
+}
+
+- (void)replayTick
+{
+    NSTimeInterval elapsed = HRMonotonicNow() - _replayBegan;
+    [self advanceReplayToElapsed:elapsed];
+}
+
+- (void)advanceReplayToElapsed:(NSTimeInterval)elapsed
+{
+    if (!_replay) return;
+    NSUInteger wrongBefore = _replaySession.wrongInputCount;
+    NSUInteger wordBefore = _replaySession.currentWordIndex, caretBefore = [_replaySession caretIndexInCurrentWord];
+    BOOL more = [_replay advanceToElapsed:elapsed];
+    /* the sounds of it too, a tick's worth at a time */
+    if (_replaySession.wrongInputCount != wrongBefore) [_sounds playError];
+    else if (_replaySession.currentWordIndex != wordBefore || [_replaySession caretIndexInCurrentWord] != caretBefore) [_sounds playKey:@"a"];
+    [_testView setNeedsDisplay:YES];
+    [self movePaceCaret];
+    NSTimeInterval now = [_replay timeAtElapsed:elapsed];
+    [_liveField setStringValue:[NSString stringWithFormat:HRLoc(@"replay   %.0f wpm   %.0f%%   %.0fs   \u2014   esc \u2014 back to the result"),
+                                [_replaySession liveWpmAtTime:now], [_replaySession liveAccuracy],
+                                MIN(elapsed, _replay.duration)]];
+    if (!more) [self endReplay];
+}
+
+/* Stops the show and leaves the stage as it is: for whoever is about to
+ * put something else on it. */
+- (void)cancelReplay
+{
+    if (!_replay) return;
+    _replay = nil;
+    _replaySession = nil;
+    _testView.replaying = NO;
+    _testView.session = _session;
+    _testView.paceCharacters = -1.0;
+}
+
+/* ...and back to the result it came from. */
+- (void)endReplay
+{
+    if (!_replay) return;
+    [self cancelReplay];
+    [_testView setHidden:YES];
+    [_resultsView setHidden:NO];
+    [_window makeFirstResponder:_resultsView];
+    [_liveField setStringValue:@""];
+}
+
+/* "r" where a result is shown; the hint under the result says so. */
+- (NSString *)hintWithReplay:(NSString *)hint
+{
+    return _lastReplay ? [hint stringByAppendingString:HRLoc(@"      r \u2014 replay")] : hint;
+}
+
+#pragma mark - Sounds
+
+- (void)testView:(HRTestView *)view didTypeInput:(NSString *)input correctly:(BOOL)correct
+{
+    if (correct) [_sounds playKey:input];
+    else [_sounds playError];
 }
 
 #pragma mark - HRTestViewDelegate
 
 - (void)testViewDidRequestRestart:(HRTestView *)view
 {
+    if (_replay) {
+        /* Tab, Esc or Return while a replay runs: back to its result */
+        [self endReplay];
+        return;
+    }
     [self startNewTest];
 }
 
@@ -2235,6 +2551,9 @@ static const NSUInteger HRPracticeWords = 40;
 - (void)testViewDidFinish:(HRTestView *)view
 {
     HRTestSummary *s = [_session summary];
+    _testView.paceCharacters = -1.0;
+    /* a lesson goes straight on to its next exercise: there is no result to replay from */
+    _lastReplay = _run ? nil : [[HRReplay alloc] initWithSession:_session];
 
     BOOL isBest = NO;
     /* a test with nothing in it is not a result */
@@ -2280,7 +2599,7 @@ static const NSUInteger HRPracticeWords = 40;
         (unsigned long)s.correctCharacters, (unsigned long)s.incorrectCharacters,
         (unsigned long)s.extraCharacters, (unsigned long)s.missedCharacters,
         s.duration, isBest ? HRLoc(@"   — new personal best") : @""]];
-    [_hintField setStringValue:HRLoc(@"tab, esc or return — next test")];
+    [_hintField setStringValue:[self hintWithReplay:HRLoc(@"tab, esc or return — next test")]];
     _chartView.errors = s.errorsPerSecond;
     _chartView.average = s.rawWpm;
     _chartView.samples = s.rawWpmPerSecond;

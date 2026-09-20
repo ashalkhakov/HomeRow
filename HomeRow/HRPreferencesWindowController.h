@@ -15,7 +15,9 @@
 typedef NS_OPTIONS(NSUInteger, HRPreferencesChange) {
     HRPreferencesChangedAppearance = 1 << 0,   /* theme, font, sizes: redraw */
     HRPreferencesChangedTyping     = 1 << 1,   /* the rules of a test: the one under way starts over */
-    HRPreferencesChangedKeyboard   = 1 << 2    /* layout, or when the keyboard shows */
+    HRPreferencesChangedKeyboard   = 1 << 2,   /* layout, or when the keyboard shows */
+    HRPreferencesChangedPace       = 1 << 3,   /* the pace caret: takes effect in the test under way */
+    HRPreferencesChangedSound      = 1 << 4
 };
 
 @protocol HRPreferencesDelegate <NSObject>
@@ -41,6 +43,9 @@ typedef NS_OPTIONS(NSUInteger, HRPreferencesChange) {
 @property (nonatomic, strong) IBOutlet NSPopUpButton *stopPopUp;
 @property (nonatomic, strong) IBOutlet NSPopUpButton *backspacePopUp;
 @property (nonatomic, strong) IBOutlet NSButton *beepCheck;
+@property (nonatomic, strong) IBOutlet NSPopUpButton *pacePopUp;
+@property (nonatomic, strong) IBOutlet NSTextField *paceField;    /* the speed of one's choosing */
+@property (nonatomic, strong) IBOutlet NSPopUpButton *soundPopUp;
 /* a name and a button: a pop-up of 239 layouts is no way to choose one */
 @property (nonatomic, strong) IBOutlet NSTextField *layoutField;
 @property (nonatomic, strong) IBOutlet NSButton *layoutButton;
@@ -67,6 +72,8 @@ typedef NS_OPTIONS(NSUInteger, HRPreferencesChange) {
 /* User defaults the window shares with the rest of the app. */
 extern NSString * const HRCodeTypeTabsDefaultsKey;        /* Tab is typed where code indents deeper */
 extern NSString * const HRBeepOnErrorDefaultsKey;
+extern NSString * const HRPaceKindDefaultsKey;           /* HRPaceKind; off unless set */
+extern NSString * const HRPaceCustomWpmDefaultsKey;      /* 60 unless set */
 extern NSString * const HRKeyboardInCourseDefaultsKey;   /* on unless set */
 extern NSString * const HRKeyboardInCodeDefaultsKey;     /* on unless set */
 extern NSString * const HRKeyboardInTestsDefaultsKey;    /* off unless set */

@@ -12,7 +12,9 @@ plans.
 3. Preferences window (done)
 4. Weak-spot practice (done)
 5. History list and export (done)
-6. Tag `v0.1`
+6. Code mode (done)
+7. Polish for 1.0 (done, but for themes and the signing secrets)
+8. Tag `v0.1` — see [releasing.md](releasing.md)
 
 ## Known bugs
 
@@ -60,10 +62,17 @@ plans.
       over time as a chart, kinds of key narrowed to one programming language.
 - [ ] **Quote mode** — needs quotes that may be shipped: public-domain texts
       (Project Gutenberg), not MonkeyType's collection.
-- [ ] **Polish for 1.0** — pace caret (race your average or best), replay of
-      a test, sounds, more themes, a first-launch "teach me / test me" choice,
-      signed and notarized macOS build, a tagged release with a Releases table
-      in the README.
+- [x] **Polish for 1.0** — pace caret (average, best, or a chosen speed);
+      replay of the test just typed (R on the result), from an input log the
+      session keeps; key sounds, synthesized (click, typewriter); a
+      first-launch "teach me / test me" choice; the release workflow
+      smoke-tests, signs, notarizes and checks with `spctl`, and
+      [releasing.md](releasing.md) says how to give it the secrets; a Releases
+      table in the README. *Not seen on a display or heard yet.* More themes
+      were dropped as not needed. Still to do by hand: set the signing
+      secrets, tag. Still open: replay speed (2×, step), replays of saved
+      results (needs the input log stored), a volume setting, sounds on Linux
+      without the host's libao.
 
 ## Ideas beyond the plan
 

@@ -16,15 +16,17 @@ Objective-C 2.0 with ARC, XIB-based UI, one source tree for both platforms.
 
 ## Get it
 
-There is no tagged release yet. Until there is, every push builds both
-downloads: open the latest green run under
-[Actions](https://github.com/ashalkhakov/HomeRow/actions/workflows/ci.yml) and
-take the artifact for your platform.
+Take the files from the [latest release](https://github.com/ashalkhakov/HomeRow/releases/latest):
 
-| Platform | Artifact | Contains |
+| Platform | File | To run it |
 |---|---|---|
-| macOS 11 Big Sur or later | `HomeRow-macOS-<commit>` | Universal app (Intel and Apple silicon), ad-hoc signed: right-click ▸ Open the first time |
-| Linux x86_64 | `HomeRow-Linux-<commit>` | One file with GNUstep, FreeCoreData and fonts inside; `chmod +x`, then run it |
+| macOS 11 Big Sur or later, Intel and Apple silicon | `HomeRow-macOS-<version>.zip` | Unzip, move to Applications, open. A file named `…-unsigned.zip` is not notarized: right-click ▸ Open the first time |
+| Linux x86_64 | `HomeRow-Linux-<version>-x86_64.AppImage` | `chmod +x`, then run it. GNUstep, FreeCoreData and fonts are inside; key sounds use the system's libao if it is there |
+
+Between releases, every push builds the same two downloads: open the latest
+green run under
+[Actions](https://github.com/ashalkhakov/HomeRow/actions/workflows/ci.yml) and
+take `HomeRow-macOS-<commit>` or `HomeRow-Linux-<commit>`.
 
 Build from source:
 
@@ -50,7 +52,11 @@ Details: [docs/building.md](docs/building.md).
   has to go first, the key you hit by mistake in red.
 - **Tests** — time, words, zen and custom-text tests in 140 languages, with
   punctuation and numbers, live WPM and accuracy, and a results screen with a
-  per-second chart.
+  per-second chart. A **pace caret** runs ahead at your average, your best or
+  a speed you choose; **r** on a result plays the test back as it was typed;
+  key sounds if you like them.
+- **A first launch that asks** whether you want to be taught or tested, and
+  starts the course for your layout or a test accordingly.
 - **Code** — 23 real source files in C, Objective-C, C#, Python, JavaScript,
   TypeScript, Go, Rust, SQL and shell, plus your own: files and whole project
   folders, dropped on the window. Typed the way an editor has you type it:
@@ -95,7 +101,10 @@ How to use all of it, with every shortcut: [docs/using.md](docs/using.md).
   courses (Czech, Slovenian, Romanian) and the keypad courses have no
   keyboard to show.
 - **English interface only.**
-- **No signed or notarized macOS build** until the release secrets are set.
+- **The macOS build is signed and notarized only once the release secrets are
+  set** ([releasing.md](docs/releasing.md)); until then it is ad-hoc signed.
+- **Key sounds are synthesized**, not recorded, and on Linux need the
+  system's libao.
 
 The plan, phase by phase: [docs/feature-set.md](docs/feature-set.md); the working list: [docs/roadmap.md](docs/roadmap.md).
 
@@ -122,11 +131,11 @@ block-beta
 Everything under `Engine/` is free of AppKit and takes its timestamps as
 arguments, so the rules — what counts as an error, when a drill repeats, how a
 file is cut into parts, what a grammar makes of a line — are tested without a
-display: 81 XCTest cases, including vscode-textmate's own tokenizer suite, run
+display: 86 XCTest cases, including vscode-textmate's own tokenizer suite, run
 on both platforms in CI. What cannot be unit-tested is covered by a smoke test
 built into the app (`HR_SMOKE_TEST=1`): CI starts the packaged AppImage and the
 macOS app, which check their own outlets, type a test, a lesson and a section
-of code, open every window, and exit 0.
+of code, replay the test, open every window, and exit 0.
 
 | Path | What |
 |---|---|
@@ -143,7 +152,7 @@ of code, open every window, and exit 0.
 ## Documentation
 
 - [Using HomeRow](docs/using.md) — keys, courses, code, statistics
-- [Building and packaging](docs/building.md)
+- [Building and packaging](docs/building.md) · [Releasing](docs/releasing.md)
 - Adding [a language](docs/adding-a-language.md), [a keyboard layout](docs/adding-a-layout.md), [a programming language](docs/adding-a-code-language.md)
 - [How the numbers are worked out](docs/metrics.md) · [The results file](docs/results-format.md) · [Feature set and phases](docs/feature-set.md) · [Roadmap](docs/roadmap.md)
 - [GNUstep patches](patches/gnustep/README.md)

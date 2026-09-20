@@ -8,6 +8,7 @@
  * any later version.  It comes with ABSOLUTELY NO WARRANTY.  See COPYING.
  */
 #import "HRTestView.h"
+#import "HRPace.h"
 #import "HRTestSession.h"
 #import "HRTheme.h"
 #import "HRClock.h"
@@ -39,6 +40,7 @@ static BOOL HRInputLogging(void)
 
 - (void)setUpDefaults
 {
+    _paceCharacters = -1.0;
     if (!_font) _font = [HRTheme fixedPitchFontOfSize:[HRTheme proseFontSize]];
 }
 
@@ -89,6 +91,34 @@ static BOOL HRInputLogging(void)
 - (void)setTheme:(HRTheme *)theme
 {
     _theme = theme;
+    [self setNeedsDisplay:YES];
+}
+
+- (void)setPaceCharacters:(double)paceCharacters
+{
+    /* the caret moves a cell at a time: redraw when it has */
+    BOOL moved = floor(paceCharacters) != floor(_paceCharacters) || (paceCharacters < 0.0) != (_paceCharacters < 0.0);
+    _paceCharacters = paceCharacters;
+    if (moved) [self setNeedsDisplay:YES];
+}
+
+- (BOOL)getPaceWord:(NSUInteger *)word character:(NSUInteger *)character
+{
+    if (_paceCharacters < 0.0 || !_session || _session.state == HRSessionFinished || _codeLayout || _pageText) return NO;
+    return [HRPace getWordIndex:word characterIndex:character forCharacters:_paceCharacters inWords:_session.words];
+}
+
+- (NSString *)paceCaretDescription
+{
+    NSUInteger word = 0, character = 0;
+    if (![self getPaceWord:&word character:&character]) return nil;
+    return [NSString stringWithFormat:@"%lu:%lu", (unsigned long)word, (unsigned long)character];
+}
+
+- (void)setReplaying:(BOOL)replaying
+{
+    _replaying = replaying;
+    [self discardMarkedText];
     [self setNeedsDisplay:YES];
 }
 
@@ -201,12 +231,23 @@ static BOOL HRInputLogging(void)
         }
     }
 
+    NSUInteger paceWord = NSNotFound, paceCharacter = 0;
+    if (![self getPaceWord:&paceWord character:&paceCharacter]) paceWord = NSNotFound;
+
     for (NSUInteger row = 0; row < HRVisibleLines && firstLine + row < [lines count]; row++) {
         NSRange range = [lines[firstLine + row] rangeValue];
         CGFloat y = top + row * lineHeight;
         NSUInteger col = 0;
         for (NSUInteger wi = range.location; wi < NSMaxRange(range); wi++) {
             NSUInteger len = [_session displayLengthOfWordAtIndex:wi];
+            if (wi == paceWord) {
+                /* under the text and paler than the caret: company, not a second cursor.
+                 * It goes by the word as it should be, so extras typed into a
+                 * word do not push it along. */
+                CGFloat x = HRInset + (col + paceCharacter) * advance;
+                [[_theme.untyped colorWithAlphaComponent:0.8] set];
+                [NSBezierPath fillRect:NSMakeRect(x - 1.0, y + 2.0, 2.0, lineHeight - 10.0)];
+            }
             for (NSUInteger ci = 0; ci < len; ci++) {
                 HRCharacterState st = [_session stateOfCharacterAtIndex:ci inWordAtIndex:wi];
                 NSString *ch = [_session displayCharacterAtIndex:ci inWordAtIndex:wi];
@@ -438,6 +479,12 @@ static NSString *HRExpandTabs(NSString *line)
         [super keyDown:event];
         return;
     }
+    if (_replaying) {
+        BOOL leaves = (c == NSTabCharacter || c == 0x1B || c == NSCarriageReturnCharacter
+                       || c == NSNewlineCharacter || c == NSEnterCharacter);
+        if (leaves) [_delegate testViewDidRequestRestart:self];
+        return;
+    }
     if ([self hasMarkedText]) {
         /* an accent is waiting: the next key completes or cancels it, and
          * that is the input context's call, Backspace and Escape included */
@@ -508,16 +555,26 @@ static NSString *HRExpandTabs(NSString *line)
 {
     HRInputLog(@"insertText:%@ (the plain NSResponder one)", string);
     NSString *s = [string isKindOfClass:[NSAttributedString class]] ? [string string] : string;
-    if (_session.state == HRSessionFinished) return;
+    if (_session.state == HRSessionFinished || _replaying) return;
     NSUInteger wrongBefore = _session.wrongInputCount;
     [_session insertText:s atTime:_eventTime];
-    if (_session.wrongInputCount != wrongBefore) [self wrongInput];
+    BOOL wrong = _session.wrongInputCount != wrongBefore;
+    if (wrong) [self wrongInput];
     else [self endFlash];   /* the right key: the red goes at once */
+    [self keySounded:s correct:!wrong];
     [self afterInput];
+}
+
+- (void)keySounded:(NSString *)input correct:(BOOL)correct
+{
+    if ([_delegate respondsToSelector:@selector(testView:didTypeInput:correctly:)]) {
+        [_delegate testView:self didTypeInput:input correctly:correct];
+    }
 }
 
 - (void)typeText:(NSString *)text atTime:(NSTimeInterval)time
 {
+    if (_replaying) return;
     _eventTime = time;
     [self insertText:text];
 }
@@ -628,13 +685,17 @@ static NSString *HRExpandTabs(NSString *line)
 
 - (void)deleteBackward:(id)sender
 {
+    if (_replaying) return;
     [_session deleteBackwardAtTime:_eventTime];
+    [self keySounded:@"\b" correct:YES];
     [self afterInput];
 }
 
 - (void)deleteWordBackward:(id)sender
 {
+    if (_replaying) return;
     [_session deleteWordBackwardAtTime:_eventTime];
+    [self keySounded:@"\b" correct:YES];
     [self afterInput];
 }
 
@@ -678,7 +739,7 @@ static NSString *HRExpandTabs(NSString *line)
 - (void)tick
 {
     if (_flashUntil > 0.0 && HRMonotonicNow() >= _flashUntil) [self endFlash];
-    if (_session.state != HRSessionRunning) return;
+    if (_session.state != HRSessionRunning || _replaying) return;   /* a replay runs on its own clock */
     [_session tickAtTime:HRMonotonicNow()];
     [_delegate testViewDidChange:self];
     if (_session.state == HRSessionFinished) {

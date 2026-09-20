@@ -19,7 +19,7 @@ APP_NAME = HomeRow
 HomeRow_APPLICATION_ICON = HomeRow.png
 
 #
-# Resources.  Languages, Lessons and Themes are copied as whole folders, so a
+# Resources.  Languages, Lessons, Sounds and Themes are copied as whole folders, so a
 # new language pack, course or theme is picked up without touching this file.
 #
 HomeRow_RESOURCE_FILES = \
@@ -29,11 +29,13 @@ HomeRow_RESOURCE_FILES = \
     Resources/StatsWindow.xib \
     Resources/PreferencesWindow.xib \
     Resources/LayoutChooser.xib \
+    Resources/WelcomeWindow.xib \
     Resources/Code \
     Resources/HomeRow.png \
     Resources/Languages \
     Resources/Layouts \
     Resources/Lessons \
+    Resources/Sounds \
     Resources/Themes
 
 HomeRow_LANGUAGES = en
@@ -61,8 +63,10 @@ HomeRow_OBJC_FILES = \
     HRManagedObjects.m \
     HRResultStore.m \
     HRResultsView.m \
+    HRSoundPlayer.m \
     HRTestView.m \
     HRTheme.m \
+    HRWelcomeWindowController.m \
     main.m
 
 # Oniguruma: exactly these -- the other .c files in that folder are

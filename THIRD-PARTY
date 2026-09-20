@@ -21,6 +21,10 @@ HomeRow/Resources/Languages/*/words-*.txt
     source files and the commit.  The exception is english/words-200.txt,
     which was compiled by hand for HomeRow.
 
+HomeRow/Resources/Sounds/*/*.wav
+    HomeRow's own: synthesized sample by sample by Scripts/make-sounds.py,
+    nothing recorded or borrowed.  GPL-3.0-or-later, like the program.
+
 HomeRow/Resources/Layouts/*.plist
     Keyboard layouts from MonkeyType (same project, licence and commit),
     converted by Scripts/import-monkeytype-layouts.py; see Layouts/LICENSE.

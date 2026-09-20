@@ -10,12 +10,16 @@
 #import "HRPreferencesWindowController.h"
 #import "HRCodeWindowController.h"
 #import "HRTestConfiguration.h"
+#import "HRPace.h"
+#import "HRSoundPlayer.h"
 #import "HRTheme.h"
 
 #define HRLoc(key) NSLocalizedString(key, nil)
 
 NSString * const HRCodeTypeTabsDefaultsKey = @"HRCodeTypeTabs";
 NSString * const HRBeepOnErrorDefaultsKey = @"HRBeepOnError";
+NSString * const HRPaceKindDefaultsKey = @"HRPaceKind";
+NSString * const HRPaceCustomWpmDefaultsKey = @"HRPaceCustomWpm";
 NSString * const HRKeyboardInCourseDefaultsKey = @"HRShowKeyboardInCourse";
 NSString * const HRKeyboardInCodeDefaultsKey = @"HRShowKeyboardInCode";
 NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
@@ -82,6 +86,15 @@ NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
                                         HRLoc(@"Off")]
         values:@[@(HRBackspaceFree), @(HRBackspaceCurrentWord), @(HRBackspaceNone)]];
 
+    [self fill:_pacePopUp titles:@[HRLoc(@"Off"), HRLoc(@"My average"), HRLoc(@"My best"), HRLoc(@"A speed I choose:")]
+        values:@[@(HRPaceOff), @(HRPaceAverage), @(HRPaceBest), @(HRPaceCustom)]];
+    NSMutableArray *soundTitles = [NSMutableArray arrayWithObject:HRLoc(@"Off")], *soundValues = [NSMutableArray arrayWithObject:@""];
+    for (NSString *scheme in [HRSoundPlayer schemeNames]) {
+        [soundTitles addObject:[NSString stringWithFormat:@"%@%@", [[scheme substringToIndex:1] uppercaseString], [scheme substringFromIndex:1]]];
+        [soundValues addObject:scheme];
+    }
+    [self fill:_soundPopUp titles:soundTitles values:soundValues];
+
 #if defined(__APPLE__)
     [_revealButton setTitle:HRLoc(@"Show in Finder")];
 #endif
@@ -109,6 +122,12 @@ NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     [self select:@(c.stopPolicy) in:_stopPopUp];
     [self select:@(c.backspacePolicy) in:_backspacePopUp];
     [_beepCheck setState:([d boolForKey:HRBeepOnErrorDefaultsKey] ? NSControlStateValueOn : NSControlStateValueOff)];
+
+    [self select:@([d integerForKey:HRPaceKindDefaultsKey]) in:_pacePopUp];
+    NSInteger paceWpm = [d integerForKey:HRPaceCustomWpmDefaultsKey];
+    [_paceField setIntegerValue:(paceWpm > 0 ? paceWpm : 60)];
+    [_paceField setEnabled:[d integerForKey:HRPaceKindDefaultsKey] == HRPaceCustom];
+    [self select:([d stringForKey:HRSoundSchemeDefaultsKey] ?: @"") in:_soundPopUp];
 
     [_layoutField setStringValue:[(c.layoutID ?: @"qwerty") stringByReplacingOccurrencesOfString:@"_" withString:@" "]];
     [_keyboardCourseCheck setState:([self boolForKey:HRKeyboardInCourseDefaultsKey unlessSet:YES] ? NSControlStateValueOn : NSControlStateValueOff)];
@@ -161,6 +180,28 @@ NSString * const HRKeyboardInTestsDefaultsKey = @"HRShowKeyboardInTests";
     if (beep != [d boolForKey:HRBeepOnErrorDefaultsKey]) {
         [d setBool:beep forKey:HRBeepOnErrorDefaultsKey];
         change |= HRPreferencesChangedAppearance;
+    }
+
+    if (_pacePopUp) {
+        NSInteger pace = [[[_pacePopUp selectedItem] representedObject] integerValue];
+        if (pace != [d integerForKey:HRPaceKindDefaultsKey]) {
+            [d setInteger:pace forKey:HRPaceKindDefaultsKey];
+            change |= HRPreferencesChangedPace;
+        }
+        [_paceField setEnabled:pace == HRPaceCustom];
+        /* anything typed is brought to a speed a person might type at */
+        NSInteger wpm = MAX(5, MIN(300, [_paceField integerValue]));
+        NSInteger before = [d integerForKey:HRPaceCustomWpmDefaultsKey];
+        if (wpm != (before > 0 ? before : 60)) {
+            [d setInteger:wpm forKey:HRPaceCustomWpmDefaultsKey];
+            change |= HRPreferencesChangedPace;
+        }
+        if (wpm != [_paceField integerValue]) [_paceField setIntegerValue:wpm];
+    }
+    NSString *sound = [[_soundPopUp selectedItem] representedObject] ?: @"";
+    if (_soundPopUp && ![sound isEqual:([d stringForKey:HRSoundSchemeDefaultsKey] ?: @"")]) {
+        [d setObject:sound forKey:HRSoundSchemeDefaultsKey];
+        change |= HRPreferencesChangedSound;
     }
 
     NSArray *shows = @[@[_keyboardCourseCheck ?: (id)[NSNull null], HRKeyboardInCourseDefaultsKey, @YES],

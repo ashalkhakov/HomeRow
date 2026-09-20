@@ -116,5 +116,8 @@
 
 /* Highest WPM recorded for these settings, or nil. */
 - (HRTestResult *)personalBestForSettingsKey:(NSString *)settingsKey error:(NSError **)error;
+/* The speeds (NSNumber, wpm) of the latest `limit` results with these
+ * settings, oldest first: what the pace caret's "my average" goes by. */
+- (NSArray *)recentSpeedsForSettingsKey:(NSString *)settingsKey limit:(NSUInteger)limit;
 
 @end

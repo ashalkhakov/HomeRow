@@ -26,6 +26,8 @@
 /* A wrong key, as HRTestSession's lastWrongInput spells it -- for the
  * on-screen keyboard.  nil a moment later: stop showing it. */
 - (void)testView:(HRTestView *)view didTypeWrongInput:(NSString *)input;
+/* A key went down and meant something -- @"\b" for Backspace: for the sounds. */
+- (void)testView:(HRTestView *)view didTypeInput:(NSString *)input correctly:(BOOL)correct;
 @end
 
 /* The typing surface.  Draws the text itself instead of being an
@@ -57,6 +59,17 @@
  * suffix are drawn, untyped), scrolls to keep the caret's line in view,
  * and what is not typed yet is syntax-coloured. */
 @property (nonatomic) BOOL codeLayout;
+/* The pace caret: how far a steady typist would be by now, in characters
+ * from the start of the text, spaces included (see HRPace); negative for
+ * none.  Drawn in the prose layout only. */
+@property (nonatomic) double paceCharacters;
+/* A finished test being played back: the session is fed by someone else,
+ * keys are not typed, and Tab, Esc or Return ask for the restart that ends
+ * the show. */
+@property (nonatomic) BOOL replaying;
+/* Where the pace caret is, for tests: "word:character"; nil when there is
+ * none, or it has run off the end of the text. */
+@property (nonatomic, readonly, copy) NSString *paceCaretDescription;
 /* NSBeep() on every wrong key.  Off unless set. */
 @property (nonatomic) BOOL beepsOnError;
 /* IBOutlet-compatible; not retained. */
