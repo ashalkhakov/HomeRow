@@ -115,23 +115,38 @@ code on both platforms, and content that is all data.
 
 ```mermaid
 block-beta
-    columns 3
-    app["HomeRow.app — XIBs, HRAppDelegate, window controllers"]:3
-    views["Views — typing surface · keyboard · charts"]:2
-    store["HRResultStore — results, progress"]
-    engine["Engine (Foundation only) — sessions · scoring · courses · layouts · statistics"]:2
+    columns 4
+    delegate["HRAppDelegate — makes the parts, decides which activity is on, owns the app-wide windows"]:4
+    activities["Activities — free tests · course · code: what is typed, and what becomes of it"]:2
+    stage["HRStage — typing view, results, clock, pace caret, replay, sounds"]:2
+    bar["HRControlBar · HRMenuController"]
+    dock["HRKeyboardDock"]
+    windows["Window controllers — Courses · Code · Statistics · Preferences"]:2
+    model["HRAppModel — configuration · HRResultStore · HRPacks"]:4
+    engine["Engine (Foundation only) — sessions · scoring · courses · layouts · statistics · replay"]:3
     coredata["Core Data / FreeCoreData"]
     textmate["TextMate tokenizer"]
     onig["Oniguruma"]
-    packs["Packs — languages · layouts · lessons · code · themes"]
-    macos["macOS — Cocoa"]:1
+    packs["Packs — languages · layouts · lessons · code · themes · sounds"]:2
+    macos["macOS — Cocoa"]:2
     linux["Linux — GNUstep, libobjc2, ARC"]:2
 ```
+
+The app layer is a handful of objects with one job each. An *activity*
+(`HRFreeTestActivity`, `HRCourseActivity`, `HRCodeActivity`) knows what there
+is to type and what becomes of it — which lesson, which file, where the
+bookmark is, what gets recorded — and knows nothing about views. The *stage*
+(`HRStage`) knows how to put a session, a page or a result on screen, runs the
+clock, the pace caret, the replay and the sounds — and knows nothing about
+courses or files. The app delegate introduces them to each other: it hands the
+stage's news to whichever activity is on, and when an activity takes the stage
+it lets the others go and has the control bar, the menus and the on-screen
+keyboard follow.
 
 Everything under `Engine/` is free of AppKit and takes its timestamps as
 arguments, so the rules — what counts as an error, when a drill repeats, how a
 file is cut into parts, what a grammar makes of a line — are tested without a
-display: 86 XCTest cases, including vscode-textmate's own tokenizer suite, run
+display: 88 XCTest cases, including vscode-textmate's own tokenizer suite, run
 on both platforms in CI. What cannot be unit-tested is covered by a smoke test
 built into the app (`HR_SMOKE_TEST=1`): CI starts the packaged AppImage and the
 macOS app, which check their own outlets, type a test, a lesson and a section
@@ -139,8 +154,8 @@ of code, replay the test, open every window, and exit 0.
 
 | Path | What |
 |---|---|
-| `HomeRow/Engine/` | Sessions, scoring, text sources, GNU Typist scripts, course runs, keyboard layouts, TextMate grammars, code documents, statistics |
-| `HomeRow/` | App delegate, views, window controllers, the Core Data store |
+| `HomeRow/Engine/` | Sessions, scoring, text sources, packs (`HRPacks`: where languages, layouts and courses are read), GNU Typist scripts, course runs, keyboard layouts, TextMate grammars, code documents, statistics |
+| `HomeRow/` | The app: `HRAppDelegate`, `HRAppModel`, `HRStage`, the activities, `HRControlBar`, `HRKeyboardDock`, `HRMenuController`; views, window controllers, the Core Data store; `HRSmokeTest` |
 | `HomeRow/Resources/` | XIBs and the packs: `Languages/` `Layouts/` `Lessons/` `Code/` `Themes/` |
 | `HomeRow/HomeRow.xcdatamodeld` | The data model — compiled by Xcode on macOS, by FreeCoreData's `momc` on GNUstep |
 | `HomeRow/ThirdParty/oniguruma/` | The regular expression engine TextMate grammars need |

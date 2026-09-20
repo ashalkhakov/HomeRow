@@ -50,20 +50,30 @@ HomeRow_XCDATAMODELD_FILES = HomeRow.xcdatamodeld
 #
 HomeRow_OBJC_FILES = \
     $(wildcard Engine/*.m) \
+    HRActivity.m \
     HRAppDelegate.m \
+    HRAppModel.m \
     HRChartView.m \
+    HRCodeActivity.m \
+    HRControlBar.m \
+    HRCourseActivity.m \
     HRCourseWindowController.m \
     HRCodeWindowController.m \
     HRPlotView.m \
     HRPreferencesWindowController.m \
     HRStatTilesView.m \
     HRStatsWindowController.m \
+    HRFreeTestActivity.m \
+    HRKeyboardDock.m \
     HRKeyboardView.m \
     HRLayoutChooserController.m \
     HRManagedObjects.m \
+    HRMenuController.m \
     HRResultStore.m \
     HRResultsView.m \
+    HRSmokeTest.m \
     HRSoundPlayer.m \
+    HRStage.m \
     HRTestView.m \
     HRTheme.m \
     HRWelcomeWindowController.m \
