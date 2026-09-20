@@ -42,8 +42,11 @@
 #import "HRPlotView.h"
 #import "HRStatTilesView.h"
 #import <objc/runtime.h>
-#if defined(GNUSTEP)
-#import <GNUstepBase/NSTask+GNUstepBase.h>   /* +launchPathForTool:, for the smoke test */
+/* +[NSTask launchPathForTool:], for the AppImage's xdg-open check.  Guarded by
+ * what is there rather than by GNUSTEP: CI's import check wants exactly this
+ * form on the line above anything outside Foundation/AppKit/CoreData. */
+#if __has_include(<GNUstepBase/NSTask+GNUstepBase.h>)
+#import <GNUstepBase/NSTask+GNUstepBase.h>
 #endif
 #import "HRPace.h"
 #import "HRReplay.h"
