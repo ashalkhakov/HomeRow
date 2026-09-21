@@ -114,19 +114,26 @@ jobs:
           generate_release_notes: true
           files: ${{ env.SRC_PATH }}/HomeRow-Linux-*.AppImage
 
-  ############################### macOS ###############################
-  # Signing and notarization are optional: with no secrets configured this
-  # job still produces an ad-hoc signed zip and says so. The secrets, when
-  # they exist, are
+  ############################ macOS ############################
+  # Ported from RDLKit's release.yml: the same environment, the same secrets,
+  # the same keychain, codesign and notarytool commands, which are known to
+  # work there. What differs is what is built -- one app, universal, no
+  # framework or command-line tool beside it -- and that the app is tested
+  # and smoke-tested before it is signed.
   #
   #   MACOS_CERTIFICATE            base64 of a Developer ID Application .p12
   #   MACOS_CERTIFICATE_PASSWORD   its password
   #   MACOS_SIGN_IDENTITY          "Developer ID Application: Name (TEAMID)"
   #   NOTARY_APPLE_ID, NOTARY_TEAM_ID, NOTARY_PASSWORD   (app-specific password)
   macos:
-    name: macOS app
+    name: macOS (signed)
     runs-on: macos-15
     timeout-minutes: 45
+    # The signing and notarisation secrets live in this environment, and an
+    # environment's secrets are only readable by a job that names it: without
+    # this line every one of them resolves to the empty string and the job
+    # ships an unsigned build, saying so and passing.
+    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -135,7 +142,7 @@ jobs:
           if [ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]; then
             echo "APP_VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
           else
-            echo "APP_VERSION=0.0.0-${GITHUB_RUN_NUMBER}-${GITHUB_SHA}" >> "$GITHUB_ENV"
+            echo "APP_VERSION=0.0.0-build${{ github.run_number }}" >> "$GITHUB_ENV"
           fi
 
       - name: Stamp the version
@@ -151,7 +158,7 @@ jobs:
           xcodebuild -project HomeRow.xcodeproj -scheme HomeRow \
             -destination 'generic/platform=macOS' -configuration Release \
             -derivedDataPath "$RUNNER_TEMP/release" ONLY_ACTIVE_ARCH=NO build
-          echo "APP=$RUNNER_TEMP/release/Build/Products/Release/HomeRow.app" >> "$GITHUB_ENV"
+          echo "BUILT=$RUNNER_TEMP/release/Build/Products/Release" >> "$GITHUB_ENV"
 
       # The same check CI makes, on the very app that is about to be signed.
       - name: Smoke-test the app
@@ -159,77 +166,76 @@ jobs:
         run: |
           export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
           export CFFIXED_USER_HOME="$HOME"
-          HR_SMOKE_TEST=1 "$APP/Contents/MacOS/HomeRow"
+          HR_SMOKE_TEST=1 "$BUILT/HomeRow.app/Contents/MacOS/HomeRow"
 
+      # Signing is skipped, loudly, when the certificate secrets are absent, so
+      # a fork or a dry run still produces artifacts -- unsigned, and named so.
       - name: Sign
+        id: sign
         env:
           CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
           CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
           IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
         run: |
           if [ -z "$CERTIFICATE" ] || [ -z "$IDENTITY" ]; then
-            echo "::warning::MACOS_CERTIFICATE / MACOS_SIGN_IDENTITY not set; the app is ad-hoc signed and Gatekeeper will object to it"
-            echo "SIGNED=no" >> "$GITHUB_ENV"
+            echo "::warning::MACOS_CERTIFICATE or MACOS_SIGN_IDENTITY not set; shipping unsigned"
+            echo "signed=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
-          keychain="$RUNNER_TEMP/signing.keychain-db"
-          kpass=$(uuidgen)
+          keychain=$RUNNER_TEMP/signing.keychain-db
+          password=$(uuidgen)
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
           echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security create-keychain -p "$kpass" "$keychain"
-          security set-keychain-settings -lut 3600 "$keychain"
-          security unlock-keychain -p "$kpass" "$keychain"
-          security import "$RUNNER_TEMP/cert.p12" -P "$CERTIFICATE_PASSWORD" \
-            -A -t cert -f pkcs12 -k "$keychain"
-          security set-key-partition-list -S apple-tool:,apple: -k "$kpass" "$keychain" > /dev/null
-          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
+            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: \
+            -s -k "$password" "$keychain" > /dev/null
+          security list-keychain -d user -s "$keychain" login.keychain-db
           rm -f "$RUNNER_TEMP/cert.p12"
+
           # --options runtime is what notarization requires.
-          codesign --force --options runtime --timestamp --sign "$IDENTITY" "$APP"
-          codesign --verify --strict --verbose=2 "$APP"
-          echo "SIGNED=yes" >> "$GITHUB_ENV"
+          codesign --force --timestamp --options runtime --deep \
+                   --sign "$IDENTITY" "$BUILT/HomeRow.app"
+          codesign --verify --strict --verbose=2 "$BUILT/HomeRow.app"
+          echo "signed=true" >> "$GITHUB_OUTPUT"
 
       - name: Notarize
-        if: env.SIGNED == 'yes'
+        if: steps.sign.outputs.signed == 'true'
         env:
           NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
           NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
           NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
         run: |
+          # Checked here rather than in `if:`, where a step's own env block is
+          # not reliably visible to its own condition -- the step would be
+          # skipped whatever the secrets said, and a signed-but-unnotarized app
+          # that Gatekeeper still refuses would ship from a green run.
           if [ -z "$NOTARY_APPLE_ID" ] || [ -z "$NOTARY_TEAM_ID" ] || [ -z "$NOTARY_PASSWORD" ]; then
             echo "::warning::NOTARY_* secrets not set; signed but not notarized"
             exit 0
           fi
-          ditto -c -k --keepParent "$APP" "$RUNNER_TEMP/HomeRow-notarize.zip"
-          # notarytool exits 0 for a submission Apple rejected, so read the
-          # status, and on anything but Accepted print the log that says why
-          creds=(--apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" --password "$NOTARY_PASSWORD")
-          xcrun notarytool submit "$RUNNER_TEMP/HomeRow-notarize.zip" "${creds[@]}" \
-            --wait --output-format json > "$RUNNER_TEMP/notary.json"
-          cat "$RUNNER_TEMP/notary.json"
-          status=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["status"])' "$RUNNER_TEMP/notary.json")
-          if [ "$status" != "Accepted" ]; then
-            id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["id"])' "$RUNNER_TEMP/notary.json")
-            xcrun notarytool log "$id" "${creds[@]}" || true
-            echo "::error::notarization ended as $status"
-            exit 1
-          fi
-          xcrun stapler staple "$APP"
-          # what a downloader's Mac will decide
-          spctl --assess --type execute --verbose=2 "$APP"
+          ditto -c -k --keepParent "$BUILT/HomeRow.app" "$RUNNER_TEMP/HomeRow-notarize.zip"
+          xcrun notarytool submit "$RUNNER_TEMP/HomeRow-notarize.zip" \
+            --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" \
+            --password "$NOTARY_PASSWORD" --wait
+          xcrun stapler staple "$BUILT/HomeRow.app"
 
       - name: Package
         run: |
-          suffix=""; [ "$SIGNED" = "yes" ] || suffix="-unsigned"
-          ditto -c -k --keepParent "$APP" "HomeRow-macOS-${APP_VERSION}${suffix}.zip"
+          suffix=""
+          [ "${{ steps.sign.outputs.signed }}" = "true" ] || suffix="-unsigned"
+          ditto -c -k --keepParent "$BUILT/HomeRow.app" \
+            "HomeRow-macOS-${APP_VERSION}${suffix}.zip"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: HomeRow-macOS
+          name: HomeRow-macOS-${{ env.APP_VERSION }}
           path: HomeRow-macOS-*.zip
 
       - name: Attach to the release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
         with:
-          generate_release_notes: true
           files: HomeRow-macOS-*.zip

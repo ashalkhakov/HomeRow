@@ -48,7 +48,10 @@ This needs a paid Apple Developer Program membership. Once:
 
 3. **An app-specific password** for notarization: account.apple.com ▸
    Sign-In and Security ▸ App-Specific Passwords.
-4. **Repository secrets** (Settings ▸ Secrets and variables ▸ Actions):
+4. **Secrets of the `production` environment** (Settings ▸ Environments ▸
+   production ▸ Environment secrets) — the macOS job of `release.yml` names
+   that environment, and only a job that does can read them. Repository-level
+   secrets of the same names work too, but keep them in one place:
 
    | Secret | Value |
    |---|---|
@@ -60,6 +63,12 @@ This needs a paid Apple Developer Program membership. Once:
    | `NOTARY_PASSWORD` | the app-specific password |
 
    Then delete the `.p12` from wherever it was exported to.
+
+If the job warns that `MACOS_CERTIFICATE` is not set although it is, the log
+shows `CERTIFICATE:` empty in the step's `env:` — the secrets are in an
+environment the job does not name, or the environment restricts which
+branches and tags may use it (Deployment branches and tags: a `v*` tag must
+be allowed).
 
 With the certificate but without the `NOTARY_*` secrets the app is signed
 and not notarized, and the job says so in a warning.
