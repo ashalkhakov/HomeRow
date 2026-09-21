@@ -65,7 +65,7 @@ plans.
 - [x] **Polish for 1.0** — pace caret (average, best, or a chosen speed);
       replay of the test just typed (R on the result), from an input log the
       session keeps; key sounds, synthesized (click, typewriter); a
-      first-launch "teach me / test me" choice; the release workflow
+      welcome at every launch (carry on / teach me / test me); the release workflow
       smoke-tests, signs, notarizes and checks with `spctl`, and
       [releasing.md](releasing.md) says how to give it the secrets; a Releases
       table in the README. *Not seen on a display or heard yet.* More themes

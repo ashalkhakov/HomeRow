@@ -835,31 +835,66 @@
     }
 #endif
 
-    /* The first launch: the question is asked of someone new only, and
-     * "teach me" starts a course for the layout in use */
+    /* The welcome: every launch starts with it.  By now there are results
+     * on record, so there is something to carry on with; each of the three
+     * answers must put something on the stage, whatever was on before. */
     {
         HRWelcomeWindowController *welcome = [_app welcomeWindow];
-        [welcome showWindow:self];
-        if (!welcome.teachButton || !welcome.testButton) [failures addObject:@"WelcomeWindow.xib: a button is not connected"];
+        id courseBefore = [smokeDefaults objectForKey:HRCurrentCourseDefaultsKey];
+        HRTestMode modeBefore = _app.model.configuration.mode;
+        [smokeDefaults removeObjectForKey:HRCurrentCourseDefaultsKey];
         if ([_app isNewHere]) [failures addObject:@"someone with results on record was taken for new"];
+
+        /* carry on: a words test, as the configuration says */
+        _app.model.configuration.mode = HRTestModeWords;
+        [_app showWelcome];
+        if (!welcome.resumeButton || !welcome.resumeField || !welcome.teachButton || !welcome.testButton) {
+            [failures addObject:@"WelcomeWindow.xib: an outlet is not connected"];
+        }
+        if (![welcome.resumeButton isEnabled] || [[welcome.resumeField stringValue] rangeOfString:@"word"].location == NSNotFound) {
+            [failures addObject:[NSString stringWithFormat:@"the welcome does not say what there is to carry on with (\"%@\")", [welcome.resumeField stringValue]]];
+        }
+        [[[welcome window] contentView] display];
+        HRTestSession *before = _app.stage.session;
+        [welcome resume:self];
+        if ([[welcome window] isVisible]) [failures addObject:@"the welcome stayed up after its answer"];
+        if (_app.activity != _app.freeTests || _app.stage.session == before || _app.stage.session.configuration.mode != HRTestModeWords) {
+            [failures addObject:@"\"Carry on\" did not start the kind of test that was on"];
+        }
+
+        /* teach me: with no course under way, the one for the layout in use */
         NSString *beginners = [_app.course beginnersCourseFile];
         if (!beginners) {
             [failures addObject:@"there is no course to start a beginner on"];
         } else {
-            id welcomeBefore = [smokeDefaults objectForKey:HRWelcomeDoneDefaultsKey];
-            id courseBefore = [smokeDefaults objectForKey:HRCurrentCourseDefaultsKey];
             BOOL started = [_app.model.store progressForCourse:beginners] != nil;
+            [_app showWelcome];
             [welcome teachMe:self];
-            if (!_app.course.run || ![_app.course.courseFile isEqual:beginners]) [failures addObject:@"\"Teach me\" did not start the beginners' course"];
-            if ([[welcome window] isVisible]) [failures addObject:@"the welcome stayed up after its answer"];
-            if (![smokeDefaults boolForKey:HRWelcomeDoneDefaultsKey]) [failures addObject:@"the welcome would be shown again"];
-            [_app.course leave];
+            if (_app.activity != _app.course || !_app.course.run || ![_app.course.courseFile isEqual:beginners]) {
+                [failures addObject:@"\"Teach me\" did not start the beginners' course"];
+            }
+            /* test me, from inside a lesson: a test all the same */
+            [_app showWelcome];
+            if ([[welcome.resumeField stringValue] rangeOfString:@"lesson"].location == NSNotFound) {
+                [failures addObject:@"in a course, the welcome does not offer to carry on with its lesson"];
+            }
+            [welcome testMe:self];
+            if (_app.activity != _app.freeTests || _app.course.run || _app.stage.session.state != HRSessionIdle
+                || (_app.model.configuration.mode != HRTestModeTime && _app.model.configuration.mode != HRTestModeWords)) {
+                [failures addObject:@"\"Test me\" did not put a test on in place of the lesson"];
+            }
             if (!started) [_app.model.store resetCourse:beginners error:NULL];
-            if (welcomeBefore) [smokeDefaults setObject:welcomeBefore forKey:HRWelcomeDoneDefaultsKey];
-            else [smokeDefaults removeObjectForKey:HRWelcomeDoneDefaultsKey];
-            if (courseBefore) [smokeDefaults setObject:courseBefore forKey:HRCurrentCourseDefaultsKey];
-            else [smokeDefaults removeObjectForKey:HRCurrentCourseDefaultsKey];
         }
+        /* closing the window instead of answering is an answer */
+        [_app showWelcome];
+        before = _app.stage.session;
+        [[welcome window] performClose:self];
+        if (_app.stage.session == before) [failures addObject:@"closing the welcome did not carry on"];
+
+        if (courseBefore) [smokeDefaults setObject:courseBefore forKey:HRCurrentCourseDefaultsKey];
+        else [smokeDefaults removeObjectForKey:HRCurrentCourseDefaultsKey];
+        _app.model.configuration.mode = modeBefore;
+        [_app.model saveConfiguration];
     }
     if (soundBefore) [smokeDefaults setObject:soundBefore forKey:HRSoundSchemeDefaultsKey];
     else [smokeDefaults removeObjectForKey:HRSoundSchemeDefaultsKey];

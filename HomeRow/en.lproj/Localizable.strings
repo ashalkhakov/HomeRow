@@ -177,3 +177,17 @@
 "My best" = "My best";
 "Replay the Last Test" = "Replay the Last Test";
 "replay   %.0f wpm   %.0f%%   %.0fs   \U2014   esc \U2014 back to the result" = "replay   %.0f wpm   %.0f%%   %.0fs   \U2014   esc \U2014 back to the result";
+
+/* The welcome */
+"%@ \U2014 finished; pick what to take again." = "%@ \U2014 finished; pick what to take again.";
+"%@ \U2014 typed to the end; pick what to type again." = "%@ \U2014 typed to the end; pick what to type again.";
+"%@, lesson %lu of %lu." = "%@, lesson %lu of %lu.";
+"%@, part %lu of %lu." = "%@, part %lu of %lu.";
+"%ld-second tests in %@." = "%ld-second tests in %@.";
+"%ld-word tests in %@." = "%ld-word tests in %@.";
+"Nothing to carry on with yet." = "Nothing to carry on with yet.";
+"Practice on your weak keys." = "Practice on your weak keys.";
+"Tests, as you left them." = "Tests, as you left them.";
+"Your code." = "Your code.";
+"Your courses." = "Your courses.";
+"Zen: type anything." = "Zen: type anything.";

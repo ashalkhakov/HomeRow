@@ -8,6 +8,8 @@
     <objects>
         <customObject id="-2" userLabel="File's Owner" customClass="HRWelcomeWindowController">
             <connections>
+                <outlet property="resumeButton" destination="hRw-Rs-Bt1" id="hRw-Rs-Bt4"/>
+                <outlet property="resumeField" destination="hRw-Rs-Lb1" id="hRw-Rs-Lb4"/>
                 <outlet property="teachButton" destination="hRw-Tc-Bt1" id="hRw-Tc-Bt4"/>
                 <outlet property="testButton" destination="hRw-Ts-Bt1" id="hRw-Ts-Bt4"/>
                 <outlet property="window" destination="hRw-Wn-Wn1" id="hRw-Wn-Wn2"/>
@@ -18,14 +20,14 @@
         <window title="Welcome to HomeRow" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" visibleAtLaunch="NO" animationBehavior="default" id="hRw-Wn-Wn1">
             <windowStyleMask key="styleMask" titled="YES" closable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="400" y="400" width="500" height="270"/>
+            <rect key="contentRect" x="400" y="400" width="500" height="330"/>
             <rect key="screenRect" x="0.0" y="0.0" width="1920" height="1055"/>
             <view key="contentView" id="hRw-Wn-Vw1">
-                <rect key="frame" x="0.0" y="0.0" width="500" height="270"/>
+                <rect key="frame" x="0.0" y="0.0" width="500" height="330"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hRw-Ti-Lb1">
-                        <rect key="frame" x="24" y="222" width="452" height="26"/>
+                        <rect key="frame" x="24" y="282" width="452" height="26"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Welcome to HomeRow" id="hRw-Ti-Lb2">
                             <font key="font" metaFont="systemBold" size="20"/>
@@ -34,11 +36,31 @@
                         </textFieldCell>
                     </textField>
                     <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hRw-Su-Lb1">
-                        <rect key="frame" x="24" y="194" width="452" height="17"/>
+                        <rect key="frame" x="24" y="254" width="452" height="17"/>
                         <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                         <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Where would you like to start?" id="hRw-Su-Lb2">
                             <font key="font" metaFont="system"/>
                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
+                            <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
+                        </textFieldCell>
+                    </textField>
+                    <button verticalHuggingPriority="750" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hRw-Rs-Bt1">
+                        <rect key="frame" x="18" y="206" width="230" height="32"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <buttonCell key="cell" type="push" title="Carry on where I left off" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="hRw-Rs-Bt2">
+                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                            <font key="font" metaFont="system"/>
+                        </buttonCell>
+                        <connections>
+                            <action selector="resume:" target="-2" id="hRw-Rs-Bt3"/>
+                        </connections>
+                    </button>
+                    <textField focusRingType="none" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" fixedFrame="YES" translatesAutoresizingMaskIntoConstraints="NO" id="hRw-Rs-Lb1">
+                        <rect key="frame" x="258" y="196" width="222" height="45"/>
+                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                        <textFieldCell key="cell" sendsActionOnEndEditing="YES" alignment="left" title="Nothing to carry on with yet." id="hRw-Rs-Lb2">
+                            <font key="font" metaFont="system" size="11"/>
+                            <color key="textColor" name="secondaryLabelColor" catalog="System" colorSpace="catalog"/>
                             <color key="backgroundColor" name="controlColor" catalog="System" colorSpace="catalog"/>
                         </textFieldCell>
                     </textField>

@@ -89,7 +89,8 @@
 - (HRPreferencesWindowController *)preferencesWindow;
 - (HRLayoutChooserController *)layoutChooser;
 - (HRWelcomeWindowController *)welcomeWindow;
-/* Nothing on record and never asked: the welcome is for them. */
+/* Nothing on record: the welcome has nothing to offer to carry on with. */
 - (BOOL)isNewHere;
+- (void)showWelcome;
 
 @end

@@ -92,14 +92,16 @@
     _menus = [[HRMenuController alloc] initWithModel:_model course:_course target:self];
     [_menus build];
     [self syncControls];
-    /* someone following a course, or typing a file, comes back to it where they left it */
-    [[self activityForMode:_model.configuration.mode] begin];
+    [_liveField setStringValue:@""];
     [_window makeKeyAndOrderFront:self];
 
     if ([[[NSProcessInfo processInfo] environment] objectForKey:@"HR_SMOKE_TEST"]) {
+        /* nobody to ask: on with whatever was on */
+        [self carryOn];
         [[[HRSmokeTest alloc] initWithAppDelegate:self] performSelector:@selector(run) withObject:nil afterDelay:0.5];
     } else {
-        [self welcomeIfNew];
+        /* every launch starts with the question; the stage waits for the answer */
+        [self showWelcome];
     }
 }
 
@@ -130,6 +132,7 @@
         if (other != activity) [other leave];
     }
     _activity = activity;
+    [_welcomeWindow dismiss];   /* a menu got there first: the question is answered */
     _model.configuration.mode = mode;
     [self syncControls];
     if (save) [_model saveConfiguration];
@@ -496,25 +499,58 @@
     return subjects;
 }
 
-#pragma mark - The first launch
+#pragma mark - The welcome
 
-/* Asked once, and only of someone with nothing on record: whoever has
- * results or a course under way has answered it already. */
+/* Nothing on record: there is nothing to carry on with. */
 - (BOOL)isNewHere
 {
-    if ([[NSUserDefaults standardUserDefaults] boolForKey:HRWelcomeDoneDefaultsKey]) return NO;
     HRResultStore *store = _model.store;
-    if ([[store recentResultsWithLimit:1 error:NULL] count] > 0 || [[store startedCourses] count] > 0) return NO;
-    return YES;
+    return [[store recentResultsWithLimit:1 error:NULL] count] == 0 && [[store startedCourses] count] == 0;
 }
 
-- (void)welcomeIfNew
+/* Someone following a course, or typing a file, comes back to it where they
+ * left it; anyone else to the kind of test they had. */
+- (void)carryOn
 {
-    if (![self isNewHere]) {
-        [[NSUserDefaults standardUserDefaults] setBool:YES forKey:HRWelcomeDoneDefaultsKey];
-        return;
+    [[self activityForMode:_model.configuration.mode] begin];
+}
+
+/* What -carryOn would put on, for the welcome to say; nil for someone new. */
+- (NSString *)resumeDescription
+{
+    if ([self isNewHere]) return nil;
+    HRTestConfiguration *configuration = _model.configuration;
+    HRResultStore *store = _model.store;
+    switch (configuration.mode) {
+        case HRTestModeLesson: {
+            NSString *file = [_course currentCourseFile];
+            NSString *title = [self statistics:nil titleForCourseFile:file];
+            if (!title) return HRLoc(@"Your courses.");
+            NSUInteger total = [[_model.packs scriptForCourseFile:file].lessons count];
+            NSUInteger next = (NSUInteger)MAX(0, [[store progressForCourse:file].lessonIndex integerValue]);
+            if (next >= total) return [NSString stringWithFormat:HRLoc(@"%@ \u2014 finished; pick what to take again."), title];
+            return [NSString stringWithFormat:HRLoc(@"%@, lesson %lu of %lu."), title, (unsigned long)(next + 1), (unsigned long)total];
+        }
+        case HRTestModeCode: {
+            HRCodeFile *file = [_code currentFile];
+            if (!file) return HRLoc(@"Your code.");
+            NSUInteger total = [_code.library documentForFile:file error:NULL].numberOfSections;
+            NSUInteger next = (NSUInteger)MAX(0, [[store progressForCourse:file.identifier].lessonIndex integerValue]);
+            if (total == 0 || next >= total) return [NSString stringWithFormat:HRLoc(@"%@ \u2014 typed to the end; pick what to type again."), file.title];
+            return [NSString stringWithFormat:HRLoc(@"%@, part %lu of %lu."), file.title, (unsigned long)(next + 1), (unsigned long)total];
+        }
+        case HRTestModeTime:
+            return [NSString stringWithFormat:HRLoc(@"%ld-second tests in %@."), (long)configuration.amount, [_model currentLanguage].displayName ?: @"?"];
+        case HRTestModeWords:
+            return [NSString stringWithFormat:HRLoc(@"%ld-word tests in %@."), (long)configuration.amount, [_model currentLanguage].displayName ?: @"?"];
+        case HRTestModeZen:
+            return HRLoc(@"Zen: type anything.");
+        case HRTestModePractice:
+            return HRLoc(@"Practice on your weak keys.");
+        case HRTestModeCustom:
+            break;   /* the text is gone with the last launch */
     }
-    [[self welcomeWindow] showWindow:self];
+    return HRLoc(@"Tests, as you left them.");
 }
 
 - (HRWelcomeWindowController *)welcomeWindow
@@ -523,16 +559,31 @@
     return _welcomeWindow;
 }
 
+- (void)showWelcome
+{
+    [self welcomeWindow].resumeDescription = [self resumeDescription];
+    [[self welcomeWindow] showWindow:self];
+}
+
 - (void)welcome:(HRWelcomeWindowController *)controller didChoose:(HRWelcomeChoice)choice
 {
     [_window makeKeyAndOrderFront:self];
-    if (choice == HRWelcomeTestMe) {
-        [_window makeFirstResponder:_testView];
-        return;   /* the test is there already */
+    switch (choice) {
+        case HRWelcomeResume:
+            [self carryOn];
+            break;
+        case HRWelcomeTestMe:
+            /* a test whatever was on: the last kind of word test, or 30 seconds */
+            [self beginWordTest];
+            break;
+        case HRWelcomeTeachMe: {
+            /* the course they are in, if any; else the one to start a beginner on */
+            NSString *file = [_course currentCourseFile] ?: [_course beginnersCourseFile];
+            if (file) [_course switchToCourse:file];
+            else [_course showWindow];   /* no course for this layout: let them pick */
+            break;
+        }
     }
-    NSString *file = [_course beginnersCourseFile];
-    if (file) [_course switchToCourse:file];
-    else [_course showWindow];   /* no course for this layout: let them pick */
 }
 
 @end

@@ -1,11 +1,14 @@
 # Using HomeRow
 
-The first time it starts, HomeRow asks where you want to begin. *Teach me to
-touch-type* starts the first course for your keyboard layout (GNU Typist's
-quick QWERTY course, or the Dvorak or Colemak one), with the keyboard on
-screen; *Test my typing* leaves you at a 30-second test. It is asked once,
-and only of someone with nothing on record; everything stays a menu away
-whichever you pick.
+Every launch starts with a small window and three answers. *Carry on where I
+left off* puts back whatever was on when you quit — the lesson you were in,
+the file you were typing, the kind of test you had — and says which; it is
+greyed out until there is something on record. *Teach me to touch-type* goes
+on with your course, or, with none under way, starts the first one for your
+keyboard layout (GNU Typist's quick QWERTY course, or the Dvorak or Colemak
+one) with the keyboard on screen. *Test my typing* puts a test on, whatever
+was on before. Return takes the first answer that is available; closing the
+window carries on. Everything else stays a menu away whichever you pick.
 
 ## Keys
 

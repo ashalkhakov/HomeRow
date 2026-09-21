@@ -12,7 +12,8 @@
 @class HRWelcomeWindowController;
 
 typedef NS_ENUM(NSInteger, HRWelcomeChoice) {
-    HRWelcomeTeachMe = 0,   /* a course, from the beginning */
+    HRWelcomeResume = 0,    /* whatever was on when HomeRow was last quit */
+    HRWelcomeTeachMe,       /* a course, from the beginning or from its place */
     HRWelcomeTestMe         /* a test, now */
 };
 
@@ -20,20 +21,31 @@ typedef NS_ENUM(NSInteger, HRWelcomeChoice) {
 - (void)welcome:(HRWelcomeWindowController *)controller didChoose:(HRWelcomeChoice)choice;
 @end
 
-/* The first launch: a tutor and a speed test are different programs to
- * different people, and the main window cannot guess which one this is.
- * WelcomeWindow.xib.  Shown once; closing it is a choice too (a test). */
-@interface HRWelcomeWindowController : NSWindowController
+/* What every launch starts with: carry on, be taught, or be tested.  A
+ * tutor and a speed test are different programs to different people, and to
+ * the same person on different days.  WelcomeWindow.xib.
+ *
+ * Closing the window is a choice too: to carry on if there is something to
+ * carry on with, a test otherwise. */
+@interface HRWelcomeWindowController : NSWindowController <NSWindowDelegate>
 
+@property (nonatomic, strong) IBOutlet NSButton *resumeButton;
+@property (nonatomic, strong) IBOutlet NSTextField *resumeField;
 @property (nonatomic, strong) IBOutlet NSButton *teachButton;
 @property (nonatomic, strong) IBOutlet NSButton *testButton;
 
 - (instancetype)initWithDelegate:(id<HRWelcomeDelegate>)delegate;
 
+/* What "carry on" would carry on with, in a line or two -- "Quick QWERTY
+ * course, lesson 4 of 15"; nil when there is nothing on record, which
+ * greys the button out. */
+@property (nonatomic, copy) NSString *resumeDescription;
+
+/* Something else answered the question (a menu, another window). */
+- (void)dismiss;
+
+- (IBAction)resume:(id)sender;
 - (IBAction)teachMe:(id)sender;
 - (IBAction)testMe:(id)sender;
 
 @end
-
-/* User default: the question has been answered (or waved away). */
-extern NSString * const HRWelcomeDoneDefaultsKey;

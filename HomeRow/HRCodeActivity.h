@@ -26,6 +26,9 @@
 
 @property (nonatomic, readonly) HRCodeLibrary *library;
 
+/* The file that "carry on" means: the one typed last, if it is still there. */
+- (HRCodeFile *)currentFile;
+
 /* -begin carries on the current file where it was left, or says why not. */
 - (void)startSection:(NSUInteger)section ofFile:(HRCodeFile *)file;
 

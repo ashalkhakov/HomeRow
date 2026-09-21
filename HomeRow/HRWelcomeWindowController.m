@@ -9,11 +9,12 @@
  */
 #import "HRWelcomeWindowController.h"
 
-NSString * const HRWelcomeDoneDefaultsKey = @"HRWelcomeDone";
+#define HRLoc(key) NSLocalizedString(key, nil)
 
 @implementation HRWelcomeWindowController
 {
     __weak id<HRWelcomeDelegate> _delegate;
+    BOOL _chosen;   /* the window is closing because of a choice, not instead of one */
 }
 
 - (instancetype)initWithDelegate:(id<HRWelcomeDelegate>)delegate
@@ -28,17 +29,55 @@ NSString * const HRWelcomeDoneDefaultsKey = @"HRWelcomeDone";
 {
     [super windowDidLoad];
     [[self window] center];
-    [[self window] setDefaultButtonCell:[_teachButton cell]];
+    [[self window] setDelegate:self];
+    [self sync];
+}
+
+- (void)setResumeDescription:(NSString *)resumeDescription
+{
+    _resumeDescription = [resumeDescription copy];
+    if ([self isWindowLoaded]) [self sync];
+}
+
+/* Return goes to what most people want: on with it, or -- the first time --
+ * the course. */
+- (void)sync
+{
+    BOOL canResume = [_resumeDescription length] > 0;
+    [_resumeButton setEnabled:canResume];
+    [_resumeField setStringValue:(canResume ? _resumeDescription : HRLoc(@"Nothing to carry on with yet."))];
+    [[self window] setDefaultButtonCell:[(canResume ? _resumeButton : _teachButton) cell]];
+}
+
+- (void)showWindow:(id)sender
+{
+    _chosen = NO;
+    [super showWindow:sender];
 }
 
 - (void)choose:(HRWelcomeChoice)choice
 {
-    [[NSUserDefaults standardUserDefaults] setBool:YES forKey:HRWelcomeDoneDefaultsKey];
+    _chosen = YES;
     [[self window] orderOut:self];
     [_delegate welcome:self didChoose:choice];
 }
 
+- (void)dismiss
+{
+    if (![self isWindowLoaded] || _chosen) return;
+    _chosen = YES;
+    [[self window] orderOut:self];
+}
+
+- (IBAction)resume:(id)sender { if ([_resumeDescription length] > 0) [self choose:HRWelcomeResume]; }
 - (IBAction)teachMe:(id)sender { [self choose:HRWelcomeTeachMe]; }
 - (IBAction)testMe:(id)sender { [self choose:HRWelcomeTestMe]; }
+
+- (void)windowWillClose:(NSNotification *)notification
+{
+    if (_chosen) return;
+    _chosen = YES;
+    [_delegate welcome:self didChoose:([_resumeDescription length] > 0 ? HRWelcomeResume : HRWelcomeTestMe)];
+}
 
 @end

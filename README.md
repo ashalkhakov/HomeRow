@@ -55,8 +55,8 @@ Details: [docs/building.md](docs/building.md).
   per-second chart. A **pace caret** runs ahead at your average, your best or
   a speed you choose; **r** on a result plays the test back as it was typed;
   key sounds if you like them.
-- **A first launch that asks** whether you want to be taught or tested, and
-  starts the course for your layout or a test accordingly.
+- **A launch that asks**: carry on where you left off, be taught, or be
+  tested — and says what carrying on would mean.
 - **Code** — 23 real source files in C, Objective-C, C#, Python, JavaScript,
   TypeScript, Go, Rust, SQL and shell, plus your own: files and whole project
   folders, dropped on the window. Typed the way an editor has you type it:
