@@ -101,5 +101,6 @@ plans.
   path in the typing view; IME needs the `NSTextInputClient` work first.
 - **Flatpak** next to the AppImage; a Homebrew cask once the Mac build is
   signed.
-- **Upstream to GNUstep** — the fixed-pitch font fallback, and the patches in
-  `patches/gnustep`.
+- **Upstream to GNUstep** — the fixed-pitch font fallback, and the gnustep-gui
+  fixes CI applies from the shared
+  [gnustep-patches](https://github.com/ashalkhakov/gnustep-patches) repository.

@@ -162,7 +162,7 @@ of code, replay the test, open every window, and exit 0.
 | `HomeRowTests/` | XCTest sources and fixtures |
 | `HomeRow.xcodeproj` · `GNUmakefile` | The two builds, side by side |
 | `Scripts/` | Importers for the packs, AppImage packaging, version stamping |
-| `patches/gnustep/` | gnustep-gui fixes applied when CI builds GNUstep |
+| `patches/gnustep/` | Where the gnustep-gui fixes went: the shared gnustep-patches repository |
 
 ## Documentation
 

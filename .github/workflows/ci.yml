@@ -137,6 +137,12 @@ jobs:
       CXX: clang++
       LIBRARY_COMBO: ng-gnu-gnu
       RUNTIME_VERSION: gnustep-2.0
+      # The shared repository the gnustep-gui fixes come from, and the pin
+      # that decides which of them this build gets. It is part of the cache
+      # key below -- which used to hash patches/gnustep/*.patch -- so moving
+      # it rebuilds the stack instead of reusing a differently-patched
+      # prefix. Name a commit here to pin the build exactly.
+      GNUSTEP_PATCHES_REF: 5b7cea43e828d053d72078f6dd1ebeb8785d770c
       # libobjc2 and libdispatch land in the prefix's plain lib/, which the
       # gnustep layout does not treat as a library root.
       LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
@@ -202,7 +208,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+          key: gnustep-v3-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'
@@ -215,7 +221,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v2-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/patches/gnustep/*.patch') }}
+          key: gnustep-v3-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
 
       # gnustep-base picks ICU up on its own when libicu-dev is installed
       # (it is, above) and says nothing when it is not -- and without it
