@@ -103,6 +103,8 @@ Build scripts and patches
     Adapted from XFormsKit, https://github.com/ashalkhakov/XFormsKit
     (LGPL-2.1-or-later, same author), used here under GPL-3.0-or-later.
 
-patches/gnustep/*.patch
-    Fixes to gnustep-gui (LGPL-2.1-or-later, as gnustep-gui itself), copied
-    from XFormsKit. See patches/gnustep/README.md.
+gnustep-patches, https://github.com/ashalkhakov/gnustep-patches
+    Fixes to gnustep-gui (LGPL-2.1-or-later, as gnustep-gui itself), applied
+    to the gui built into the AppImage. Not carried in this repository any
+    more: .github/scripts/dependencies.sh clones that one and applies what it
+    holds for libs-gui. See patches/gnustep/README.md.
