@@ -1,86 +1,96 @@
 name: Release
 
-# A tag is a release: `git tag v0.1.0 && git push origin v0.1.0`.
-# workflow_dispatch builds the same artifacts without publishing anything,
-# for rehearsing a release from any branch.
+# A tag is a release: `git tag v0.1.0 && git push origin v0.1.0`. A tag with
+# a - in it (v0.2.0-rc1) makes a pre-release.
+# workflow_dispatch builds the same artifacts: with a tag, that tag, attached
+# to its release; with none, the branch, as artifacts only -- for rehearsing
+# a release from any branch.
+#
+# Signing, notarizing, the Sparkle appcast, the GNUstep stack, linuxdeploy
+# and the AppImage's update information are gnustep-release-actions', the
+# same in every app's release; what is HomeRow's own (its build, its tests
+# and smoke tests, version stamping, packaging) stays here.
 on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'A v* tag to build and attach to its release (empty: this branch, artifacts only)'
+        required: false
+        default: ''
 
 permissions:
   contents: write   # to attach files to the release
+
+env:
+  TAG: ${{ inputs.tag || (github.ref_type == 'tag' && github.ref_name) || '' }}
 
 jobs:
   ############################ Linux AppImage ############################
   linux:
     name: Linux AppImage
-    runs-on: ubuntu-latest
-    timeout-minutes: 90
-    env:
-      SRC_PATH: ${{ github.workspace }}/source
-      DEPS_PATH: ${{ github.workspace }}/dependencies
-      INSTALL_PATH: ${{ github.workspace }}/build
-      CC: clang
-      CXX: clang++
-      LIBRARY_COMBO: ng-gnu-gnu
-      RUNTIME_VERSION: gnustep-2.0
-      # The shared repository the gnustep-gui fixes come from, and the pin
-      # that decides which of them this build gets. It is part of the cache
-      # key below -- which used to hash patches/gnustep/*.patch -- so moving
-      # it rebuilds the stack instead of reusing a differently-patched
-      # prefix. Name a commit here to pin the build exactly.
-      GNUSTEP_PATCHES_REF: 5b7cea43e828d053d72078f6dd1ebeb8785d770c
-      LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
+    # Built on the oldest Ubuntu LTS still in support, not ubuntu-latest: an
+    # AppImage carries its own libraries but not glibc, so it runs only on a
+    # system at least as new as the one it was linked on. Raise this only
+    # when that release leaves support.
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    # The stack's settings (PREFIX, SOURCES, the toolchain) are
+    # gnustep-release-actions/gnustep-stack's.
     defaults:
       run:
         working-directory: ${{ github.workspace }}/source
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ env.TAG || github.ref }}
           path: source
+
+      # GNUSTEP_PATCHES_REF and FREECOREDATA_REF, from the one place they
+      # are named (the release builds what CI tested).
+      - uses: ashalkhakov/gnustep-release-actions/pins@v1
+        with:
+          file: source/.github/pins.env
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ashalkhakov/gnustep-patches
+          ref: ${{ env.GNUSTEP_PATCHES_REF }}
+          path: gnustep-patches
 
       - name: Version
         run: |
-          if [ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]; then
-            echo "APP_VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          if [ -n "$TAG" ]; then
+            echo "APP_VERSION=$TAG" >> "$GITHUB_ENV"
           else
             echo "APP_VERSION=0.0.0-${GITHUB_RUN_NUMBER}-${GITHUB_SHA}" >> "$GITHUB_ENV"
           fi
 
-      - name: Install packages
-        run: |
-          ./.github/scripts/apt-update.sh
-          sudo apt-get -q -y install \
-            pkg-config libgnutls28-dev libffi-dev libicu-dev libxml2-dev libxslt1-dev \
-            libssl-dev libavahi-client-dev zlib1g-dev gnutls-bin libcurl4-gnutls-dev \
-            libgmp-dev libcairo2-dev libjpeg-dev libtiff-dev libpng-dev libicns-dev \
-            libpthread-workqueue-dev libsqlite3-dev libsndfile1-dev libao-dev \
-            libfreetype-dev libfontconfig1-dev libxrender-dev liblcms2-dev \
-            libxt-dev libxmu-dev libxft-dev libxrandr-dev libxfixes-dev libxcursor-dev \
-            xvfb desktop-file-utils fonts-dejavu fonts-liberation
-          if [ -x /usr/bin/ld.gold ]; then
-            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.gold 10
-          else
-            sudo apt-get -q -y install lld
-            sudo update-alternatives --install /usr/bin/ld ld /usr/bin/ld.lld 10
-          fi
-
-      # Same key as ci.yml, so a release normally starts from the stack the
-      # last CI run on the default branch already built and tested against.
-      - name: Restore GNUstep
-        id: gnustep-cache
-        uses: actions/cache/restore@v4
+      # The patched stack, cached by its recipe: what dependencies.sh builds
+      # for CI, but FreeCoreData, which is HomeRow's own and comes next.
+      # Beyond the stack's packages: libsndfile and libao, which make
+      # gnustep-gui build its sound plug-ins (key sounds); SQLite for
+      # FreeCoreData; Xvfb for the smoke test.
+      - name: GNUstep
+        uses: ashalkhakov/gnustep-release-actions/gnustep-stack@v1
         with:
-          path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v3-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
+          patches: ${{ github.workspace }}/gnustep-patches
+          components: libobjc2 libdispatch tools-make libs-base libs-gui libs-back eau tools-xctest
+          extra-packages: libsqlite3-dev libsndfile1-dev libao-dev xvfb
 
-      - name: Build GNUstep
-        if: steps.gnustep-cache.outputs.cache-hit != 'true'
-        run: ./.github/scripts/dependencies.sh
+      # The packages are not in the stack's cache key: a stack built without
+      # them would be restored without its sound plug-ins.
+      - name: gnustep-gui built its sound plug-ins
+        run: |
+          find "$PREFIX" -maxdepth 5 -name '*.nssound' | grep . \
+            || { echo "::error::no .nssound bundles: were libsndfile1-dev and libao-dev installed before the stack was built?"; exit 1; }
 
-      - name: Fetch linuxdeploy and the AppImage runtime
-        run: ./Scripts/install-linuxdeploy.sh
+      - name: FreeCoreData
+        run: INSTALL_PATH="$PREFIX" DEPS_PATH="$SOURCES" ./.github/scripts/dependencies.sh freecoredata
+
+      - name: linuxdeploy and the AppImage runtime
+        uses: ashalkhakov/gnustep-release-actions/appimage-tools@v1
 
       - name: Stamp the version
         run: ./Scripts/stamp-version.sh "$APP_VERSION"
@@ -88,22 +98,29 @@ jobs:
       # A release that does not pass its own tests is not one.
       - name: Unit tests
         run: |
-          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
+          . "$PREFIX/System/Library/Makefiles/GNUstep.sh"
           make check
 
+      # A release's image updates itself from the newest release (through
+      # AppImageUpdate, Gear Lever and the like), by the .zsync attached
+      # beside it; a pre-release's does not.
+      - name: Update information
+        uses: ashalkhakov/gnustep-release-actions/appimage-update-info@v1
+        with:
+          tag: ${{ env.TAG }}
+          zsync: HomeRow-Linux-*x86_64.AppImage.zsync
+
       - name: Package the AppImage
-        env:
-          LDAI_RUNTIME_FILE: /tmp/appimage-runtime/runtime-x86_64
         run: |
-          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
-          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/prepare-appdir.sh
-          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/package-appimage.sh
+          . "$PREFIX/System/Library/Makefiles/GNUstep.sh"
+          GNUSTEP_PREFIX="$PREFIX" ./Scripts/prepare-appdir.sh
+          GNUSTEP_PREFIX="$PREFIX" ./Scripts/package-appimage.sh
 
       - name: Smoke-test the AppImage
         run: |
           image=$(ls HomeRow-Linux-*.AppImage)
           chmod +x "$image"
-          mv "$INSTALL_PATH" "$INSTALL_PATH.away"
+          mv "$PREFIX" "$PREFIX.away"
           export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
           env -u LD_LIBRARY_PATH APPIMAGE_EXTRACT_AND_RUN=1 HR_SMOKE_TEST=1 \
             timeout 120 xvfb-run -a ./"$image"
@@ -111,26 +128,27 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: HomeRow-Linux-AppImage
-          path: ${{ env.SRC_PATH }}/HomeRow-Linux-*.AppImage
+          path: |
+            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage
+            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage.zsync
+          if-no-files-found: error
 
       - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: env.TAG != ''
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ env.TAG }}
+          prerelease: ${{ contains(env.TAG, '-') }}
           generate_release_notes: true
-          files: ${{ env.SRC_PATH }}/HomeRow-Linux-*.AppImage
+          files: |
+            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage
+            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage.zsync
 
   ############################ macOS ############################
-  # Ported from RDLKit's release.yml: the same environment, the same secrets,
-  # the same keychain, codesign and notarytool commands, which are known to
-  # work there. What differs is what is built -- one app, universal, no
-  # framework or command-line tool beside it -- and that the app is tested
-  # and smoke-tested before it is signed.
-  #
-  #   MACOS_CERTIFICATE            base64 of a Developer ID Application .p12
-  #   MACOS_CERTIFICATE_PASSWORD   its password
-  #   MACOS_SIGN_IDENTITY          "Developer ID Application: Name (TEAMID)"
-  #   NOTARY_APPLE_ID, NOTARY_TEAM_ID, NOTARY_PASSWORD   (app-specific password)
+  # One app, universal, tested and smoke-tested before it is signed.
+  # gnustep-release-actions' README lists the secrets; each step skips
+  # itself, saying so, when its secrets are absent (a fork, a dry run): the
+  # build is then unsigned, and named so.
   macos:
     name: macOS (signed)
     runs-on: macos-15
@@ -142,11 +160,13 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG || github.ref }}
 
       - name: Version
         run: |
-          if [ "${GITHUB_REF#refs/tags/}" != "$GITHUB_REF" ]; then
-            echo "APP_VERSION=${GITHUB_REF#refs/tags/}" >> "$GITHUB_ENV"
+          if [ -n "$TAG" ]; then
+            echo "APP_VERSION=$TAG" >> "$GITHUB_ENV"
           else
             echo "APP_VERSION=0.0.0-build${{ github.run_number }}" >> "$GITHUB_ENV"
           fi
@@ -164,7 +184,10 @@ jobs:
           xcodebuild -project HomeRow.xcodeproj -scheme HomeRow \
             -destination 'generic/platform=macOS' -configuration Release \
             -derivedDataPath "$RUNNER_TEMP/release" ONLY_ACTIVE_ARCH=NO build
-          echo "BUILT=$RUNNER_TEMP/release/Build/Products/Release" >> "$GITHUB_ENV"
+          app="$RUNNER_TEMP/release/Build/Products/Release/HomeRow.app"
+          test -d "$app/Contents/Frameworks/Sparkle.framework" \
+            || { echo "::error::HomeRow.app does not embed Sparkle.framework"; exit 1; }
+          echo "APP=$app" >> "$GITHUB_ENV"
 
       # The same check CI makes, on the very app that is about to be signed.
       - name: Smoke-test the app
@@ -172,76 +195,68 @@ jobs:
         run: |
           export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
           export CFFIXED_USER_HOME="$HOME"
-          HR_SMOKE_TEST=1 "$BUILT/HomeRow.app/Contents/MacOS/HomeRow"
+          HR_SMOKE_TEST=1 "$APP/Contents/MacOS/HomeRow"
 
-      # Signing is skipped, loudly, when the certificate secrets are absent, so
-      # a fork or a dry run still produces artifacts -- unsigned, and named so.
       - name: Sign
         id: sign
-        env:
-          CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
-          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
-        run: |
-          if [ -z "$CERTIFICATE" ] || [ -z "$IDENTITY" ]; then
-            echo "::warning::MACOS_CERTIFICATE or MACOS_SIGN_IDENTITY not set; shipping unsigned"
-            echo "signed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          keychain=$RUNNER_TEMP/signing.keychain-db
-          password=$(uuidgen)
-          security create-keychain -p "$password" "$keychain"
-          security set-keychain-settings -lut 21600 "$keychain"
-          security unlock-keychain -p "$password" "$keychain"
-          echo "$CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
-          security import "$RUNNER_TEMP/cert.p12" -k "$keychain" \
-            -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-          security set-key-partition-list -S apple-tool:,apple:,codesign: \
-            -s -k "$password" "$keychain" > /dev/null
-          security list-keychain -d user -s "$keychain" login.keychain-db
-          rm -f "$RUNNER_TEMP/cert.p12"
+        uses: ashalkhakov/gnustep-release-actions/macos-sign@v1
+        with:
+          app: ${{ env.APP }}
+          certificate: ${{ secrets.MACOS_CERTIFICATE }}
+          certificate-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          identity: ${{ secrets.MACOS_SIGN_IDENTITY }}
 
-          # --options runtime is what notarization requires.
-          codesign --force --timestamp --options runtime --deep \
-                   --sign "$IDENTITY" "$BUILT/HomeRow.app"
-          codesign --verify --strict --verbose=2 "$BUILT/HomeRow.app"
-          echo "signed=true" >> "$GITHUB_OUTPUT"
+      # The hardened runtime loads only frameworks signed by the same team:
+      # the signed app, Sparkle in it, has to start and pass again.
+      - name: Smoke-test the signed app
+        if: steps.sign.outputs.signed == 'true'
+        timeout-minutes: 2
+        run: |
+          export HOME="$RUNNER_TEMP/smoke-home-signed"; mkdir -p "$HOME"
+          export CFFIXED_USER_HOME="$HOME"
+          HR_SMOKE_TEST=1 "$APP/Contents/MacOS/HomeRow"
 
       - name: Notarize
         if: steps.sign.outputs.signed == 'true'
-        env:
-          NOTARY_APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
-          NOTARY_TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
-          NOTARY_PASSWORD: ${{ secrets.NOTARY_PASSWORD }}
-        run: |
-          # Checked here rather than in `if:`, where a step's own env block is
-          # not reliably visible to its own condition -- the step would be
-          # skipped whatever the secrets said, and a signed-but-unnotarized app
-          # that Gatekeeper still refuses would ship from a green run.
-          if [ -z "$NOTARY_APPLE_ID" ] || [ -z "$NOTARY_TEAM_ID" ] || [ -z "$NOTARY_PASSWORD" ]; then
-            echo "::warning::NOTARY_* secrets not set; signed but not notarized"
-            exit 0
-          fi
-          ditto -c -k --keepParent "$BUILT/HomeRow.app" "$RUNNER_TEMP/HomeRow-notarize.zip"
-          xcrun notarytool submit "$RUNNER_TEMP/HomeRow-notarize.zip" \
-            --apple-id "$NOTARY_APPLE_ID" --team-id "$NOTARY_TEAM_ID" \
-            --password "$NOTARY_PASSWORD" --wait
-          xcrun stapler staple "$BUILT/HomeRow.app"
+        uses: ashalkhakov/gnustep-release-actions/macos-notarize@v1
+        with:
+          app: ${{ env.APP }}
+          apple-id: ${{ secrets.NOTARY_APPLE_ID }}
+          team-id: ${{ secrets.NOTARY_TEAM_ID }}
+          password: ${{ secrets.NOTARY_PASSWORD }}
 
       - name: Package
         run: |
           suffix=""
           [ "${{ steps.sign.outputs.signed }}" = "true" ] || suffix="-unsigned"
-          ditto -c -k --keepParent "$BUILT/HomeRow.app" \
-            "HomeRow-macOS-${APP_VERSION}${suffix}.zip"
+          ditto -c -k --keepParent "$APP" "HomeRow-macOS-${APP_VERSION}${suffix}.zip"
+
+      # The appcast the app's Sparkle reads (SUFeedURL: the newest release's
+      # appcast.xml), signed with the key whose public half is SUPublicEDKey;
+      # for a release only.
+      - name: Appcast
+        if: steps.sign.outputs.signed == 'true'
+        uses: ashalkhakov/gnustep-release-actions/sparkle-appcast@v1
+        with:
+          archive: ${{ github.workspace }}/HomeRow-macOS-${{ env.APP_VERSION }}.zip
+          output: ${{ github.workspace }}/appcast.xml
+          tag: ${{ env.TAG }}
+          private-key: ${{ secrets.SPARKLE_PRIVATE_KEY }}
 
       - uses: actions/upload-artifact@v4
         with:
           name: HomeRow-macOS-${{ env.APP_VERSION }}
-          path: HomeRow-macOS-*.zip
+          path: |
+            ${{ github.workspace }}/HomeRow-macOS-*.zip
+            ${{ github.workspace }}/appcast.xml
+          if-no-files-found: error
 
       - name: Attach to the release
-        if: startsWith(github.ref, 'refs/tags/')
+        if: env.TAG != ''
         uses: softprops/action-gh-release@v2
         with:
-          files: HomeRow-macOS-*.zip
+          tag_name: ${{ env.TAG }}
+          prerelease: ${{ contains(env.TAG, '-') }}
+          files: |
+            ${{ github.workspace }}/HomeRow-macOS-*.zip
+            ${{ github.workspace }}/appcast.xml

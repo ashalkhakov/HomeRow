@@ -18,12 +18,14 @@ files to a GitHub release with generated notes.
 
    The tag is the version: `Scripts/stamp-version.sh` writes it into the
    Xcode project (numeric part only, as Apple requires), the GNUmakefile and
-   `HomeRowInfo.plist`. `v0.1.0-rc1` works; GitHub marks nothing as a
-   pre-release by itself, so tick that box on the release page for one.
+   `HomeRowInfo.plist`. `v0.1.0-rc1` works, and makes a pre-release: one
+   that installed copies are not offered (below).
 5. When the workflow is done, the release has
    `HomeRow-Linux-<version>-x86_64.AppImage` and
-   `HomeRow-macOS-<version>.zip` (or `…-unsigned.zip`, see below). Edit the
-   generated notes into something a user wants to read.
+   `HomeRow-macOS-<version>.zip` (or `…-unsigned.zip`, see below), and for
+   a release (not a pre-release) `appcast.xml` and the AppImage's `.zsync`
+   (see *Updates*). Edit the generated notes into something a user wants
+   to read.
 
 A tag that fails its tests publishes nothing for that platform; fix, delete
 the tag (`git push origin :v0.1.0`), and tag again.
@@ -61,6 +63,7 @@ This needs a paid Apple Developer Program membership. Once:
    | `NOTARY_APPLE_ID` | the Apple ID's e-mail address |
    | `NOTARY_TEAM_ID` | the ten-character team ID |
    | `NOTARY_PASSWORD` | the app-specific password |
+   | `SPARKLE_PRIVATE_KEY` | the EdDSA key Sparkle's `generate_keys -x` exports (*Updates*) |
 
    Then delete the `.p12` from wherever it was exported to.
 
@@ -74,15 +77,34 @@ With the certificate but without the `NOTARY_*` secrets the app is signed
 and not notarized, and the job says so in a warning.
 
 HomeRow needs no entitlements: it uses the hardened runtime as it is, opens
-only files the user points it at, and is not sandboxed. If notarization is
-rejected, the job prints Apple's log; the usual cause is a nested binary
-that was not signed, and HomeRow has none.
+only files the user points it at, and is not sandboxed. The hardened runtime
+is switched on when the app is signed (gnustep-release-actions'
+`macos-sign`), not in the Xcode project: an ad-hoc signed build with it
+would refuse to load the Sparkle.framework embedded in it. Signing goes
+inside out -- Sparkle's helpers, the framework, then the app -- rather than
+with `--deep`. If notarization is rejected, the job prints Apple's log; the
+usual cause is a nested binary that was not signed.
 
 To check a download by hand:
 
     spctl --assess --type execute --verbose=2 HomeRow.app
     codesign --verify --deep --strict --verbose=2 HomeRow.app
     xcrun stapler validate HomeRow.app
+
+## Updates
+
+The Mac app updates itself with Sparkle: it checks the newest release's
+`appcast.xml` (`SUFeedURL` in `HomeRow/HomeRow-Info.plist`) once a day if
+the user allows it, and HomeRow ▸ Check for Updates… checks at once. A
+release's appcast is written by `release.yml` and signed with the
+`SPARKLE_PRIVATE_KEY` secret, whose public half is `SUPublicEDKey` in the
+same plist; without the secret there is no appcast, and installed copies
+are not offered the release.
+
+A release's AppImage carries update information (`gh-releases-zsync`, the
+newest release), and its `.zsync` is attached beside it, so AppImageUpdate,
+Gear Lever and the like update it by the blocks that changed. A
+pre-release's carries none: "latest" would offer it the release before it.
 
 ## Linux
 
@@ -95,5 +117,9 @@ Arch). Without them HomeRow is silent and otherwise unchanged.
 The GNUstep stack is cached in CI under a key that hashes
 `.github/scripts/dependencies.sh` and the patches. A change to the *apt
 package list* that GNUstep's configure scripts react to (as `libao-dev` was)
-is not in that hash: bump the `gnustep-vN` prefix of the key in both
-workflows.
+is not in that hash: bump the `gnustep-vN` prefix of the key in `ci.yml`.
+`release.yml` builds the AppImage on Ubuntu 22.04, so that it runs there and
+on anything newer, with the stack from gnustep-release-actions'
+`gnustep-stack` (gnustep-patches' `build-gnustep.sh`, cached by its own
+recipe) and FreeCoreData from `dependencies.sh freecoredata`; there, a
+change to the package list means a new `cache-key` for that action.

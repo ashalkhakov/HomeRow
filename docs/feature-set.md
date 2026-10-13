@@ -15,7 +15,7 @@ A native typing tutor for GNUstep and Cocoa, in the spirit of MonkeyType (prose,
 | Lessons/course | In scope — not for the author, but for everyone else who needs a free tutor |
 | Code mode | In scope; first version done (section 4). Syntax comes from **TextMate grammars** — the format VS Code still uses — rather than tokenizers of our own |
 | Languages / layouts | v0.2 ships English + QWERTY-US only, but languages and keyboard layouts are **data packs** from the start, so more can be added without code (section 7a) |
-| FreeCoreData in CI | Checked out at a pinned tag/commit by `dependencies.sh`; bumping the pin is a deliberate commit |
+| FreeCoreData in CI | Checked out at a pinned commit by `dependencies.sh`; the pin is `FREECOREDATA_REF` in `.github/pins.env`, and bumping it is a deliberate commit |
 | Hosting / CI | GitHub and GitHub Actions only; no Forgejo pipeline |
 
 ## 1. Design principles
@@ -205,7 +205,7 @@ HomeRow/
     HomeRow.xcdatamodeld
     en.lproj/
   HomeRowTests/               XCTest bundle, own GNUmakefile
-  Scripts/                    install-linuxdeploy.sh, AppDir assembly
+  Scripts/                    AppDir assembly, AppImage packaging
   .github/workflows/ci.yml, release.yml
   .github/scripts/apt-update.sh, dependencies.sh
   docs/  COPYING  THIRD-PARTY  README.md

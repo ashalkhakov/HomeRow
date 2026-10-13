@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>SUFeedURL</key>
+	<string>https://github.com/ashalkhakov/HomeRow/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>9cBO16YcwJZy7uzpT8tSbD/UnYF9HNTekubfnW8WlUE=</string>
 </dict>
 </plist>

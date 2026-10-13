@@ -24,7 +24,8 @@ HomeRowTests_OBJC_FILES = $(wildcard *.m)
 HomeRowTests_OBJC_FILES += \
     $(wildcard ../HomeRow/Engine/*.m) \
     ../HomeRow/HRResultStore.m \
-    ../HomeRow/HRManagedObjects.m
+    ../HomeRow/HRManagedObjects.m \
+    ../HomeRow/HRGNUstepCompat.m
 
 HomeRowTests_C_FILES = \
     ../HomeRow/ThirdParty/oniguruma/src/regerror.c \

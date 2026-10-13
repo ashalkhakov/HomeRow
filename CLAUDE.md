@@ -8,7 +8,8 @@ course from zero, quick tests, and real-text practice.
 Fixes to GNUstep itself are not kept here. They live in `../gnustep-patches`,
 which this machine's GNUstep projects share, and `.github/scripts/dependencies.sh`
 clones that repository at the commit pinned by `GNUSTEP_PATCHES_REF` and
-applies what it carries for libs-gui.
+applies what it carries for libs-gui. Every pin (that one, FreeCoreData's)
+is in `.github/pins.env`: to move one, edit it there.
 
 If a bug here turns out to be GNUstep's, work in that repository and read its
 `CLAUDE.md` first: reproduce in the docker container, fix, turn the

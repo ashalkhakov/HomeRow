@@ -18,7 +18,8 @@ supported; on Linux, use the AppImage unless you are developing.
 `.github/scripts/dependencies.sh` builds the whole stack into a prefix of
 your choice — libobjc2, libdispatch, tools-make, libs-base, libs-gui,
 libs-back, [FreeCoreData](https://github.com/ashalkhakov/FreeCoreData) at a
-pinned commit, the Eau theme and tools-xctest. The package list it needs is
+pinned commit (`.github/pins.env`, where every pin is moved), the Eau
+theme and tools-xctest. The package list it needs is
 in `.github/workflows/ci.yml`.
 
 ```sh

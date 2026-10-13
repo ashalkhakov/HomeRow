@@ -1,3 +1,4 @@
-# HomeRow is ARC throughout.
-ADDITIONAL_OBJCFLAGS += -fobjc-arc -Wall
+# HomeRow is ARC throughout.  HRGNUstepCompat.h is force-included, as in
+# the app, for what this libc lacks (arc4random before glibc 2.36).
+ADDITIONAL_OBJCFLAGS += -fobjc-arc -Wall -include HRGNUstepCompat.h
 ADDITIONAL_CFLAGS += -w -DHAVE_CONFIG_H
