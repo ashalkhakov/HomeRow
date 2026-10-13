@@ -1,15 +1,14 @@
 name: Release
 
-# A tag is a release: `git tag v0.1.0 && git push origin v0.1.0`. A tag with
-# a - in it (v0.2.0-rc1) makes a pre-release.
-# workflow_dispatch builds the same artifacts: with a tag, that tag, attached
-# to its release; with none, the branch, as artifacts only -- for rehearsing
-# a release from any branch.
+# HomeRow for macOS (signed, notarized, updated by Sparkle) and Linux (an
+# AppImage that updates itself), by gnustep-release-actions' release
+# workflows, the same as every app's. What is HomeRow's own is in
+# .github/release/ (build, test, package); the commits it builds on in
+# .github/pins.env.
 #
-# Signing, notarizing, the Sparkle appcast, the GNUstep stack, linuxdeploy
-# and the AppImage's update information are gnustep-release-actions', the
-# same in every app's release; what is HomeRow's own (its build, its tests
-# and smoke tests, version stamping, packaging) stays here.
+# A v* tag builds both and attaches them to its release (a pre-release when
+# the tag has a '-'). Run by hand with a tag, it builds that tag; with none,
+# this branch, as artifacts only.
 on:
   push:
     tags: ['v*']
@@ -21,242 +20,21 @@ on:
         default: ''
 
 permissions:
-  contents: write   # to attach files to the release
-
-env:
-  TAG: ${{ inputs.tag || (github.ref_type == 'tag' && github.ref_name) || '' }}
+  contents: write
 
 jobs:
-  ############################ Linux AppImage ############################
-  linux:
-    name: Linux AppImage
-    # Built on the oldest Ubuntu LTS still in support, not ubuntu-latest: an
-    # AppImage carries its own libraries but not glibc, so it runs only on a
-    # system at least as new as the one it was linked on. Raise this only
-    # when that release leaves support.
-    runs-on: ubuntu-22.04
-    timeout-minutes: 120
-    # The stack's settings (PREFIX, SOURCES, the toolchain) are
-    # gnustep-release-actions/gnustep-stack's.
-    defaults:
-      run:
-        working-directory: ${{ github.workspace }}/source
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TAG || github.ref }}
-          path: source
-
-      # GNUSTEP_PATCHES_REF and FREECOREDATA_REF, from the one place they
-      # are named (the release builds what CI tested).
-      - uses: ashalkhakov/gnustep-release-actions/pins@v1
-        with:
-          file: source/.github/pins.env
-
-      - uses: actions/checkout@v4
-        with:
-          repository: ashalkhakov/gnustep-patches
-          ref: ${{ env.GNUSTEP_PATCHES_REF }}
-          path: gnustep-patches
-
-      - name: Version
-        run: |
-          if [ -n "$TAG" ]; then
-            echo "APP_VERSION=$TAG" >> "$GITHUB_ENV"
-          else
-            echo "APP_VERSION=0.0.0-${GITHUB_RUN_NUMBER}-${GITHUB_SHA}" >> "$GITHUB_ENV"
-          fi
-
-      # The patched stack, cached by its recipe: what dependencies.sh builds
-      # for CI, but FreeCoreData, which is HomeRow's own and comes next.
-      # Beyond the stack's packages: libsndfile and libao, which make
-      # gnustep-gui build its sound plug-ins (key sounds); SQLite for
-      # FreeCoreData; Xvfb for the smoke test.
-      - name: GNUstep
-        uses: ashalkhakov/gnustep-release-actions/gnustep-stack@v1
-        with:
-          patches: ${{ github.workspace }}/gnustep-patches
-          components: libobjc2 libdispatch tools-make libs-base libs-gui libs-back eau tools-xctest
-          extra-packages: libsqlite3-dev libsndfile1-dev libao-dev xvfb
-
-      # The packages are not in the stack's cache key: a stack built without
-      # them would be restored without its sound plug-ins.
-      - name: gnustep-gui built its sound plug-ins
-        run: |
-          find "$PREFIX" -maxdepth 5 -name '*.nssound' | grep . \
-            || { echo "::error::no .nssound bundles: were libsndfile1-dev and libao-dev installed before the stack was built?"; exit 1; }
-
-      - name: FreeCoreData
-        run: INSTALL_PATH="$PREFIX" DEPS_PATH="$SOURCES" ./.github/scripts/dependencies.sh freecoredata
-
-      - name: linuxdeploy and the AppImage runtime
-        uses: ashalkhakov/gnustep-release-actions/appimage-tools@v1
-
-      - name: Stamp the version
-        run: ./Scripts/stamp-version.sh "$APP_VERSION"
-
-      # A release that does not pass its own tests is not one.
-      - name: Unit tests
-        run: |
-          . "$PREFIX/System/Library/Makefiles/GNUstep.sh"
-          make check
-
-      # A release's image updates itself from the newest release (through
-      # AppImageUpdate, Gear Lever and the like), by the .zsync attached
-      # beside it; a pre-release's does not.
-      - name: Update information
-        uses: ashalkhakov/gnustep-release-actions/appimage-update-info@v1
-        with:
-          tag: ${{ env.TAG }}
-          zsync: HomeRow-Linux-*x86_64.AppImage.zsync
-
-      - name: Package the AppImage
-        run: |
-          . "$PREFIX/System/Library/Makefiles/GNUstep.sh"
-          GNUSTEP_PREFIX="$PREFIX" ./Scripts/prepare-appdir.sh
-          GNUSTEP_PREFIX="$PREFIX" ./Scripts/package-appimage.sh
-
-      - name: Smoke-test the AppImage
-        run: |
-          image=$(ls HomeRow-Linux-*.AppImage)
-          chmod +x "$image"
-          mv "$PREFIX" "$PREFIX.away"
-          export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
-          env -u LD_LIBRARY_PATH APPIMAGE_EXTRACT_AND_RUN=1 HR_SMOKE_TEST=1 \
-            timeout 120 xvfb-run -a ./"$image"
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: HomeRow-Linux-AppImage
-          path: |
-            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage
-            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage.zsync
-          if-no-files-found: error
-
-      - name: Attach to the release
-        if: env.TAG != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.TAG }}
-          prerelease: ${{ contains(env.TAG, '-') }}
-          generate_release_notes: true
-          files: |
-            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage
-            ${{ github.workspace }}/source/HomeRow-Linux-*.AppImage.zsync
-
-  ############################ macOS ############################
-  # One app, universal, tested and smoke-tested before it is signed.
-  # gnustep-release-actions' README lists the secrets; each step skips
-  # itself, saying so, when its secrets are absent (a fork, a dry run): the
-  # build is then unsigned, and named so.
   macos:
-    name: macOS (signed)
-    runs-on: macos-15
-    timeout-minutes: 45
-    # The signing and notarisation secrets live in this environment, and an
-    # environment's secrets are only readable by a job that names it: without
-    # this line every one of them resolves to the empty string and the job
-    # ships an unsigned build, saying so and passing.
-    environment: production
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ env.TAG || github.ref }}
+    uses: ashalkhakov/gnustep-release-actions/.github/workflows/macos-release.yml@v1
+    with:
+      tag: ${{ inputs.tag }}
+      apps: HomeRow=HomeRow
+    secrets: inherit
 
-      - name: Version
-        run: |
-          if [ -n "$TAG" ]; then
-            echo "APP_VERSION=$TAG" >> "$GITHUB_ENV"
-          else
-            echo "APP_VERSION=0.0.0-build${{ github.run_number }}" >> "$GITHUB_ENV"
-          fi
-
-      - name: Stamp the version
-        run: ./Scripts/stamp-version.sh "$APP_VERSION"
-
-      - name: Unit tests
-        run: |
-          xcodebuild -project HomeRow.xcodeproj -scheme HomeRow \
-            -destination 'platform=macOS' -configuration Debug test
-
-      - name: Build
-        run: |
-          xcodebuild -project HomeRow.xcodeproj -scheme HomeRow \
-            -destination 'generic/platform=macOS' -configuration Release \
-            -derivedDataPath "$RUNNER_TEMP/release" ONLY_ACTIVE_ARCH=NO build
-          app="$RUNNER_TEMP/release/Build/Products/Release/HomeRow.app"
-          test -d "$app/Contents/Frameworks/Sparkle.framework" \
-            || { echo "::error::HomeRow.app does not embed Sparkle.framework"; exit 1; }
-          echo "APP=$app" >> "$GITHUB_ENV"
-
-      # The same check CI makes, on the very app that is about to be signed.
-      - name: Smoke-test the app
-        timeout-minutes: 2
-        run: |
-          export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
-          export CFFIXED_USER_HOME="$HOME"
-          HR_SMOKE_TEST=1 "$APP/Contents/MacOS/HomeRow"
-
-      - name: Sign
-        id: sign
-        uses: ashalkhakov/gnustep-release-actions/macos-sign@v1
-        with:
-          app: ${{ env.APP }}
-          certificate: ${{ secrets.MACOS_CERTIFICATE }}
-          certificate-password: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
-          identity: ${{ secrets.MACOS_SIGN_IDENTITY }}
-
-      # The hardened runtime loads only frameworks signed by the same team:
-      # the signed app, Sparkle in it, has to start and pass again.
-      - name: Smoke-test the signed app
-        if: steps.sign.outputs.signed == 'true'
-        timeout-minutes: 2
-        run: |
-          export HOME="$RUNNER_TEMP/smoke-home-signed"; mkdir -p "$HOME"
-          export CFFIXED_USER_HOME="$HOME"
-          HR_SMOKE_TEST=1 "$APP/Contents/MacOS/HomeRow"
-
-      - name: Notarize
-        if: steps.sign.outputs.signed == 'true'
-        uses: ashalkhakov/gnustep-release-actions/macos-notarize@v1
-        with:
-          app: ${{ env.APP }}
-          apple-id: ${{ secrets.NOTARY_APPLE_ID }}
-          team-id: ${{ secrets.NOTARY_TEAM_ID }}
-          password: ${{ secrets.NOTARY_PASSWORD }}
-
-      - name: Package
-        run: |
-          suffix=""
-          [ "${{ steps.sign.outputs.signed }}" = "true" ] || suffix="-unsigned"
-          ditto -c -k --keepParent "$APP" "HomeRow-macOS-${APP_VERSION}${suffix}.zip"
-
-      # The appcast the app's Sparkle reads (SUFeedURL: the newest release's
-      # appcast.xml), signed with the key whose public half is SUPublicEDKey;
-      # for a release only.
-      - name: Appcast
-        if: steps.sign.outputs.signed == 'true'
-        uses: ashalkhakov/gnustep-release-actions/sparkle-appcast@v1
-        with:
-          archive: ${{ github.workspace }}/HomeRow-macOS-${{ env.APP_VERSION }}.zip
-          output: ${{ github.workspace }}/appcast.xml
-          tag: ${{ env.TAG }}
-          private-key: ${{ secrets.SPARKLE_PRIVATE_KEY }}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: HomeRow-macOS-${{ env.APP_VERSION }}
-          path: |
-            ${{ github.workspace }}/HomeRow-macOS-*.zip
-            ${{ github.workspace }}/appcast.xml
-          if-no-files-found: error
-
-      - name: Attach to the release
-        if: env.TAG != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ env.TAG }}
-          prerelease: ${{ contains(env.TAG, '-') }}
-          files: |
-            ${{ github.workspace }}/HomeRow-macOS-*.zip
-            ${{ github.workspace }}/appcast.xml
+  appimage:
+    uses: ashalkhakov/gnustep-release-actions/.github/workflows/appimage-release.yml@v1
+    with:
+      tag: ${{ inputs.tag }}
+      appimage: HomeRow-Linux
+      dependencies: FreeCoreData
+      components: libobjc2 libdispatch tools-make libs-base libs-gui libs-back eau tools-xctest
+      extra-packages: libsqlite3-dev libsndfile1-dev libao-dev
