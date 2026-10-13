@@ -55,7 +55,7 @@ This needs a paid Apple Developer Program membership. Once:
    Sign-In and Security ▸ App-Specific Passwords.
 4. **Secrets of the `production` environment** (Settings ▸ Environments ▸
    production ▸ Environment secrets) — the macOS job (gnustep-release-actions'
-   `macos-release.yml`) names that environment, and only a job that does can
+   `macos.yml`) names that environment, and only a job that does can
    read them. Repository-level secrets of the same names work too, but keep
    them in one place:
 

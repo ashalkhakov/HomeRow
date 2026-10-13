@@ -1,0 +1,56 @@
+# HomeRow on macOS, the familiar way (gnustep-release-actions' macos.yml
+# runs the same):
+#
+#   make -f Makefile.apple            HomeRow.app, universal (Release)
+#   make -f Makefile.apple check      the sources checked (Scripts/check-sources.sh),
+#                                     the Debug build, and the unit tests (the
+#                                     XCTest sources the GNUstep build runs, here
+#                                     against Apple's Core Data)
+#   make -f Makefile.apple install DESTDIR=<dir>       HomeRow.app
+#   make -f Makefile.apple installcheck DESTDIR=<dir>  the installed app's smoke
+#                                     test: it starts, types and quits, in a
+#                                     fresh home
+#
+# Sparkle's XCFramework is in .deps/, by the version .github/pins.env names
+# (gnustep-release-actions' scripts/deps.sh apple). GNUstep: GNUmakefile.
+
+BUILD = build
+DERIVED = $(BUILD)/DerivedData
+RELEASE = $(DERIVED)/Build/Products/Release
+# Where a failed test's result bundle is kept (CI uploads it from there).
+RESULTS ?= $(or $(RUNNER_TEMP),$(BUILD))
+XCODEBUILD = xcodebuild -project HomeRow.xcodeproj -scheme HomeRow -derivedDataPath $(DERIVED)
+# The oldest macOS it runs on: what the binary says, not the project, since
+# one target setting or an Xcode upgrade moves it silently.
+MINOS = 12.0
+
+all:
+	@test -d .deps/Sparkle.xcframework \
+	  || { echo "no Sparkle in .deps: gnustep-release-actions' scripts/deps.sh apple fetches what .github/pins.env names"; exit 1; }
+	$(XCODEBUILD) -configuration Release -destination 'generic/platform=macOS' ONLY_ACTIVE_ARCH=NO build
+	@for arch in arm64 x86_64; do \
+	  minos=$$(vtool -arch $$arch -show-build $(RELEASE)/HomeRow.app/Contents/MacOS/HomeRow | awk '/minos/{print $$2; exit}'); \
+	  echo "$$arch: minos $$minos"; \
+	  [ "$$minos" = "$(MINOS)" ] || { echo "the $$arch slice needs macOS $$minos, not $(MINOS)"; exit 1; }; \
+	done
+
+check:
+	Scripts/check-sources.sh
+	$(XCODEBUILD) -configuration Debug -destination 'platform=macOS' build
+	rm -rf $(RESULTS)/HomeRowTests.xcresult
+	$(XCODEBUILD) -configuration Debug -destination 'platform=macOS' \
+	  -resultBundlePath $(RESULTS)/HomeRowTests.xcresult test
+
+install: all
+	@test -n "$(DESTDIR)" || { echo "install: give DESTDIR"; exit 1; }
+	mkdir -p $(DESTDIR)
+	rm -rf $(DESTDIR)/HomeRow.app
+	ditto $(RELEASE)/HomeRow.app $(DESTDIR)/HomeRow.app
+
+installcheck:
+	home=$$(mktemp -d) && HOME=$$home CFFIXED_USER_HOME=$$home HR_SMOKE_TEST=1 $(DESTDIR)/HomeRow.app/Contents/MacOS/HomeRow
+
+clean:
+	rm -rf $(BUILD)
+
+.PHONY: all check install installcheck clean

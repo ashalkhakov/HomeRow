@@ -20,7 +20,7 @@ Take the files from the [latest release](https://github.com/ashalkhakov/HomeRow/
 
 | Platform | File | To run it |
 |---|---|---|
-| macOS 11 Big Sur or later, Intel and Apple silicon | `HomeRow-macOS-<version>.zip` | Unzip, move to Applications, open. A file named `…-unsigned.zip` is not notarized: right-click ▸ Open the first time. It updates itself (HomeRow ▸ Check for Updates…) |
+| macOS 12 Monterey or later, Intel and Apple silicon | `HomeRow-macOS-<version>.zip` | Unzip, move to Applications, open. A file named `…-unsigned.zip` is not notarized: right-click ▸ Open the first time. It updates itself (HomeRow ▸ Check for Updates…) |
 | Linux x86_64 | `HomeRow-<version>-x86_64.AppImage` | `chmod +x`, then run it. GNUstep, FreeCoreData and fonts are inside; key sounds use the system's libao if it is there. Gear Lever, AppImageUpdate or AppImagePool update it |
 
 Between releases, every push builds the same two downloads: open the latest
