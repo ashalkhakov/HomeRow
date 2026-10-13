@@ -76,6 +76,7 @@ HomeRow_OBJC_FILES = \
     HRStage.m \
     HRTestView.m \
     HRTheme.m \
+    HRUpdater.m \
     HRWelcomeWindowController.m \
     main.m
 

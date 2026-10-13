@@ -43,6 +43,12 @@
                                     <action selector="orderFrontStandardAboutPanel:" target="-1" id="JZP-GS-EZ4"/>
                                 </connections>
                             </menuItem>
+                            <menuItem title="Check for Updates…" tag="7100" id="HRu-pd-Mi1">
+                                <modifierMask key="keyEquivalentModifierMask"/>
+                                <connections>
+                                    <action selector="checkForUpdates:" target="HRd-el-Gt1" id="HRu-pd-Ac1"/>
+                                </connections>
+                            </menuItem>
                             <menuItem isSeparatorItem="YES" id="zBm-s1-rac"/>
                             <menuItem title="Services" id="d9T-H4-QgT">
                                 <modifierMask key="keyEquivalentModifierMask"/>

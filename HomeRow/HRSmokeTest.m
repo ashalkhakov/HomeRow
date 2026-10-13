@@ -52,6 +52,7 @@
 #import "HRReplay.h"
 #import "HRSoundPlayer.h"
 #import "HRWelcomeWindowController.h"
+#import "HRUpdater.h"
 
 /* What the test pokes that nobody else needs to: said here, not in the
  * app delegate's header. */
@@ -126,6 +127,17 @@
         if (outlets[name] == [NSNull null]) [failures addObject:[NSString stringWithFormat:@"outlet %@ is not connected", name]];
     }
     if ([_app.model.packs.languages count] == 0) [failures addObject:@"no language pack was loaded"];
+    /* Check for Updates...: in the app menu where there is an updater
+     * (Sparkle, on macOS), not where the image is updated from outside
+     * (GNUstep's AppImage) */
+    {
+        BOOL hasUpdater = [[HRUpdater alloc] initStarting:NO].available;
+        NSMenuItem *check = [[[[NSApp mainMenu] itemAtIndex:0] submenu] itemWithTag:HRCheckForUpdatesTag];
+        if ((check != nil) != hasUpdater || (check && !sel_isEqual([check action], @selector(checkForUpdates:)))) {
+            [failures addObject:hasUpdater ? @"Check for Updates... is not in the app menu" : @"Check for Updates... is offered with no updater"];
+        }
+        printf("HomeRow smoke test: Check for Updates... %s\n", hasUpdater ? "in the app menu" : "not offered");
+    }
     if (!_app.model.store) [failures addObject:@"the result store did not open"];
 
     _app.model.configuration.mode = HRTestModeWords;

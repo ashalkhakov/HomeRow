@@ -35,6 +35,7 @@
 #import "HRLayoutChooserController.h"
 #import "HRWelcomeWindowController.h"
 #import "HRSoundPlayer.h"
+#import "HRUpdater.h"
 #import <objc/runtime.h>
 
 #define HRLoc(key) NSLocalizedString(key, nil)
@@ -50,9 +51,23 @@
     HRPreferencesWindowController *_preferencesWindow;
     HRLayoutChooserController *_layoutChooser;
     HRWelcomeWindowController *_welcomeWindow;
+    HRUpdater *_updater;
 }
 
 #pragma mark - Launch
+
+/* Updates, set up before the app finishes launching (as Sparkle asks), and
+ * not started in a smoke test.  Where there is no updater, no menu item. */
+- (void)applicationWillFinishLaunching:(NSNotification *)notification
+{
+    BOOL smokeTest = [[[NSProcessInfo processInfo] environment] objectForKey:@"HR_SMOKE_TEST"] != nil;
+    _updater = [[HRUpdater alloc] initStarting:!smokeTest];
+    if (!_updater.available) {
+        NSMenu *appMenu = [[[NSApp mainMenu] itemAtIndex:0] submenu];
+        NSMenuItem *check = [appMenu itemWithTag:HRCheckForUpdatesTag];
+        if (check) [appMenu removeItem:check];
+    }
+}
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
@@ -235,11 +250,17 @@
     [_stage replayLastTest:sender];
 }
 
+- (IBAction)checkForUpdates:(id)sender
+{
+    [_updater checkForUpdates:sender];
+}
+
 - (BOOL)validateMenuItem:(NSMenuItem *)item
 {
     /* Course > Restart Lesson only means something inside a lesson */
     if (sel_isEqual([item action], @selector(restartLesson:))) return _activity == _course && _course.isInLesson;
     if (sel_isEqual([item action], @selector(replayLastTest:))) return _stage.canReplay;
+    if (sel_isEqual([item action], @selector(checkForUpdates:))) return _updater.canCheckForUpdates;
     return YES;
 }
 

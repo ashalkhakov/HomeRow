@@ -154,6 +154,8 @@
 		F5D8ADE3E8EBBD4583442747 /* HRCourseRun.m in Sources */ = {isa = PBXBuildFile; fileRef = C5AB93D5C75A0F3CB38B8F9C /* HRCourseRun.m */; };
 		F6B9E1B64D48696BED748BA4 /* regext.c in Sources */ = {isa = PBXBuildFile; fileRef = F0DDF2FBC24ECE522D9BD6DF /* regext.c */; settings = {COMPILER_FLAGS = "-w"; }; };
 		F973161BE2686EBD0CCD6214 /* HRResultStore.m in Sources */ = {isa = PBXBuildFile; fileRef = D2593BBA44546F23F67822A5 /* HRResultStore.m */; };
+		283F981629C2A5E4E2EAE1D5 /* HRUpdater-Apple.m in Sources */ = {isa = PBXBuildFile; fileRef = 018E17B2E263FE05CA90CEAA /* HRUpdater-Apple.m */; };
+		35ADC78FD1AE2F7DB50BC4F9 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 97B63366A62A60662A09A6BA /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -314,6 +316,9 @@
 		F93461EF8B6ACE710AB397AC /* HRReplayTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRReplayTests.m; sourceTree = "<group>"; };
 		FD49F1D2553AB14D5E553904 /* HRAppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRAppDelegate.h; sourceTree = "<group>"; };
 		FE9EEF232FDB28584E2577F2 /* HRCodeTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRCodeTests.m; sourceTree = "<group>"; };
+		7027E67E1EFDD35719F132BA /* HRUpdater.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = HRUpdater.h; sourceTree = "<group>"; };
+		C458F303A75C420381DD615D /* HRUpdater.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = HRUpdater.m; sourceTree = "<group>"; };
+		018E17B2E263FE05CA90CEAA /* HRUpdater-Apple.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "HRUpdater-Apple.m"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -321,6 +326,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				35ADC78FD1AE2F7DB50BC4F9 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,6 +405,9 @@
 				8F7B479F4B5CA8D5F994FB86 /* HRTestView.m */,
 				60BA38B918C535BD2A909CEF /* HRTheme.h */,
 				887AA73D0F9869E2CD9256AC /* HRTheme.m */,
+				7027E67E1EFDD35719F132BA /* HRUpdater.h */,
+				C458F303A75C420381DD615D /* HRUpdater.m */,
+				018E17B2E263FE05CA90CEAA /* HRUpdater-Apple.m */,
 				DC1A2FDBF7EBFD767AC42687 /* HRWelcomeWindowController.h */,
 				92D448121253CE8C7B50A7C6 /* HRWelcomeWindowController.m */,
 				6514D2D3F833EF5FA75DD853 /* main.m */,
@@ -575,6 +584,9 @@
 			dependencies = (
 			);
 			name = HomeRow;
+			packageProductDependencies = (
+				97B63366A62A60662A09A6BA /* Sparkle */,
+			);
 			productName = HomeRow;
 			productReference = 395879FCFD26E9BD13AEE954 /* HomeRow.app */;
 			productType = "com.apple.product-type.application";
@@ -615,6 +627,9 @@
 				Base,
 			);
 			mainGroup = 258FCCA9F383B1CE2CF01513;
+			packageReferences = (
+				19C7ADBCF71854F3914E9EF8 /* XCRemoteSwiftPackageReference "Sparkle" */,
+			);
 			productRefGroup = EEE35E36B319F030AC61354B /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -715,6 +730,7 @@
 				047DD3775E4E52B0508D3025 /* HRStatsWindowController.m in Sources */,
 				B4AE9703F0624DEF0099343A /* HRTestView.m in Sources */,
 				67B497FB2B547981836A5003 /* HRTheme.m in Sources */,
+				283F981629C2A5E4E2EAE1D5 /* HRUpdater-Apple.m in Sources */,
 				70DB2EBB5C98D8A0EB6DFE3F /* HRWelcomeWindowController.m in Sources */,
 				282A120D0DECE54C5501B8A9 /* main.m in Sources */,
 				2302E8EFB129C0CD82AFC130 /* regerror.c in Sources */,
@@ -883,7 +899,6 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = ("HAVE_CONFIG_H=1", "$(inherited)");
 				HEADER_SEARCH_PATHS = ("$(SRCROOT)/HomeRow", "$(SRCROOT)/HomeRow/Engine", "$(SRCROOT)/HomeRow/ThirdParty/oniguruma/src");
 				INFOPLIST_FILE = "HomeRow/HomeRow-Info.plist";
@@ -901,7 +916,6 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_PREPROCESSOR_DEFINITIONS = ("HAVE_CONFIG_H=1", "$(inherited)");
 				HEADER_SEARCH_PATHS = ("$(SRCROOT)/HomeRow", "$(SRCROOT)/HomeRow/Engine", "$(SRCROOT)/HomeRow/ThirdParty/oniguruma/src");
 				INFOPLIST_FILE = "HomeRow/HomeRow-Info.plist";
@@ -975,6 +989,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		19C7ADBCF71854F3914E9EF8 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = exactVersion;
+				version = 2.10.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		97B63366A62A60662A09A6BA /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 19C7ADBCF71854F3914E9EF8 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
+		};
+/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		59E422D56244B9DCA01596B7 /* HomeRow.xcdatamodeld */ = {

@@ -44,6 +44,9 @@
  * What is left here is what belongs to nobody else: which activity is on, the windows of the app as a whole
  * (Preferences, Statistics, the layout chooser, the welcome), and passing
  * on what one part has to tell another. */
+/* The tag of HomeRow > Check for Updates... in MainMenu.xib. */
+enum { HRCheckForUpdatesTag = 7100 };
+
 @interface HRAppDelegate : NSObject <NSApplicationDelegate>
 
 @property (nonatomic, strong) IBOutlet NSWindow *window;
@@ -70,6 +73,9 @@
 /* MainMenu.xib's Test menu */
 - (IBAction)restartTest:(id)sender;
 - (IBAction)openText:(id)sender;
+/* MainMenu.xib's HomeRow > Check for Updates... (HRUpdater), gone where
+ * there is no updater */
+- (IBAction)checkForUpdates:(id)sender;
 /* The menus HRMenuController builds: HRMenuActions, plus */
 - (IBAction)continueCourse:(id)sender;
 - (IBAction)practiseWeakKeys:(id)sender;
