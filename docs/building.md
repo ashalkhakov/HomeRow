@@ -51,17 +51,16 @@ project change.
 
 ## Packaging
 
-`Scripts/prepare-appdir.sh` assembles an AppDir from a GNUstep prefix (the
-app, the GNUstep libraries and bundles it needs, a fontconfig setup with
-DejaVu and Liberation fonts) and `Scripts/package-appimage.sh` turns it into
-`HomeRow-Linux-*.AppImage` with linuxdeploy. The image also carries `Scripts/appimage/open`, installed as `open` and
-`xdg-open` in its GNUstep tools directory: `NSWorkspace` looks there before
-`$PATH`, and would otherwise find nothing to open the project link in the
-Info panel with. The script puts the host's `PATH` and `LD_LIBRARY_PATH` back
-(AppRun saves them as `HR_HOST_*`) and hands the URL to the host's `xdg-open`,
-`gio`, or `$BROWSER` — a browser started against the image's libraries does
-not start. CI then runs the image with the
-build prefix moved away, so an image that only works on the build machine
-fails there. `release.yml` does the same for a tag and, given signing
+`HomeRow-Linux-*.AppImage` is made by gnustep-release-actions' `appimage`, the
+same as every app's image: the app (installed into the prefix by
+`.github/release/linux-install.sh`), the GNUstep libraries and bundles it
+needs, DejaVu and Liberation fonts, the Eau theme, the shared launcher
+(`AppRun`) and an opener, installed as `open` and `xdg-open` in the image's
+GNUstep tools directory: `NSWorkspace` looks there before `$PATH`, and would
+otherwise find nothing to open the project link in the Info panel with. What
+is HomeRow's own is `.github/release/appimage.conf`. CI then runs the image
+on a clean Ubuntu with no GNUstep and no fonts (`appimage-test`, which runs
+`.github/release/linux-test.sh`), so an image that only works on the build
+machine fails there. `release.yml` does the same for a tag and, given signing
 secrets, signs and notarizes the macOS app; without them the zip is ad-hoc
 signed.

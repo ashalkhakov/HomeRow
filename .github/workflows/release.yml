@@ -34,7 +34,6 @@ jobs:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/appimage-release.yml@v1
     with:
       tag: ${{ inputs.tag }}
-      appimage: HomeRow-Linux
       dependencies: FreeCoreData
       components: libobjc2 libdispatch tools-make libs-base libs-gui libs-back eau tools-xctest
       extra-packages: libsqlite3-dev libsndfile1-dev libao-dev

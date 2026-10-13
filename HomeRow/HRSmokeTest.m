@@ -837,9 +837,9 @@
 #if defined(GNUSTEP)
     /* Inside the AppImage the link in the Info panel goes through
      * NSWorkspace to "xdg-open", looked up in GNUstep's own tool directories
-     * first: the image has to carry one (Scripts/appimage/open) that hands
+     * first: the image has to carry one (gnustep-release-actions' opener) that hands
      * the job to the host, or the link does nothing. */
-    if ([[[NSProcessInfo processInfo] environment] objectForKey:@"HR_HOST_PATH"]) {   /* set by the image's AppRun */
+    if ([[[NSProcessInfo processInfo] environment] objectForKey:@"APPIMAGE_HOST_PATH"]) {   /* set by the image's AppRun */
         NSString *opener = [NSTask launchPathForTool:@"xdg-open"];
         if ([opener rangeOfString:@"/usr/System/Tools/"].location == NSNotFound) {
             [failures addObject:[NSString stringWithFormat:@"the AppImage's own xdg-open is not the one NSWorkspace would find (%@)", opener]];

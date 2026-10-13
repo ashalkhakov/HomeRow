@@ -256,33 +256,23 @@ jobs:
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
           make check
 
-      # The release's: linuxdeploy at its pinned release, the runtime, and
-      # LINUXDEPLOY and LDAI_RUNTIME_FILE set for package-appimage.sh.
-      - name: linuxdeploy and the AppImage runtime
-        uses: ashalkhakov/gnustep-release-actions/appimage-tools@v1
-
+      # gnustep-release-actions' appimage and appimage-test, as release.yml's:
+      # .github/release/linux-install.sh and appimage.conf, the image, and
+      # linux-test.sh on a plain Ubuntu (this job's) with no GNUstep.
       - name: Package the AppImage
+        id: appimage
+        uses: ashalkhakov/gnustep-release-actions/appimage@v1
         env:
-          APP_VERSION: 0.0.0-${{ github.run_number }}-${{ github.sha }}
-        run: |
-          sudo apt-get -q -y install desktop-file-utils fonts-dejavu fonts-liberation
-          . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
-          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/prepare-appdir.sh
-          GNUSTEP_PREFIX="$INSTALL_PATH" ./Scripts/package-appimage.sh
+          PREFIX: ${{ env.INSTALL_PATH }}
+        with:
+          version: 0.0.0-${{ github.run_number }}-${{ github.sha }}
+          working-directory: ${{ env.SRC_PATH }}
 
-      # Run the image the way a user would, minus the prefix it was built
-      # from: if it only works because $INSTALL_PATH is still on this machine,
-      # it does not work. HR_SMOKE_TEST makes the app check its own outlets,
-      # type a test, save the result through FreeCoreData, and exit 0.
-      - name: Smoke-test the AppImage
-        run: |
-          image=$(ls HomeRow-Linux-*.AppImage)
-          chmod +x "$image"
-          mv "$INSTALL_PATH" "$INSTALL_PATH.away"
-          trap 'mv "$INSTALL_PATH.away" "$INSTALL_PATH"' EXIT
-          export HOME="$RUNNER_TEMP/smoke-home"; mkdir -p "$HOME"
-          env -u LD_LIBRARY_PATH APPIMAGE_EXTRACT_AND_RUN=1 HR_SMOKE_TEST=1 \
-            timeout 120 xvfb-run -a ./"$image"
+      - name: Smoke-test the AppImage on a clean system
+        uses: ashalkhakov/gnustep-release-actions/appimage-test@v1
+        with:
+          image: ${{ steps.appimage.outputs.image }}
+          working-directory: ${{ env.SRC_PATH }}
 
       - uses: actions/upload-artifact@v4
         with:
