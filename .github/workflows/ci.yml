@@ -162,7 +162,8 @@ jobs:
       # Seconds, and before the half-hour dependency build. Importing a
       # framework GNUstep does not have compiles on a Mac and breaks this job,
       # which is a slow way to find out. What GNUstep has: Foundation, AppKit,
-      # the objc runtime headers and (through FreeCoreData) CoreData. Anything else -- Cocoa.h,
+      # the objc runtime headers, POSIX's sys/ (HRGNUstepCompat.m) and
+      # (through FreeCoreData) CoreData. Anything else -- Cocoa.h,
       # QuartzCore, Carbon -- has to sit behind __has_include with a branch
       # beside it, or in an -Apple.m file, which only the Mac compiles
       # (HRUpdater-Apple.m, Sparkle). Matches import lines only, not prose
@@ -172,7 +173,7 @@ jobs:
           bad=$(grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*<[A-Za-z]+/' \
                   HomeRow HomeRowTests --include='*.h' --include='*.m' --exclude='*-Apple.m' \
                   --exclude-dir=ThirdParty --exclude-dir=Code --exclude-dir=Fixtures \
-                | grep -vE '<(Foundation|AppKit|CoreData|XCTest|objc)/' || true)
+                | grep -vE '<(Foundation|AppKit|CoreData|XCTest|objc|sys)/' || true)
           if [ -n "$bad" ]; then
             echo "$bad" | while IFS=: read -r file line rest; do
               prev=$(sed -n "$((line-1))p" "$file")
