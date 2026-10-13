@@ -3,16 +3,16 @@
 #
 #   APP_VERSION=1.2.3 ./Scripts/package-appimage.sh
 #
-# LINUXDEPLOY and LDAI_RUNTIME_FILE are taken from the environment when set
-# (release.yml: gnustep-release-actions' appimage-tools; CI:
-# Scripts/install-linuxdeploy.sh's places, the defaults below). So is
-# LDAI_UPDATE_INFORMATION (release.yml: appimage-update-info): the plugin
-# then embeds it and writes $OUTPUT.zsync beside the image.
+# LINUXDEPLOY and LDAI_RUNTIME_FILE come from the environment, as
+# gnustep-release-actions' appimage-tools sets them (both workflows); the
+# defaults are where it puts them. So does LDAI_UPDATE_INFORMATION
+# (release.yml: appimage-update-info): the plugin then embeds it and writes
+# $OUTPUT.zsync beside the image.
 set -euo pipefail
 
 WORKSPACE_DIR=$(pwd)
 LOCAL_PREFIX="${GNUSTEP_PREFIX:-/opt/gnustep-prefix}"
-LINUXDEPLOY="${LINUXDEPLOY:-/usr/local/lib/linuxdeploy/AppRun}"
+LINUXDEPLOY="${LINUXDEPLOY:-${RUNNER_TEMP:-/tmp}/linuxdeploy/AppRun}"
 
 "${WORKSPACE_DIR}/Scripts/appimage/install-assets.sh" "${WORKSPACE_DIR}" "AppDir"
 
@@ -28,7 +28,7 @@ export NO_VALIDATE=1
 # Keep the symbol tables: Objective-C methods are named only in .symtab, and
 # a backtrace from a user is worth more than the megabytes.
 export NO_STRIP="${NO_STRIP:-1}"
-export LDAI_RUNTIME_FILE="${LDAI_RUNTIME_FILE:-/tmp/appimage-runtime/runtime-x86_64}"
+export LDAI_RUNTIME_FILE="${LDAI_RUNTIME_FILE:-${RUNNER_TEMP:-/tmp}/appimage-runtime/runtime-$(uname -m)}"
 
 LD_LIBRARY_PATH="${LOCAL_PREFIX}/System/Library/Libraries:${LOCAL_PREFIX}/Local/Library/Libraries:${WORKSPACE_DIR}/AppDir/usr/lib:${LD_LIBRARY_PATH:-}" \
     "$LINUXDEPLOY" --appdir AppDir "${ELF_ARGS[@]}" --output appimage

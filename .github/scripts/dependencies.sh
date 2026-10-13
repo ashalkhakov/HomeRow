@@ -26,24 +26,30 @@
 # held there until they can be sent.  Everything else is built from master as
 # it stands.
 #
-# The CI cache key is the hash of this file and the pinned gnustep-patches
-# ref, so a change to either -- moving the FreeCoreData pin included --
-# rebuilds the stack.
+# The CI cache key is the hash of this file and .github/pins.env, so a
+# change to either -- moving the FreeCoreData pin included -- rebuilds the
+# stack.
 #
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
 #
 #   dependencies.sh freecoredata   builds FreeCoreData alone, into a stack
 #                                  built already: release.yml's, which comes
 #                                  from gnustep-release-actions' gnustep-stack
-#                                  (gnustep-patches' build-gnustep.sh). The
-#                                  pin stays here, in one place.
+#                                  (gnustep-patches' build-gnustep.sh).
 set -ex
 
-# FreeCoreData is consumed at an exact commit.  HomeRow dogfoods it, so a
-# FreeCoreData change reaches HomeRow's CI when this line moves and not
-# before; move it in a commit of its own, so that a red run has one cause.
+# The pins -- FREECOREDATA_REF, GNUSTEP_PATCHES_REF -- are .github/pins.env's,
+# the one place HomeRow names the commits it builds on; one already in the
+# environment wins.
+PINS_FILE="$(cd "$(dirname "$0")/.." && pwd)/pins.env"
+FREECOREDATA_REF_SET=${FREECOREDATA_REF:-}
+GNUSTEP_PATCHES_REF_SET=${GNUSTEP_PATCHES_REF:-}
+. "$PINS_FILE"
+FREECOREDATA_REF=${FREECOREDATA_REF_SET:-$FREECOREDATA_REF}
+GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF_SET:-$GNUSTEP_PATCHES_REF}
+
+# FreeCoreData is consumed at an exact commit (FREECOREDATA_REF).
 FREECOREDATA_REPO=${FREECOREDATA_REPO:-https://github.com/ashalkhakov/FreeCoreData.git}
-FREECOREDATA_REF=${FREECOREDATA_REF:-09aecb4e43e2d7eb1b3243b630ca6eeae20a5f20}
 
 mkdir -p "$DEPS_PATH"
 
@@ -52,12 +58,10 @@ mkdir -p "$DEPS_PATH"
 # drifted and outlived the merges upstream.  They live in one repository now,
 # and this fetches it.
 #
-# GNUSTEP_PATCHES_REF should name a commit, not a branch: it is what pins the
-# build, and the workflows fold it into the cache key so that changing a
-# patch invalidates the cached prefix.  A branch name builds whatever is on it
-# that day and the cache will not notice.
+# GNUSTEP_PATCHES_REF names a commit, not a branch: it is what pins the
+# build, and ci.yml's cache key hashes pins.env so that changing a patch
+# invalidates the cached prefix.
 GNUSTEP_PATCHES_URL=${GNUSTEP_PATCHES_URL:-https://github.com/ashalkhakov/gnustep-patches.git}
-GNUSTEP_PATCHES_REF=${GNUSTEP_PATCHES_REF:-dcbad8f6db6db7054bc9152aad3e8686a233809d}
 GNUSTEP_PATCHES_DIR="$DEPS_PATH/gnustep-patches"
 
 install_gnustep_patches() {

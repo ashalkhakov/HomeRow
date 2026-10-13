@@ -35,12 +35,13 @@ jobs:
       # by one: a source added on Linux is otherwise invisible here until
       # something fails to link. A file with an -Apple.m beside it
       # (HRUpdater.m) is that class's GNUstep half, and the Mac compiles
-      # the other.
+      # the other; HRGNUstepCompat.m is GNUstep's alone.
       - name: Every source file is in the Xcode project
         run: |
           missing=0
           for f in HomeRow/*.m HomeRow/Engine/*.m HomeRowTests/*.m; do
             [ -e "${f%.m}-Apple.m" ] && continue
+            [ "$(basename "$f")" = HRGNUstepCompat.m ] && continue
             name=$(basename "$f")
             grep -q "/\* $name in Sources \*/" HomeRow.xcodeproj/project.pbxproj \
               || { echo "::error file=$f::$name is not compiled by any target in HomeRow.xcodeproj"; missing=1; }
@@ -140,12 +141,6 @@ jobs:
       CXX: clang++
       LIBRARY_COMBO: ng-gnu-gnu
       RUNTIME_VERSION: gnustep-2.0
-      # The shared repository the gnustep-gui fixes come from, and the pin
-      # that decides which of them this build gets. It is part of the cache
-      # key below -- which used to hash patches/gnustep/*.patch -- so moving
-      # it rebuilds the stack instead of reusing a differently-patched
-      # prefix. Name a commit here to pin the build exactly.
-      GNUSTEP_PATCHES_REF: dcbad8f6db6db7054bc9152aad3e8686a233809d
       # libobjc2 and libdispatch land in the prefix's plain lib/, which the
       # gnustep layout does not treat as a library root.
       LD_LIBRARY_PATH: ${{ github.workspace }}/build/lib
@@ -157,6 +152,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: source
+
+      # GNUSTEP_PATCHES_REF and FREECOREDATA_REF, from the one place they
+      # are named.
+      - uses: ashalkhakov/gnustep-release-actions/pins@v1
+        with:
+          file: source/.github/pins.env
 
       # Seconds, and before the half-hour dependency build. Importing a
       # framework GNUstep does not have compiles on a Mac and breaks this job,
@@ -203,8 +204,8 @@ jobs:
           fi
           ld --version | head -1
 
-      # The key is the recipe: dependencies.sh (which holds the FreeCoreData
-      # pin) and the gnustep patches. Change either and the stack rebuilds.
+      # The key is the recipe: dependencies.sh and pins.env (FreeCoreData's
+      # and gnustep-patches' commits). Change either and the stack rebuilds.
       # v2: gnustep-gui configured with libsndfile and libao present, which is
       # what makes it build its two sound plug-ins (key sounds). The package
       # list is not part of the hash below, hence the number.
@@ -213,7 +214,7 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v3-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
+          key: gnustep-v3-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/.github/pins.env') }}
 
       - name: Build GNUstep
         if: steps.gnustep-cache.outputs.cache-hit != 'true'
@@ -226,7 +227,7 @@ jobs:
         uses: actions/cache/save@v4
         with:
           path: ${{ env.INSTALL_PATH }}
-          key: gnustep-v3-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh') }}-${{ env.GNUSTEP_PATCHES_REF }}
+          key: gnustep-v3-${{ runner.os }}-${{ hashFiles('source/.github/scripts/dependencies.sh', 'source/.github/pins.env') }}
 
       # gnustep-base picks ICU up on its own when libicu-dev is installed
       # (it is, above) and says nothing when it is not -- and without it
@@ -256,12 +257,13 @@ jobs:
           . $INSTALL_PATH/System/Library/Makefiles/GNUstep.sh
           make check
 
-      - name: Fetch linuxdeploy and the AppImage runtime
-        run: ./Scripts/install-linuxdeploy.sh
+      # The release's: linuxdeploy at its pinned release, the runtime, and
+      # LINUXDEPLOY and LDAI_RUNTIME_FILE set for package-appimage.sh.
+      - name: linuxdeploy and the AppImage runtime
+        uses: ashalkhakov/gnustep-release-actions/appimage-tools@v1
 
       - name: Package the AppImage
         env:
-          LDAI_RUNTIME_FILE: /tmp/appimage-runtime/runtime-x86_64
           APP_VERSION: 0.0.0-${{ github.run_number }}-${{ github.sha }}
         run: |
           sudo apt-get -q -y install desktop-file-utils fonts-dejavu fonts-liberation
