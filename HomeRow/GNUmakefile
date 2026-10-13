@@ -64,7 +64,6 @@ HomeRow_OBJC_FILES = \
     HRStatTilesView.m \
     HRStatsWindowController.m \
     HRFreeTestActivity.m \
-    HRGNUstepCompat.m \
     HRKeyboardDock.m \
     HRKeyboardView.m \
     HRLayoutChooserController.m \
