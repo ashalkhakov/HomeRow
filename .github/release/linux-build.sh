@@ -12,5 +12,4 @@ find "$PREFIX" -maxdepth 5 -name '*.nssound' | grep -q . \
 (cd ../FreeCoreData
  make -j"$(nproc)" && make install
  make -C Tools/momc && make -C Tools/momc install)
-./Scripts/stamp-version.sh "$APP_VERSION"
 make check

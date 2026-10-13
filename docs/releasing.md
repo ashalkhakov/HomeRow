@@ -16,8 +16,9 @@ files to a GitHub release with generated notes.
        git tag -a v0.1.0 -m "HomeRow 0.1.0"
        git push origin v0.1.0
 
-   The tag is the version: `Scripts/stamp-version.sh` writes it into the
-   Xcode project (numeric part only, as Apple requires), the GNUmakefile and
+   The tag is the version: the release workflows (gnustep-release-actions'
+   `stamp-version.sh`) write it into the Xcode project (numeric part only,
+   as Apple requires; the build number is the run's), the GNUmakefile and
    `HomeRowInfo.plist`. `v0.1.0-rc1` works, and makes a pre-release: one
    that installed copies are not offered (below).
 5. When the workflow is done, the release has

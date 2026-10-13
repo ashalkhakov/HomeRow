@@ -215,7 +215,7 @@ HomeRow/
   - **macOS job** (`macos-15`): `xcodebuild` build with `MACOSX_DEPLOYMENT_TARGET=11.0`, XCTest run, unsigned universal `.app` zipped and uploaded as a 14-day artifact, `.xcresult` uploaded on failure. A step asserts the built binary's minimum OS (`vtool -show-build`) is 11.0 and that both architectures are present.
   - **GNUstep job** (`ubuntu-latest`, clang, `ng-gnu-gnu`, `gnustep-2.0`): early grep guard against imports GNUstep cannot satisfy; stack built from source by `.github/scripts/dependencies.sh` with `--with-layout=gnustep` and `--enable-objc-arc`, cached on the script's hash; `make`, tests via tools-xctest, AppImage packaged with linuxdeploy and smoke-tested, uploaded as artifact.
 - Stack built by `dependencies.sh`: libobjc2, libdispatch, tools-make, libs-base, libs-gui, libs-back, tools-xctest, the Eau theme for the AppImage, and **FreeCoreData checked out at a pinned ref** (`FREECOREDATA_REF=<tag or full SHA>` at the top of the script; `git fetch --depth 1 origin $FREECOREDATA_REF`; installs the framework, `momc` and `coredata-model.make`). Because the cache key is the script's hash, changing the pin rebuilds the stack automatically. No Opal/corebase. `libsqlite3` comes from apt and is bundled into the AppImage.
-- `release.yml`, on `v*` tags: version stamped from the tag; Linux AppImage and macOS app (signed and notarized when the secrets exist, with a warning otherwise) attached to the GitHub release.
+- `release.yml`, on `v*` tags: version stamped from the tag (gnustep-release-actions); Linux AppImage and macOS app (signed and notarized when the secrets exist, with a warning otherwise) attached to the GitHub release.
 
 ## 14. Phasing
 
