@@ -71,8 +71,6 @@ fi
 
 # 7. Fonts. The typing surface wants a fixed-pitch font, and a machine with
 # none installed would otherwise fall back to something proportional.
-mkdir -p AppDir/usr/etc/fonts
-cp Scripts/appimage/fonts.conf AppDir/usr/etc/fonts/fonts.conf
 for dir in /usr/share/fonts/truetype/dejavu /usr/share/fonts/truetype/liberation; do
     if [ -d "$dir" ]; then
         mkdir -p "AppDir/usr/share/fonts/truetype/$(basename "$dir")"
