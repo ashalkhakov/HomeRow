@@ -31,6 +31,12 @@
 # rebuilds the stack.
 #
 # Expects: CC, CXX, LIBRARY_COMBO, RUNTIME_VERSION, DEPS_PATH, INSTALL_PATH.
+#
+#   dependencies.sh freecoredata   builds FreeCoreData alone, into a stack
+#                                  built already: release.yml's, which comes
+#                                  from gnustep-release-actions' gnustep-stack
+#                                  (gnustep-patches' build-gnustep.sh). The
+#                                  pin stays here, in one place.
 set -ex
 
 # FreeCoreData is consumed at an exact commit.  HomeRow dogfoods it, so a
@@ -255,6 +261,11 @@ install_tools_xctest() {
     make install
     echo "::endgroup::"
 }
+
+if [ "${1:-}" = freecoredata ]; then
+    install_freecoredata
+    exit 0
+fi
 
 # Order matters: the runtime is built before tools-make, because configuring
 # tools-make with --with-runtime-abi=gnustep-2.0 probes for it, and libdispatch

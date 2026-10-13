@@ -2,6 +2,12 @@
 # Turn AppDir into an AppImage. Ported from XFormsKit's.
 #
 #   APP_VERSION=1.2.3 ./Scripts/package-appimage.sh
+#
+# LINUXDEPLOY and LDAI_RUNTIME_FILE are taken from the environment when set
+# (release.yml: gnustep-release-actions' appimage-tools; CI:
+# Scripts/install-linuxdeploy.sh's places, the defaults below). So is
+# LDAI_UPDATE_INFORMATION (release.yml: appimage-update-info): the plugin
+# then embeds it and writes $OUTPUT.zsync beside the image.
 set -euo pipefail
 
 WORKSPACE_DIR=$(pwd)

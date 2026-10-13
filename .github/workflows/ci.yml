@@ -33,11 +33,14 @@ jobs:
       # Seconds, and before anything compiles. The GNUstep build picks
       # Engine/*.m up with a wildcard, but the Xcode project lists files one
       # by one: a source added on Linux is otherwise invisible here until
-      # something fails to link.
+      # something fails to link. A file with an -Apple.m beside it
+      # (HRUpdater.m) is that class's GNUstep half, and the Mac compiles
+      # the other.
       - name: Every source file is in the Xcode project
         run: |
           missing=0
           for f in HomeRow/*.m HomeRow/Engine/*.m HomeRowTests/*.m; do
+            [ -e "${f%.m}-Apple.m" ] && continue
             name=$(basename "$f")
             grep -q "/\* $name in Sources \*/" HomeRow.xcodeproj/project.pbxproj \
               || { echo "::error file=$f::$name is not compiled by any target in HomeRow.xcodeproj"; missing=1; }
@@ -160,11 +163,13 @@ jobs:
       # which is a slow way to find out. What GNUstep has: Foundation, AppKit,
       # the objc runtime headers and (through FreeCoreData) CoreData. Anything else -- Cocoa.h,
       # QuartzCore, Carbon -- has to sit behind __has_include with a branch
-      # beside it. Matches import lines only, not prose in comments.
+      # beside it, or in an -Apple.m file, which only the Mac compiles
+      # (HRUpdater-Apple.m, Sparkle). Matches import lines only, not prose
+      # in comments.
       - name: No imports GNUstep cannot satisfy
         run: |
           bad=$(grep -rnE '^[[:space:]]*#[[:space:]]*(import|include)[[:space:]]*<[A-Za-z]+/' \
-                  HomeRow HomeRowTests --include='*.h' --include='*.m' \
+                  HomeRow HomeRowTests --include='*.h' --include='*.m' --exclude='*-Apple.m' \
                   --exclude-dir=ThirdParty --exclude-dir=Code --exclude-dir=Fixtures \
                 | grep -vE '<(Foundation|AppKit|CoreData|XCTest|objc)/' || true)
           if [ -n "$bad" ]; then
