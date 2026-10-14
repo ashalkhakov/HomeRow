@@ -9,13 +9,13 @@ A native typing tutor for GNUstep and Cocoa, in the spirit of MonkeyType (prose,
 | Name / prefix | **HomeRow**, class prefix `HR` |
 | Licence | **GPL-3.0-or-later** (`COPYING`). Relicensed from LGPL-2.1 on 2026-09-19 by the sole author, so that GNU Typist's lessons and MonkeyType's word lists can ship in the app |
 | Content | Courses: GNU Typist's `.typ` lesson files, unmodified (46 courses, ~15 languages, incl. the KTouch-derived ones). Word lists: MonkeyType's (140 languages), via `Scripts/import-monkeytype.py`. The two are complementary, not alternatives: MonkeyType has no lessons, GNU Typist has no word lists. MonkeyType's quotes are not used |
-| macOS target | macOS 11 Big Sur minimum, universal (arm64 + x86_64) |
+| macOS target | macOS 12 Monterey minimum (Sparkle 2.10 needs it), universal (arm64 + x86_64) |
 | GNUstep target | From-source stack only (clang, libobjc2, `ng-gnu-gnu`, `gnustep-2.0`, ARC), as in XFormsKit; Linux distribution is an **AppImage**. Distro GNUstep packages are not supported. |
 | Persistence | Core Data API — Apple's CoreData on macOS, **FreeCoreData** on GNUstep (dogfooding), SQLite store |
 | Lessons/course | In scope — not for the author, but for everyone else who needs a free tutor |
 | Code mode | In scope; first version done (section 4). Syntax comes from **TextMate grammars** — the format VS Code still uses — rather than tokenizers of our own |
 | Languages / layouts | v0.2 ships English + QWERTY-US only, but languages and keyboard layouts are **data packs** from the start, so more can be added without code (section 7a) |
-| FreeCoreData in CI | Checked out at a pinned commit by `dependencies.sh`; the pin is `FREECOREDATA_REF` in `.github/pins.env`, and bumping it is a deliberate commit |
+| FreeCoreData in CI | Its release, at the version `FREECOREDATA_VERSION` in `.github/pins.env` names, unpacked by gnustep-release-actions' workflows; bumping it is a deliberate commit |
 | Hosting / CI | GitHub and GitHub Actions only; no Forgejo pipeline |
 
 ## 1. Design principles
@@ -187,7 +187,7 @@ HomeRow is GPL-3.0-or-later, which is what lets it build on the two largest free
 
 - The test view is a custom `NSView` that draws the text itself (attributed strings / `NSLayoutManager`) rather than an editable `NSTextView`: it needs per-glyph state colouring, a custom caret, and full control over key handling. Input arrives via `keyDown:` → `interpretKeyEvents:` → `insertText:` so dead keys and non-US layouts work on both platforms.
 - Timing uses a monotonic clock, captured at the key event, not at redraw.
-- Big Sur floor: deployment target 11.0; no API newer than macOS 11 without an `@available` guard; XIBs kept to features GNUstep's XIB loader handles (as already practised in UDCalc) — no storyboards, no Auto Layout-only constructs that GNUstep ignores unless verified there.
+- Monterey floor: deployment target 12.0 (Sparkle 2.10 needs it); no API newer than macOS 12 without an `@available` guard; XIBs kept to features GNUstep's XIB loader handles (as already practised in UDCalc) — no storyboards, no Auto Layout-only constructs that GNUstep ignores unless verified there.
 - Engine classes (Foundation only): `HRTestSession`, `HRTextSource` (+ word, quote, lesson, custom, later code subclasses), `HRKeystrokeLog`, `HRScorer`, `HRLessonGenerator`, `HRCoursePlan`, `HRKeyboardLayout`, `HRLanguage`, `HRPackValidator`.
 - App classes: `HRAppDelegate`, `HRTestView`, `HRKeyboardView`, `HRChartView`, `HRResultStore` (Core Data façade), window controllers per window.
 
@@ -205,17 +205,18 @@ HomeRow/
     HomeRow.xcdatamodeld
     en.lproj/
   HomeRowTests/               XCTest bundle, own GNUmakefile
-  Scripts/                    AppDir assembly, AppImage packaging
-  .github/workflows/ci.yml, release.yml
-  .github/scripts/apt-update.sh, dependencies.sh
+  Scripts/                    pack importers, the AppImage's .desktop file
+  .github/workflows/build.yml
+  Makefile.apple              the macOS build, its checks and its install
+  .github/release/            appimage.conf
+  .github/pins.env            the releases it builds on (stack, FreeCoreData, Sparkle)
   docs/  COPYING  THIRD-PARTY  README.md
 ```
 
-- `ci.yml`, on push / PR / manual, with branch-name concurrency groups:
-  - **macOS job** (`macos-15`): `xcodebuild` build with `MACOSX_DEPLOYMENT_TARGET=11.0`, XCTest run, unsigned universal `.app` zipped and uploaded as a 14-day artifact, `.xcresult` uploaded on failure. A step asserts the built binary's minimum OS (`vtool -show-build`) is 11.0 and that both architectures are present.
-  - **GNUstep job** (`ubuntu-latest`, clang, `ng-gnu-gnu`, `gnustep-2.0`): early grep guard against imports GNUstep cannot satisfy; stack built from source by `.github/scripts/dependencies.sh` with `--with-layout=gnustep` and `--enable-objc-arc`, cached on the script's hash; `make`, tests via tools-xctest, AppImage packaged with linuxdeploy and smoke-tested, uploaded as artifact.
-- Stack built by `dependencies.sh`: libobjc2, libdispatch, tools-make, libs-base, libs-gui, libs-back, tools-xctest, the Eau theme for the AppImage, and **FreeCoreData checked out at a pinned ref** (`FREECOREDATA_REF=<tag or full SHA>` at the top of the script; `git fetch --depth 1 origin $FREECOREDATA_REF`; installs the framework, `momc` and `coredata-model.make`). Because the cache key is the script's hash, changing the pin rebuilds the stack automatically. No Opal/corebase. `libsqlite3` comes from apt and is bundled into the AppImage.
-- `release.yml`, on `v*` tags: version stamped from the tag; Linux AppImage and macOS app (signed and notarized when the secrets exist, with a warning otherwise) attached to the GitHub release.
+- `build.yml`, on push / `v*` tag / manual, with branch-name concurrency groups, calls gnustep-release-actions' shared workflows, the same as every repository's; HomeRow is built the familiar way, with the releases `.github/pins.env` names unpacked first:
+  - **macOS** (`macos.yml`, `macos-15`; `Makefile.apple`): `check` (`Scripts/check-sources.sh`: every source file in the Xcode project, imports GNUstep can satisfy; the Debug build, the XCTest run), the Release universal build (deployment target 12.0), asserting the binary's minimum OS (`vtool -show-build`) is 12.0 for both architectures; `installcheck` (the smoke test). Uploaded as an unsigned zip, kept 14 days.
+  - **Linux** (`linux.yml`, Ubuntu 22.04; `GNUmakefile`, `appimage.conf`): on the stack gnustep-patches publishes (clang, `ng-gnu-gnu`, `gnustep-2.0`, ARC, libobjc2, libdispatch, tools-make, libs-base, libs-gui, libs-back, tools-xctest, the Eau theme, in `/opt/gnustep`; its own verification checks ICU and the sound plug-ins) and FreeCoreData's release (framework, `momc`, `coredata-model.make`); `make`, `make check` (the source checks, then the tests), `make install`; AppImage packaged and smoke-tested on a clean Ubuntu container (`Scripts/appimage-smoke.sh`), uploaded, kept 14 days. No Opal/corebase. `libsqlite3` comes from apt and is bundled into the AppImage.
+  - On a `v*` tag: version stamped from the tag (gnustep-release-actions); macOS app signed and notarized when the secrets exist (with a warning otherwise) and its Sparkle appcast; AppImage with update information and `.zsync`; all attached to the GitHub release.
 
 ## 14. Phasing
 
@@ -228,4 +229,4 @@ HomeRow/
 
 ## 15. Open questions
 
-None at the moment. Next step: scaffold the repository (Xcode project, GNUmakefiles, first XIB, data model, `dependencies.sh`, `ci.yml`, `release.yml`).
+None at the moment.

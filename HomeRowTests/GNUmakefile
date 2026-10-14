@@ -19,13 +19,14 @@ endif
 include $(GNUSTEP_MAKEFILES)/common.make
 
 BUNDLE_NAME = HomeRowTests
+# Built and run, never installed: the app has no use for it.
+HomeRowTests_STANDARD_INSTALL = no
 
 HomeRowTests_OBJC_FILES = $(wildcard *.m)
 HomeRowTests_OBJC_FILES += \
     $(wildcard ../HomeRow/Engine/*.m) \
     ../HomeRow/HRResultStore.m \
-    ../HomeRow/HRManagedObjects.m \
-    ../HomeRow/HRGNUstepCompat.m
+    ../HomeRow/HRManagedObjects.m
 
 HomeRowTests_C_FILES = \
     ../HomeRow/ThirdParty/oniguruma/src/regerror.c \

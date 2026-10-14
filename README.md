@@ -1,6 +1,6 @@
 # HomeRow
 
-[![CI](https://github.com/ashalkhakov/HomeRow/actions/workflows/ci.yml/badge.svg)](https://github.com/ashalkhakov/HomeRow/actions/workflows/ci.yml)
+[![Build](https://github.com/ashalkhakov/HomeRow/actions/workflows/build.yml/badge.svg)](https://github.com/ashalkhakov/HomeRow/actions/workflows/build.yml)
 
 A native typing tutor for **macOS and Linux (GNUstep)**: a touch-typing course
 for people starting from zero, quick tests in the spirit of MonkeyType, and real
@@ -20,13 +20,17 @@ Take the files from the [latest release](https://github.com/ashalkhakov/HomeRow/
 
 | Platform | File | To run it |
 |---|---|---|
-| macOS 11 Big Sur or later, Intel and Apple silicon | `HomeRow-macOS-<version>.zip` | Unzip, move to Applications, open. A file named `…-unsigned.zip` is not notarized: right-click ▸ Open the first time. It updates itself (HomeRow ▸ Check for Updates…) |
-| Linux x86_64 | `HomeRow-Linux-<version>-x86_64.AppImage` | `chmod +x`, then run it. GNUstep, FreeCoreData and fonts are inside; key sounds use the system's libao if it is there. Gear Lever, AppImageUpdate or AppImagePool update it |
+| macOS 12 Monterey or later, Intel and Apple silicon | `HomeRow-macOS-<version>.zip` | Unzip, move to Applications, open. A file named `…-unsigned.zip` is not notarized: right-click ▸ Open the first time. It updates itself (HomeRow ▸ Check for Updates…) |
+| Linux x86_64 | `HomeRow-<version>-x86_64.AppImage` | `chmod +x`, then run it. GNUstep, FreeCoreData and fonts are inside; key sounds use the system's libao if it is there. Gear Lever, AppImageUpdate or AppImagePool update it |
 
 Between releases, every push builds the same two downloads: open the latest
 green run under
-[Actions](https://github.com/ashalkhakov/HomeRow/actions/workflows/ci.yml) and
-take `HomeRow-macOS-<commit>` or `HomeRow-Linux-<commit>`.
+[Actions](https://github.com/ashalkhakov/HomeRow/actions/workflows/build.yml)
+and take `HomeRow-macOS-0.0.0-build<n>` (an unsigned zip) or
+`HomeRow-0.0.0-build<n>-x86_64` (the AppImage). They are kept two weeks.
+
+The AppImage was `HomeRow-Linux-…` up to 0.1.1; 0.1.1 looks for that name
+and does not find the next release, so download that one by hand once.
 
 Build from source:
 
@@ -161,7 +165,7 @@ of code, replay the test, open every window, and exit 0.
 | `HomeRow/ThirdParty/oniguruma/` | The regular expression engine TextMate grammars need |
 | `HomeRowTests/` | XCTest sources and fixtures |
 | `HomeRow.xcodeproj` · `GNUmakefile` | The two builds, side by side |
-| `Scripts/` | Importers for the packs, AppImage packaging, version stamping |
+| `Scripts/` | Importers for the packs; the AppImage's `.desktop` file |
 | `patches/gnustep/` | Where the gnustep-gui fixes went: the shared gnustep-patches repository |
 
 ## Documentation

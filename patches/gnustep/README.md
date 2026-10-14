@@ -10,10 +10,10 @@ expression used after its owner released it, the `NSMenu` / `NSTextField`
 sender used after its action released it, and the tracking-rect walk visiting
 freed subviews — were byte-for-byte copies of XFormsKit's and are all there.
 
-`.github/scripts/dependencies.sh` clones that repository and applies what it
-carries for libs-gui, pinned by `GNUSTEP_PATCHES_REF` in `.github/pins.env`
-(edit it there to move it), which is part of the GNUstep cache key: moving the
-pin rebuilds the stack instead of reusing a differently-patched prefix.
+That repository builds the stack with its patches applied and publishes it
+as an image, `ghcr.io/ashalkhakov/gnustep:latest` (and a dated tag per
+build), which HomeRow's CI builds on; HomeRow builds no GNUstep and pins
+none. A patch reaches HomeRow with the next image.
 
 HomeRow does not knowingly depend on any of these fixes — its window is laid
 out with autoresizing masks, not constraints, and it keeps its controls alive

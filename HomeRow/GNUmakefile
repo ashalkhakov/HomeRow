@@ -1,8 +1,9 @@
 #
 # HomeRow -- the application, for GNUstep.
 #
-# Needs the from-source stack that .github/scripts/dependencies.sh builds:
-# clang, libobjc2 (gnustep-2.0 ABI), ARC, and FreeCoreData with its momc.
+# Needs the from-source stack gnustep-patches builds (its image, or its
+# Scripts/build-gnustep.sh): clang, libobjc2 (gnustep-2.0 ABI), ARC; and
+# FreeCoreData with its momc.
 #
 ifeq ($(GNUSTEP_MAKEFILES),)
   GNUSTEP_MAKEFILES := $(shell gnustep-config --variable=GNUSTEP_MAKEFILES 2>/dev/null)
@@ -64,7 +65,6 @@ HomeRow_OBJC_FILES = \
     HRStatTilesView.m \
     HRStatsWindowController.m \
     HRFreeTestActivity.m \
-    HRGNUstepCompat.m \
     HRKeyboardDock.m \
     HRKeyboardView.m \
     HRLayoutChooserController.m \

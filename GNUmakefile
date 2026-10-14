@@ -2,8 +2,11 @@
 # HomeRow -- top level, for GNUstep.
 #
 #   make            the app and the test bundle
-#   make check      build, then run the tests
-#   make install    install the app (GNUSTEP_INSTALLATION_DOMAIN=... as usual)
+#   make check      the sources checked (Scripts/check-sources.sh), then the tests
+#   make install    install the app (GNUSTEP_INSTALLATION_DOMAIN=... as usual);
+#                   not the test bundle
+#
+# macOS: Makefile.apple.
 #
 ifeq ($(GNUSTEP_MAKEFILES),)
   GNUSTEP_MAKEFILES := $(shell gnustep-config --variable=GNUSTEP_MAKEFILES 2>/dev/null)
@@ -21,3 +24,5 @@ include $(GNUSTEP_MAKEFILES)/aggregate.make
 
 # `make check` is gnustep-make's own target: it recurses into the
 # subprojects, and HomeRowTests hooks its test run onto it.
+check::
+	Scripts/check-sources.sh

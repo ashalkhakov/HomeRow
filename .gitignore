@@ -26,3 +26,4 @@ xcuserdata/
 
 .DS_Store
 *~
+.deps/

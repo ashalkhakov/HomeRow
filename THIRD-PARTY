@@ -90,7 +90,7 @@ FreeCoreData (GNUstep builds only)
     Cocotron contributors named in FreeCoreData's LICENSE files), with
     NSFetchedResultsController following MRTFetchedResultsController by
     Matteo Rattotti (MIT).
-    The commit used is pinned in .github/scripts/dependencies.sh.
+    The commit used is pinned in .github/pins.env.
 
 GNUstep (libobjc2, libs-base, libs-gui, libs-back), libdispatch, the Eau
 theme and the DejaVu and Liberation fonts are shipped inside the AppImage
@@ -99,12 +99,14 @@ under their own licences; none of their source is part of this repository.
 Build scripts and patches
 -------------------------
 
-.github/scripts/, Scripts/ (AppImage packaging, version stamping)
+.github/release/ (build and test hooks, AppImage configuration)
     Adapted from XFormsKit, https://github.com/ashalkhakov/XFormsKit
     (LGPL-2.1-or-later, same author), used here under GPL-3.0-or-later.
+    The workflows they plug into, AppImage packaging and version stamping
+    are gnustep-release-actions', not part of this repository.
 
 gnustep-patches, https://github.com/ashalkhakov/gnustep-patches
     Fixes to gnustep-gui (LGPL-2.1-or-later, as gnustep-gui itself), applied
     to the gui built into the AppImage. Not carried in this repository any
-    more: .github/scripts/dependencies.sh clones that one and applies what it
-    holds for libs-gui. See patches/gnustep/README.md.
+    more: the stack HomeRow builds on is the image that one publishes. See
+    patches/gnustep/README.md.

@@ -1,27 +1,30 @@
 # Releasing
 
-A release is a tag. `release.yml` builds both downloads from it, tests them,
-signs and notarizes the macOS app if it has the means, and attaches the
-files to a GitHub release with generated notes.
+A release is a tag. `build.yml`, the workflow every push runs, builds both
+downloads from it, tests them, signs and notarizes the macOS app if it has
+the means, and attaches the files to the tag's GitHub release.
 
 ## Cutting one
 
 1. `master` is green in CI, and the app has been *looked at* on both
    platforms — CI proves it starts and types, not that it looks right.
 2. Bring [roadmap.md](roadmap.md) and the README's *Limitations* up to date.
-3. Rehearse if anything about packaging changed: **Actions ▸ Release ▸ Run
-   workflow** on the branch builds the same artifacts and publishes nothing.
+3. Rehearse if anything about packaging changed: every push to a branch
+   builds the same downloads, unsigned, as artifacts of its run, and
+   publishes nothing. (**Actions ▸ Build ▸ Run workflow** with a tag
+   releases that tag.)
 4. Tag and push:
 
        git tag -a v0.1.0 -m "HomeRow 0.1.0"
        git push origin v0.1.0
 
-   The tag is the version: `Scripts/stamp-version.sh` writes it into the
-   Xcode project (numeric part only, as Apple requires), the GNUmakefile and
+   The tag is the version: the release workflows (gnustep-release-actions'
+   `stamp-version.sh`) write it into the Xcode project (numeric part only,
+   as Apple requires; the build number is the run's), the GNUmakefile and
    `HomeRowInfo.plist`. `v0.1.0-rc1` works, and makes a pre-release: one
    that installed copies are not offered (below).
 5. When the workflow is done, the release has
-   `HomeRow-Linux-<version>-x86_64.AppImage` and
+   `HomeRow-<version>-x86_64.AppImage` and
    `HomeRow-macOS-<version>.zip` (or `…-unsigned.zip`, see below), and for
    a release (not a pre-release) `appcast.xml` and the AppImage's `.zsync`
    (see *Updates*). Edit the generated notes into something a user wants
@@ -51,9 +54,10 @@ This needs a paid Apple Developer Program membership. Once:
 3. **An app-specific password** for notarization: account.apple.com ▸
    Sign-In and Security ▸ App-Specific Passwords.
 4. **Secrets of the `production` environment** (Settings ▸ Environments ▸
-   production ▸ Environment secrets) — the macOS job of `release.yml` names
-   that environment, and only a job that does can read them. Repository-level
-   secrets of the same names work too, but keep them in one place:
+   production ▸ Environment secrets) — the macOS job (gnustep-release-actions'
+   `macos.yml`) names that environment, and only a job that does can
+   read them. Repository-level secrets of the same names work too, but keep
+   them in one place:
 
    | Secret | Value |
    |---|---|
@@ -96,7 +100,7 @@ To check a download by hand:
 The Mac app updates itself with Sparkle: it checks the newest release's
 `appcast.xml` (`SUFeedURL` in `HomeRow/HomeRow-Info.plist`) once a day if
 the user allows it, and HomeRow ▸ Check for Updates… checks at once. A
-release's appcast is written by `release.yml` and signed with the
+release's appcast is written by the macOS job and signed with the
 `SPARKLE_PRIVATE_KEY` secret, whose public half is `SUPublicEDKey` in the
 same plist; without the secret there is no appcast, and installed copies
 are not offered the release.
@@ -105,6 +109,9 @@ A release's AppImage carries update information (`gh-releases-zsync`, the
 newest release), and its `.zsync` is attached beside it, so AppImageUpdate,
 Gear Lever and the like update it by the blocks that changed. A
 pre-release's carries none: "latest" would offer it the release before it.
+Up to 0.1.1 the image was named `HomeRow-Linux-<version>-x86_64.AppImage`,
+and 0.1.1's update information looks for that name: its users download the
+next release by hand once.
 
 ## Linux
 
@@ -114,12 +121,10 @@ only — libao's output plug-ins, which libao looks for in the system's own
 library directory (`libao4` on Debian and Ubuntu, `libao` on Fedora and
 Arch). Without them HomeRow is silent and otherwise unchanged.
 
-The GNUstep stack is cached in CI under a key that hashes
-`.github/scripts/dependencies.sh` and the patches. A change to the *apt
-package list* that GNUstep's configure scripts react to (as `libao-dev` was)
-is not in that hash: bump the `gnustep-vN` prefix of the key in `ci.yml`.
-`release.yml` builds the AppImage on Ubuntu 22.04, so that it runs there and
-on anything newer, with the stack from gnustep-release-actions'
-`gnustep-stack` (gnustep-patches' `build-gnustep.sh`, cached by its own
-recipe) and FreeCoreData from `dependencies.sh freecoredata`; there, a
-change to the package list means a new `cache-key` for that action.
+The AppImage is built on Ubuntu 22.04, so that it runs there and on
+anything newer, on the stack gnustep-patches publishes as an image
+(`ghcr.io/ashalkhakov/gnustep:latest`), with FreeCoreData at its pin in
+`.github/pins.env`. HomeRow builds no GNUstep of its own: a change to the
+stack (a patch, a component, an apt package its configure scripts react to,
+as `libao-dev` was) is made in gnustep-patches and reaches HomeRow with its
+next image.
