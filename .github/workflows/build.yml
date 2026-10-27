@@ -6,7 +6,7 @@ name: Build
 # and uploaded as artifacts (the Mac app, the AppImage); a v* tag (or a run
 # started by hand with one) is also released: the Mac app signed and
 # notarized with its Sparkle appcast, the AppImage with its update
-# information, attached to the tag's release (a pre-release when the tag has
+# information, the Windows installer, attached to the tag's release (a pre-release when the tag has
 # a '-'). What it builds on is in .github/pins.env.
 on:
   push:
@@ -35,6 +35,14 @@ jobs:
     with:
       tag: ${{ inputs.tag }}
       extra-packages: libsqlite3-dev
+
+  windows:
+    uses: ashalkhakov/gnustep-release-actions/.github/workflows/windows.yml@v1
+    with:
+      tag: ${{ inputs.tag }}
+      # FreeCoreData's PostgreSQL and MySQL stores come in its archive, and
+      # the installer carries what they link (libpq, libmariadb) as well.
+      extra-packages: sqlite3 postgresql libmariadbclient
 
   macos:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/macos.yml@v1

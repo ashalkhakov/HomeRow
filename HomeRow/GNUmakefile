@@ -107,6 +107,10 @@ HomeRow_HEADER_FILES = $(wildcard Engine/*.h) $(wildcard *.h)
 
 HomeRow_INCLUDE_DIRS = -IEngine -IThirdParty/oniguruma/src
 HomeRow_GUI_LIBS += -lCoreData
+# Windows: clock_gettime (HRClock, Oniguruma) is MinGW's winpthreads'.
+ifneq ($(filter mingw% windows%,$(GNUSTEP_TARGET_OS)),)
+HomeRow_GUI_LIBS += -lpthread
+endif
 
 -include GNUmakefile.preamble
 include $(GNUSTEP_MAKEFILES)/coredata-model.make

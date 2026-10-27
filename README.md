@@ -22,8 +22,9 @@ Take the files from the [latest release](https://github.com/ashalkhakov/HomeRow/
 |---|---|---|
 | macOS 12 Monterey or later, Intel and Apple silicon | `HomeRow-macOS-<version>.zip` | Unzip, move to Applications, open. A file named `…-unsigned.zip` is not notarized: right-click ▸ Open the first time. It updates itself (HomeRow ▸ Check for Updates…) |
 | Linux x86_64 | `HomeRow-<version>-x86_64.AppImage` | `chmod +x`, then run it. GNUstep, FreeCoreData and fonts are inside; key sounds use the system's libao if it is there. Gear Lever, AppImageUpdate or AppImagePool update it |
+| Windows 10 or later, x86_64 | `HomeRow-<version>-win64.msi` | Run it: it installs for you alone, no administrator needed, with a Start menu shortcut. `HomeRow-<version>-win64-portable.zip` is the same, to unzip and run. No automatic updates yet: install the next release over it |
 
-Between releases, every push builds the same two downloads: open the latest
+Between releases, every push builds the same downloads: open the latest
 green run under
 [Actions](https://github.com/ashalkhakov/HomeRow/actions/workflows/build.yml)
 and take `HomeRow-macOS-0.0.0-build<n>` (an unsigned zip) or

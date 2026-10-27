@@ -11,7 +11,7 @@
 
 @class HRAppDelegate;
 
-/* HR_SMOKE_TEST=1: prove that the packaged app starts, that every outlet of
+/* HR_SMOKE_TEST=1 (or -HRSmokeTest YES): prove that the packaged app starts, that every outlet of
  * every XIB is connected, that packs were found, and that a test, a lesson
  * and a section of code can be typed and scored -- then exit, 0 for good.
  * CI runs this against the AppImage under Xvfb and against the macOS app,
