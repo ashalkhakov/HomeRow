@@ -50,8 +50,12 @@ HomeRowTests_C_FILES = \
 
 HomeRowTests_INCLUDE_DIRS = -I../HomeRow -I../HomeRow/Engine -I../HomeRow/ThirdParty/oniguruma/src
 
-HomeRowTests_LIBRARIES = objc gnustep-base XCTest
-HomeRowTests_BUNDLE_LIBS += -lCoreData
+# Windows names every library a bundle uses when it is linked.
+HomeRowTests_BUNDLE_LIBS += -lXCTest -lCoreData
+# Windows: clock_gettime (HRClock, Oniguruma) is MinGW's winpthreads'.
+ifneq ($(filter mingw% windows%,$(GNUSTEP_TARGET_OS)),)
+HomeRowTests_BUNDLE_LIBS += -lpthread
+endif
 
 # The data model, compiled by FreeCoreData's momc; see ../HomeRow/GNUmakefile.
 HomeRowTests_XCDATAMODELD_FILES = ../HomeRow/HomeRow.xcdatamodeld
