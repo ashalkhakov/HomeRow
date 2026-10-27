@@ -3,22 +3,32 @@
  * Written by hand in place of the one autoconf/cmake would generate: both
  * of HomeRow's build systems (gnustep-make and Xcode) compile these sources
  * directly.  Everything here is true of every platform HomeRow targets
- * (64-bit macOS and Linux, clang). */
+ * (64-bit macOS, Linux and Windows, clang), but where Windows differs:
+ * alloca in malloc.h (which regint.h includes there), no sys/times.h, and
+ * a 32-bit long (LLP64). */
 #ifndef HOMEROW_ONIG_CONFIG_H
 #define HOMEROW_ONIG_CONFIG_H
 
 #define HAVE_ALLOCA 1
+#if !defined(_WIN32)
 #define HAVE_ALLOCA_H 1
+#endif
 #define HAVE_STDINT_H 1
 #define HAVE_INTTYPES_H 1
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_SYS_TIME_H 1
+#if !defined(_WIN32)
 #define HAVE_SYS_TIMES_H 1
+#endif
 #define HAVE_TIME_H 1
 #define HAVE_UNISTD_H 1
 
 #define SIZEOF_INT 4
+#if defined(_WIN32)
+#define SIZEOF_LONG 4
+#else
 #define SIZEOF_LONG 8
+#endif
 #define SIZEOF_LONG_LONG 8
 #define SIZEOF_VOIDP 8
 #define SIZEOF_INTPTR_T 8
