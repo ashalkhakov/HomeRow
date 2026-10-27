@@ -44,6 +44,14 @@
                              HRLayoutChooserDelegate, HRStatsSubjectSource, HRWelcomeDelegate>
 @end
 
+/* HR_SMOKE_TEST=1 in the environment, or -HRSmokeTest YES among the
+ * arguments (as the Windows installer's smoke test starts it). */
+static BOOL HRSmokeTestAsked(void)
+{
+    return [[[NSProcessInfo processInfo] environment] objectForKey:@"HR_SMOKE_TEST"] != nil
+        || [[NSUserDefaults standardUserDefaults] boolForKey:@"HRSmokeTest"];
+}
+
 @implementation HRAppDelegate
 {
     HRTheme *_theme;
@@ -60,7 +68,7 @@
  * not started in a smoke test.  Where there is no updater, no menu item. */
 - (void)applicationWillFinishLaunching:(NSNotification *)notification
 {
-    BOOL smokeTest = [[[NSProcessInfo processInfo] environment] objectForKey:@"HR_SMOKE_TEST"] != nil;
+    BOOL smokeTest = HRSmokeTestAsked();
     _updater = [[HRUpdater alloc] initStarting:!smokeTest];
     if (!_updater.available) {
         NSMenu *appMenu = [[[NSApp mainMenu] itemAtIndex:0] submenu];
@@ -111,7 +119,7 @@
     [[self activityForMode:_model.configuration.mode] begin];
     [_window makeKeyAndOrderFront:self];
 
-    if ([[[NSProcessInfo processInfo] environment] objectForKey:@"HR_SMOKE_TEST"]) {
+    if (HRSmokeTestAsked()) {
         [[[HRSmokeTest alloc] initWithAppDelegate:self] performSelector:@selector(run) withObject:nil afterDelay:0.5];
     } else {
         [self welcomeIfNew];
