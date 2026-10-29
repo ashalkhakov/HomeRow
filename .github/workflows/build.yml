@@ -40,9 +40,7 @@ jobs:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/windows.yml@v1
     with:
       tag: ${{ inputs.tag }}
-      # FreeCoreData's PostgreSQL and MySQL stores come in its archive, and
-      # the installer carries what they link (libpq, libmariadb) as well.
-      extra-packages: sqlite3 postgresql libmariadbclient
+      extra-packages: sqlite3
 
   macos:
     uses: ashalkhakov/gnustep-release-actions/.github/workflows/macos.yml@v1
